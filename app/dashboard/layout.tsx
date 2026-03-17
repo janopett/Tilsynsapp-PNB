@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import LogoutButton from "@/components/ui/LogoutButton";
 
@@ -8,13 +6,6 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    redirect("/login");
-  }
-
   return (
     <div className="min-h-screen flex flex-col">
       {/* Top nav */}
