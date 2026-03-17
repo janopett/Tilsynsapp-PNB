@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/server";
 import { archiveInspectionToSif } from "@/lib/sif/archival";
 import { generateInspectionPdf, buildPdfFileName } from "@/lib/pdf/generate";
@@ -15,14 +15,10 @@ const ArchiveRequestSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
+  const auth = await requireUser(req);
+  if (auth.error) return auth.error;
+  const { user, supabase } = auth;
   const serviceClient = createServiceClient();
-
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" } satisfies ArchiveInspectionResponse, { status: 401 });
-  }
 
   const body = await req.json().catch(() => null);
   const parsed = ArchiveRequestSchema.safeParse(body);

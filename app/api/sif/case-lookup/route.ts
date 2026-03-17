@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/api-auth";
 import { findCaseInSif } from "@/lib/sif/case-service";
 import { SifCaseNotFoundError, SifMultipleCasesFoundError } from "@/lib/sif/errors";
 
@@ -13,12 +13,8 @@ const CaseLookupSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const auth = await requireUser(req);
+  if (auth.error) return auth.error;
 
   const body = await req.json().catch(() => null);
   const parsed = CaseLookupSchema.safeParse(body);
