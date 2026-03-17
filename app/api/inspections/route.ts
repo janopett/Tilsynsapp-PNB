@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 const CreateInspectionSchema = z.object({
   property_address: z.string().min(1),
@@ -16,9 +16,20 @@ const CreateInspectionSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
+  const authHeader = req.headers.get("Authorization");
+  const token = authHeader?.replace("Bearer ", "");
+
+  if (!token) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const supabase = createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    { global: { headers: { Authorization: `Bearer ${token}` } } }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser(token);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
