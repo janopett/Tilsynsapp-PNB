@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import type {
   InspectionWithAnswers,
@@ -34,7 +35,11 @@ export default function InspectionPage() {
   const [activeCategory, setActiveCategory] = useState<CheckpointCategory | "all">("all");
 
   const fetchInspection = useCallback(async () => {
-    const res = await fetch(`/api/inspections/${id}`);
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(`/api/inspections/${id}`, {
+      headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+    });
     if (!res.ok) { router.push("/dashboard"); return; }
     const data = await res.json();
     setInspection(data);
@@ -53,9 +58,14 @@ export default function InspectionPage() {
     if (!inspection) return;
     setSavingId(checkpointId);
 
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
     await fetch(`/api/inspections/${id}/answers`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
       body: JSON.stringify({ checkpoint_definition_id: checkpointId, status, comment }),
     });
 

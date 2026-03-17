@@ -1,32 +1,44 @@
-import { createClient } from "@/lib/supabase/server";
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Inspection } from "@/types";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { createClient } from "@/lib/supabase/client";
 
-export default async function DashboardPage() {
-  const supabase = createClient();
+export default function DashboardPage() {
+  const [list, setList] = useState<Inspection[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: inspections, error } = await supabase
-    .from("inspections")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(50);
+  useEffect(() => {
+    async function load() {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setLoading(false); return; }
 
-  if (error) {
-    console.error("Error loading inspections", error);
+      const { data } = await supabase
+        .from("inspections")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      setList(data ?? []);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64 text-gray-400">Laster…</div>;
   }
-
-  const list: Inspection[] = inspections ?? [];
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Mine tilsyn</h1>
-          <p className="text-gray-500 text-sm mt-1">
-            {list.length} tilsyn registrert
-          </p>
+          <p className="text-gray-500 text-sm mt-1">{list.length} tilsyn registrert</p>
         </div>
         <Link
           href="/dashboard/inspections/new"
