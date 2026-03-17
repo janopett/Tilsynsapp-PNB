@@ -1,0 +1,191 @@
+// ============================================================
+// SIF Archival Orchestrator
+// Coordinates: case lookup → file upload → create document → persist
+// ============================================================
+
+import { v4 as uuidv4 } from "uuid";
+import { findCaseInSif } from "./case-service";
+import { uploadFilesToSif, mimeTypeToFormat } from "./file-service";
+import { createInspectionDocumentInSif } from "./document-service";
+import { sifMapping, buildDocumentTitle } from "@/config/sif-mapping";
+import {
+  SifError,
+  SifCaseNotFoundError,
+  SifMultipleCasesFoundError,
+  SifUploadError,
+  SifCreateDocumentError,
+} from "./errors";
+import type { ArchiveInspectionRequest, ArchiveInspectionResponse, InspectionArchival } from "@/types";
+
+export interface ArchivalContext {
+  inspectionId: string;
+  caseNumber?: string;
+  externalId?: string;
+  uid?: string;
+  propertyAddress: string;
+  inspectionDate: string;
+  pdfBuffer?: Buffer;
+  pdfFileName?: string;
+  attachments?: Array<{
+    fileName: string;
+    fileData: Buffer;
+    mimeType: string;
+  }>;
+  additionalFields?: Array<{ name: string; value: string }>;
+}
+
+/**
+ * Full archival flow:
+ * 1. Find case in SIF
+ * 2. Upload PDF report
+ * 3. Upload attachment files
+ * 4. Create document on case
+ * Returns the archival result to be persisted in Supabase.
+ */
+export async function archiveInspectionToSif(
+  ctx: ArchivalContext
+): Promise<Omit<InspectionArchival, "id" | "created_at" | "updated_at">> {
+  const correlationId = uuidv4();
+
+  console.info("[SIF] Starting archival", {
+    correlationId,
+    inspectionId: ctx.inspectionId,
+    caseNumber: ctx.caseNumber,
+    propertyAddress: ctx.propertyAddress,
+  });
+
+  const requestPayload: Record<string, unknown> = {
+    correlationId,
+    inspectionId: ctx.inspectionId,
+    caseNumber: ctx.caseNumber,
+    propertyAddress: ctx.propertyAddress,
+  };
+
+  try {
+    // Step 1: Find case
+    const sifCase = await findCaseInSif({
+      caseNumber: ctx.caseNumber,
+      externalId: ctx.externalId,
+      uid: ctx.uid,
+      correlationId,
+    });
+
+    // Step 2 + 3: Upload files
+    const filesToUpload: Array<{
+      fileName: string;
+      fileData: Buffer;
+      mimeType?: string;
+      correlationId?: string;
+    }> = [];
+
+    if (ctx.pdfBuffer && ctx.pdfFileName) {
+      filesToUpload.push({
+        fileName: ctx.pdfFileName,
+        fileData: ctx.pdfBuffer,
+        mimeType: "application/pdf",
+        correlationId,
+      });
+    }
+
+    for (const att of ctx.attachments ?? []) {
+      filesToUpload.push({
+        ...att,
+        correlationId,
+      });
+    }
+
+    if (filesToUpload.length === 0) {
+      throw new SifCreateDocumentError(
+        "No files to archive. At least a PDF report is required."
+      );
+    }
+
+    const uploadedRefs = await uploadFilesToSif(filesToUpload);
+
+    // Step 4: Build document title
+    const title = buildDocumentTitle(
+      sifMapping.inspectionReport.titleTemplate,
+      {
+        propertyAddress: ctx.propertyAddress,
+        caseNumber: sifCase.caseNumber,
+        date: ctx.inspectionDate,
+      }
+    );
+
+    // Build files list for CreateDocument
+    const docFiles = uploadedRefs.map((ref, idx) => {
+      const isMain = idx === 0;
+      const ext = ref.fileName.split(".").pop()?.toLowerCase() ?? "bin";
+      return {
+        title: ref.fileName,
+        format: ext,
+        uploadedFileReference: ref.fileReference,
+        relationType: isMain
+          ? sifMapping.inspectionReport.mainFileRelationType
+          : sifMapping.inspectionReport.attachmentRelationType,
+      };
+    });
+
+    const allAdditionalFields = [
+      ...sifMapping.defaults.standardAdditionalFields,
+      ...(ctx.additionalFields ?? []),
+    ];
+
+    // Step 5: Create document
+    const sifDocument = await createInspectionDocumentInSif({
+      caseNumber: sifCase.caseNumber,
+      title,
+      archive: sifMapping.inspectionReport.archive,
+      category: sifMapping.inspectionReport.category,
+      status: sifMapping.inspectionReport.status,
+      responsiblePersonRecno:
+        sifMapping.defaults.responsiblePersonRecno > 0
+          ? sifMapping.defaults.responsiblePersonRecno
+          : undefined,
+      files: docFiles,
+      additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
+      documentDate: ctx.inspectionDate,
+      correlationId,
+    });
+
+    console.info("[SIF] Archival complete", {
+      correlationId,
+      inspectionId: ctx.inspectionId,
+      documentRecno: sifDocument.recno,
+      documentNumber: sifDocument.documentNumber,
+    });
+
+    return {
+      inspection_id: ctx.inspectionId,
+      status: "success",
+      sif_case_number: sifCase.caseNumber,
+      sif_case_recno: sifCase.recno,
+      sif_document_number: sifDocument.documentNumber,
+      sif_document_recno: sifDocument.recno,
+      sif_document_url: sifDocument.url,
+      request_payload_json: requestPayload,
+      response_payload_json: { sifCase, sifDocument },
+      archived_at: new Date().toISOString(),
+    };
+  } catch (err) {
+    const errorMessage =
+      err instanceof Error ? err.message : String(err);
+    const errorCode =
+      err instanceof SifError ? err.code : "UNKNOWN_ERROR";
+
+    console.error("[SIF] Archival failed", {
+      correlationId,
+      inspectionId: ctx.inspectionId,
+      errorCode,
+      errorMessage,
+    });
+
+    return {
+      inspection_id: ctx.inspectionId,
+      status: "failed",
+      sif_case_number: ctx.caseNumber,
+      request_payload_json: requestPayload,
+      error_message: `[${errorCode}] ${errorMessage}`,
+    };
+  }
+}
