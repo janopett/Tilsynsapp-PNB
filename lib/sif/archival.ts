@@ -5,9 +5,10 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { findCaseInSif } from "./case-service";
-import { uploadFilesToSif, mimeTypeToFormat } from "./file-service";
+import { uploadFilesToSif } from "./file-service";
 import { createInspectionDocumentInSif } from "./document-service";
-import { sifMapping, buildDocumentTitle } from "@/config/sif-mapping";
+import { loadSifSettingsWithEnvFallback } from "./settings";
+import { buildDocumentTitle } from "@/config/sif-mapping";
 import {
   SifError,
   SifCaseNotFoundError,
@@ -53,6 +54,9 @@ export async function archiveInspectionToSif(
   ctx: ArchivalContext
 ): Promise<Omit<InspectionArchival, "id" | "created_at" | "updated_at">> {
   const correlationId = uuidv4();
+
+  // Load document mapping from DB settings (admin-configurable)
+  const settings = await loadSifSettingsWithEnvFallback();
 
   console.info("[SIF] Starting archival", {
     correlationId,
@@ -117,7 +121,7 @@ export async function archiveInspectionToSif(
     const year = ctx.inspectionDate?.slice(0, 4) ?? "";
 
     const title = buildDocumentTitle(
-      sifMapping.inspectionReport.titleTemplate,
+      settings.docTitleTemplate,
       {
         propertyAddress: ctx.propertyAddress,
         caseNumber: sifCase.caseNumber,
@@ -141,26 +145,23 @@ export async function archiveInspectionToSif(
         format: ext,
         uploadedFileReference: ref.fileReference,
         relationType: isMain
-          ? sifMapping.inspectionReport.mainFileRelationType
-          : sifMapping.inspectionReport.attachmentRelationType,
+          ? settings.docMainFileRelationType
+          : settings.docAttachmentRelationType,
       };
     });
 
-    const allAdditionalFields = [
-      ...sifMapping.defaults.standardAdditionalFields,
-      ...(ctx.additionalFields ?? []),
-    ];
+    const allAdditionalFields = ctx.additionalFields ?? [];
 
     // Step 5: Create document
     const sifDocument = await createInspectionDocumentInSif({
       caseNumber: sifCase.caseNumber,
       title,
-      archive: sifMapping.inspectionReport.archive,
-      category: sifMapping.inspectionReport.category,
-      status: sifMapping.inspectionReport.status,
+      archive: settings.docArchive,
+      category: settings.docCategory,
+      status: settings.docStatus,
       responsiblePersonRecno:
-        sifMapping.defaults.responsiblePersonRecno > 0
-          ? sifMapping.defaults.responsiblePersonRecno
+        settings.responsiblePersonRecno > 0
+          ? settings.responsiblePersonRecno
           : undefined,
       files: docFiles,
       additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
