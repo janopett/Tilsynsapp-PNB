@@ -211,6 +211,7 @@ export interface SifContact {
   roleDescription?: string;
   email?: string;
   phone?: string;
+  type?: "contactPerson" | "privatePerson" | "enterprise";
 }
 
 export interface SifCase {
