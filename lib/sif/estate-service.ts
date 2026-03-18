@@ -12,31 +12,26 @@ interface EstateQuery {
   MaxResults?: number;
 }
 
-interface RawEstate {
-  Recno: number;
-  // SIF may return Address as a plain string or as an object (e.g. { Value: "..." })
-  Address?: unknown;
-  GNr?: string;
-  BNr?: string;
-  FNr?: string;
-  SNr?: string;
-  Municipality?: string;
-  // Some SIF versions use different casing
-  Gnr?: string;
-  Bnr?: string;
-  Fnr?: string;
-  Snr?: string;
+interface RawEstateAddress {
+  StreetAddress?: string;
+  ZipCode?: string;
+  ZipPlace?: string;
+  County?: string;
+  State?: string;
+  Country?: string;
+  Area?: string;
 }
 
-/** Extract a plain string from a SIF field that may be a string or a wrapped object. */
-function extractString(value: unknown): string | undefined {
-  if (typeof value === "string") return value || undefined;
-  if (value && typeof value === "object") {
-    const obj = value as Record<string, unknown>;
-    const v = obj.Value ?? obj.FormattedValue ?? obj.Text ?? obj.AddressLine1;
-    return typeof v === "string" ? v || undefined : undefined;
-  }
-  return undefined;
+interface RawEstate {
+  Recno: number;
+  Address?: RawEstateAddress;
+  EstateNumber?: number;    // gnr
+  WorkNumber?: number;      // bnr
+  SectionNumber?: number | null;  // snr
+  LeaseHoldNumber?: number | null; // fnr
+  Type?: string;
+  Description?: string;
+  Municipality?: string;
 }
 
 interface EstateListResult {
@@ -72,11 +67,11 @@ export async function getCaseEstates(
 
     return result.Estates.map((e) => ({
       recno: e.Recno,
-      address: extractString(e.Address),
-      gnr: e.GNr ?? e.Gnr,
-      bnr: e.BNr ?? e.Bnr,
-      fnr: e.FNr ?? e.Fnr,
-      snr: e.SNr ?? e.Snr,
+      address: e.Address?.StreetAddress || undefined,
+      gnr: e.EstateNumber != null ? String(e.EstateNumber) : undefined,
+      bnr: e.WorkNumber != null ? String(e.WorkNumber) : undefined,
+      snr: e.SectionNumber != null && e.SectionNumber !== 0 ? String(e.SectionNumber) : undefined,
+      fnr: e.LeaseHoldNumber != null && e.LeaseHoldNumber !== 0 ? String(e.LeaseHoldNumber) : undefined,
       municipality: e.Municipality,
     }));
   } catch {
