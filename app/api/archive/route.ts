@@ -49,25 +49,27 @@ export async function POST(req: NextRequest) {
   const pdfBuffer = generateInspectionPdf(inspection);
   const pdfFileName = buildPdfFileName(inspection);
 
-  // Download attachment files from Supabase Storage
-  const attachmentFiles: Array<{ fileName: string; fileData: Buffer; mimeType: string }> = [];
-  for (const att of inspection.attachments) {
-    try {
-      const { data: fileData } = await supabase.storage
-        .from("inspection-attachments")
-        .download(att.file_path);
-      if (fileData) {
-        const buffer = Buffer.from(await fileData.arrayBuffer());
-        attachmentFiles.push({
-          fileName: att.file_name,
-          fileData: buffer,
-          mimeType: att.file_type,
-        });
-      }
-    } catch (err) {
-      console.warn(`Could not download attachment ${att.file_name}:`, err);
-    }
-  }
+  // Download attachment files from Supabase Storage (parallel)
+  const attachmentFiles = (
+    await Promise.all(
+      inspection.attachments.map(async (att) => {
+        try {
+          const { data: fileData } = await supabase.storage
+            .from("inspection-attachments")
+            .download(att.file_path);
+          if (!fileData) return null;
+          return {
+            fileName: att.file_name,
+            fileData: Buffer.from(await fileData.arrayBuffer()),
+            mimeType: att.file_type,
+          };
+        } catch (err) {
+          console.warn(`Could not download attachment ${att.file_name}:`, err);
+          return null;
+        }
+      })
+    )
+  ).filter((f): f is NonNullable<typeof f> => f !== null);
 
   // Persist initial "pending" archival record
   const { data: archival } = await serviceClient
@@ -94,24 +96,16 @@ export async function POST(req: NextRequest) {
     additionalFields,
   });
 
-  // Update archival record
+  // Update archival record and (if successful) inspection status in parallel
   const archivalId = archival?.id;
-  if (archivalId) {
-    await serviceClient
-      .from("inspection_archivals")
-      .update(result)
-      .eq("id", archivalId);
-  } else {
-    await serviceClient.from("inspection_archivals").insert(result);
-  }
-
-  // If successful, update inspection status to "archived"
-  if (result.status === "success") {
-    await supabase
-      .from("inspections")
-      .update({ status: "archived" })
-      .eq("id", inspectionId);
-  }
+  await Promise.all([
+    archivalId
+      ? serviceClient.from("inspection_archivals").update(result).eq("id", archivalId)
+      : serviceClient.from("inspection_archivals").insert(result),
+    result.status === "success"
+      ? supabase.from("inspections").update({ status: "archived" }).eq("id", inspectionId)
+      : Promise.resolve(),
+  ]);
 
   // Fetch updated archival record
   const { data: finalArchival } = await serviceClient

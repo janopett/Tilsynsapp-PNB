@@ -2,13 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { Inspection } from "@/types";
+type InspectionListItem = Pick<
+  import("@/types").Inspection,
+  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id"
+>;
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { createClient } from "@/lib/supabase/client";
 
 export default function DashboardPage() {
-  const [list, setList] = useState<Inspection[]>([]);
+  const [list, setList] = useState<InspectionListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -19,7 +22,7 @@ export default function DashboardPage() {
 
       const { data } = await supabase
         .from("inspections")
-        .select("*")
+        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id")
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -69,9 +72,9 @@ export default function DashboardPage() {
                     <p className="font-semibold text-gray-900 truncate">
                       {inspection.property_address}
                     </p>
-                    {(inspection as Inspection & { case_title?: string }).case_title && (
+                    {inspection.case_title && (
                       <p className="text-sm text-gray-500 truncate mt-0.5">
-                        {(inspection as Inspection & { case_title?: string }).case_title}
+                        {inspection.case_title}
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 flex-wrap">
