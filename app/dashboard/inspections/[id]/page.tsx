@@ -23,6 +23,13 @@ import ArchivePanel from "@/components/archive/ArchivePanel";
 import StatusBadge from "@/components/ui/StatusBadge";
 import type { SifContact } from "@/types";
 
+// Dummy contacts shown when case contacts can't be loaded from PNB
+const DUMMY_CONTACTS: SifContact[] = [
+  { recno: 1, name: "Ola Byggesen", role: "SØK", roleDescription: "Ansvarlig søker", type: "enterprise" },
+  { recno: 2, name: "Kari Tiltakshaver", role: "TILT", roleDescription: "Tiltakshaver", type: "privatePerson" },
+  { recno: 3, name: "Per Foretak AS", role: "UTF", roleDescription: "Ansvarlig utførende", type: "enterprise" },
+];
+
 type Tab = "checklist" | "summary" | "archive";
 
 export default function InspectionPage() {
@@ -65,8 +72,15 @@ export default function InspectionPage() {
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
         .then((r) => r.json())
-        .then((d) => { if (d.ok) setCaseContacts(d.contacts ?? []); })
-        .catch(() => {});
+        .then((d) => {
+          if (d.ok && d.contacts?.length > 0) {
+            setCaseContacts(d.contacts);
+          } else {
+            // Fallback: dummy contacts for testing until PNB is connected
+            setCaseContacts(DUMMY_CONTACTS);
+          }
+        })
+        .catch(() => setCaseContacts(DUMMY_CONTACTS));
     }
   }, [id, router]);
 

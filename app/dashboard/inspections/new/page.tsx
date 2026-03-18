@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MEASURE_TYPES, PROPERTY_QUESTIONS } from "@/data/seed/measure-types";
 import type { MeasureTypeId, PropertyTag } from "@/types";
@@ -23,6 +23,19 @@ export default function NewInspectionPage() {
   const [inspectionDate, setInspectionDate] = useState(
     new Date().toISOString().slice(0, 10)
   );
+
+  // Auto-fill inspector name from logged-in user
+  useEffect(() => {
+    createClient().auth.getUser().then(({ data: { user } }) => {
+      if (!user) return;
+      const name =
+        user.user_metadata?.full_name ??
+        user.user_metadata?.name ??
+        user.email ??
+        "";
+      setInspectorName(name);
+    });
+  }, []);
   const [notes, setNotes] = useState("");
 
   // Step 2 fields

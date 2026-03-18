@@ -166,11 +166,21 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
       status: response.status,
       body,
     });
-    throw mapHttpErrorToSifError(
-      response.status,
-      body,
-      `${service}/${method}`
-    );
+
+    // Detect Public 360 error envelope: { Type, CorrelationId, ExceptionType, Message }
+    if (
+      body &&
+      typeof body === "object" &&
+      (body as Record<string, unknown>).Type === "Error"
+    ) {
+      const err = body as Record<string, unknown>;
+      const msg =
+        `360-feil (${err.ExceptionType ?? "ukjent"}): ${err.Message ?? "Ingen melding"}` +
+        (err.CorrelationId ? `\nCorrelationId: ${err.CorrelationId}` : "");
+      throw new Error(msg);
+    }
+
+    throw mapHttpErrorToSifError(response.status, body, `${service}/${method}`);
   }
 
   let result: TOutput;
