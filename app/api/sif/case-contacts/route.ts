@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { getCaseContacts } from "@/lib/sif/contact-service";
+import { findCaseInSif } from "@/lib/sif/case-service";
 
 // ── GET /api/sif/case-contacts ────────────────────────────────────────────────
-// Returns contacts for a case. Accepts ?caseRecno=N or ?caseNumber=2024/1234
+// Returns contacts for a case. Accepts ?caseRecno=N or ?caseNumber=TILSYN-26/00007
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
@@ -19,10 +20,15 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const caseRecno = caseRecnoStr ? Number(caseRecnoStr) : undefined;
-
   try {
-    const contacts = await getCaseContacts({ caseRecno, caseNumber: caseNumber ?? undefined });
+    // Resolve caseNumber → recno so ContactService filters correctly
+    let caseRecno = caseRecnoStr ? Number(caseRecnoStr) : undefined;
+    if (!caseRecno && caseNumber) {
+      const sifCase = await findCaseInSif({ caseNumber });
+      caseRecno = sifCase.recno;
+    }
+
+    const contacts = await getCaseContacts({ caseRecno });
     return NextResponse.json({ ok: true, contacts });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
