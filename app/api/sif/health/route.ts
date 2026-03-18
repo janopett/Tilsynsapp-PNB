@@ -1,13 +1,10 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireUser } from "@/lib/api-auth";
 import { testSifConnection } from "@/lib/sif/support-service";
 
-export async function GET() {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(req: NextRequest) {
+  const auth = await requireUser(req);
+  if (auth.error) return auth.error;
 
   const result = await testSifConnection();
   return NextResponse.json(result, { status: result.ok ? 200 : 503 });

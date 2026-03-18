@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { authFetch } from "@/lib/auth-fetch";
 
 interface VersionResult {
   ok: boolean;
@@ -24,7 +25,7 @@ export default function SifTestPage() {
   async function testConnection() {
     setVersionLoading(true);
     setVersionResult(null);
-    const res = await fetch("/api/sif/health");
+    const res = await authFetch("/api/sif/health");
     const data = await res.json();
     setVersionResult(data);
     setVersionLoading(false);
@@ -35,7 +36,7 @@ export default function SifTestPage() {
     if (!caseNumber.trim()) return;
     setCaseLoading(true);
     setCaseLookupResult(null);
-    const res = await fetch("/api/sif/case-lookup", {
+    const res = await authFetch("/api/sif/case-lookup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ caseNumber }),

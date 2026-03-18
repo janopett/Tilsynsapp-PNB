@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
+import { authFetch } from "@/lib/auth-fetch";
 
 interface Props {
   inspection: InspectionWithAnswers;
@@ -41,7 +42,7 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
     setLoading(true);
     setResult(null);
 
-    const res = await fetch("/api/archive", {
+    const res = await authFetch("/api/archive", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

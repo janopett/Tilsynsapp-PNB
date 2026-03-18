@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import type {
   InspectionWithAnswers,
@@ -34,10 +35,25 @@ export default function InspectionPage() {
   const [activeCategory, setActiveCategory] = useState<CheckpointCategory | "all">("all");
 
   const fetchInspection = useCallback(async () => {
-    const res = await fetch(`/api/inspections/${id}`);
-    if (!res.ok) { router.push("/dashboard"); return; }
-    const data = await res.json();
-    setInspection(data);
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.push("/dashboard"); return; }
+
+    const [inspRes, answersRes, attachRes, archivalRes] = await Promise.all([
+      supabase.from("inspections").select("*").eq("id", id).eq("user_id", session.user.id).single(),
+      supabase.from("inspection_answers").select("*").eq("inspection_id", id),
+      supabase.from("attachments").select("*").eq("inspection_id", id),
+      supabase.from("inspection_archivals").select("*").eq("inspection_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
+
+    if (inspRes.error || !inspRes.data) { router.push("/dashboard"); return; }
+
+    setInspection({
+      ...inspRes.data,
+      answers: answersRes.data ?? [],
+      attachments: attachRes.data ?? [],
+      archival: archivalRes.data ?? undefined,
+    });
     setLoading(false);
   }, [id, router]);
 
@@ -53,11 +69,24 @@ export default function InspectionPage() {
     if (!inspection) return;
     setSavingId(checkpointId);
 
-    await fetch(`/api/inspections/${id}/answers`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ checkpoint_definition_id: checkpointId, status, comment }),
-    });
+    const supabase = createClient();
+    await supabase.from("inspection_answers").upsert(
+      { inspection_id: id, checkpoint_definition_id: checkpointId, status, comment: comment || null },
+      { onConflict: "inspection_id,checkpoint_definition_id" }
+    );
+
+    // Auto-update inspection status
+    const { data: answers } = await supabase
+      .from("inspection_answers")
+      .select("status")
+      .eq("inspection_id", id);
+    if (answers?.some((a) => a.status !== "not_checked")) {
+      await supabase
+        .from("inspections")
+        .update({ status: "in_progress" })
+        .eq("id", id)
+        .eq("status", "draft");
+    }
 
     // Optimistic update
     setInspection((prev) => {

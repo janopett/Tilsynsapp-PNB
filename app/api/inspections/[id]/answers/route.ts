@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { createClient } from "@/lib/supabase/server";
+import { requireUser } from "@/lib/api-auth";
 
 const AnswerSchema = z.object({
   checkpoint_definition_id: z.string().min(1),
@@ -12,9 +12,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const supabase = createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const auth = await requireUser(req);
+  if (auth.error) return auth.error;
+  const { user, supabase } = auth;
 
   // Verify inspection ownership
   const { data: inspection } = await supabase

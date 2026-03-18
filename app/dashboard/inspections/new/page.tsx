@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MEASURE_TYPES, PROPERTY_QUESTIONS } from "@/data/seed/measure-types";
 import type { MeasureTypeId, PropertyTag } from "@/types";
+import { createClient } from "@/lib/supabase/client";
 
 export default function NewInspectionPage() {
   const router = useRouter();
@@ -42,9 +43,15 @@ export default function NewInspectionPage() {
     setLoading(true);
     setError("");
 
+    const supabase = createClient();
+    const { data: { session } } = await supabase.auth.getSession();
+
     const res = await fetch("/api/inspections", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      },
       body: JSON.stringify({
         property_address: propertyAddress,
         case_number: caseNumber || undefined,
