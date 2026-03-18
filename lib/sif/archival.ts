@@ -34,6 +34,8 @@ export interface ArchivalContext {
   measureTypeName?: string;
   pdfBuffer?: Buffer;
   pdfFileName?: string;
+  jsonBuffer?: Buffer;
+  jsonFileName?: string;
   attachments?: Array<{
     fileName: string;
     fileData: Buffer;
@@ -94,6 +96,15 @@ export async function archiveInspectionToSif(
         fileName: ctx.pdfFileName,
         fileData: ctx.pdfBuffer,
         mimeType: "application/pdf",
+        correlationId,
+      });
+    }
+
+    if (ctx.jsonBuffer && ctx.jsonFileName) {
+      filesToUpload.push({
+        fileName: ctx.jsonFileName,
+        fileData: ctx.jsonBuffer,
+        mimeType: "application/json",
         correlationId,
       });
     }

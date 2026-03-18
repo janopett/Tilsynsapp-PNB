@@ -3,6 +3,33 @@
 import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 
+// ─── Copy button helper ───────────────────────────────────────────────────────
+
+function CopyableJson({ data }: { data: unknown }) {
+  const [copied, setCopied] = useState(false);
+  const text = JSON.stringify(data, null, 2);
+  async function copy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+  return (
+    <div>
+      <div className="flex justify-end mb-1">
+        <button
+          onClick={copy}
+          className="text-xs px-2 py-1 rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-900 transition"
+        >
+          {copied ? "Kopiert!" : "Kopier"}
+        </button>
+      </div>
+      <pre className="text-xs font-mono bg-green-100 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all max-h-72 overflow-y-auto">
+        {text}
+      </pre>
+    </div>
+  );
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SifSettingsForm {
@@ -54,7 +81,7 @@ const DEFAULT_FORM: SifSettingsForm = {
   docArchive: "recno:2",
   docCategory: "recno:111",
   docStatus: "J",
-  docTitleTemplate: "Tilsynsrapport - {{propertyAddress}} - {{date}}",
+  docTitleTemplate: "{{title}} - Tilsynsrapport - {{date}}",
   docMainFileRelationType: "H",
   docAttachmentRelationType: "V",
   roleMunicipalitySender: "AV",
@@ -171,9 +198,9 @@ function CodeTablePicker({
 // ─── Title template field with variable reference ─────────────────────────────
 
 const TEMPLATE_VARIABLES = [
+  { variable: "{{title}}", description: "Sakstittel fra Plan & Build (f.eks. «Helleveien 133, tilsynssak»)" },
   { variable: "{{propertyAddress}}", description: "Eiendomsadresse fra tilsynsskjemaet" },
-  { variable: "{{caseNumber}}", description: "Saksnummer fra Plan & Build (f.eks. BYGG-26/00042)" },
-  { variable: "{{caseTitle}}", description: "Tittel på saken i Plan & Build (f.eks. «Oppføring av garasje»)" },
+  { variable: "{{caseNumber}}", description: "Saksnummer fra Plan & Build (f.eks. TILSYN-26/00099)" },
   { variable: "{{date}}", description: "Tilsynsdato (DD.MM.ÅÅÅÅ)" },
   { variable: "{{year}}", description: "Årstall alene (f.eks. 2026)" },
   { variable: "{{inspectorName}}", description: "Tilsynsførerens navn" },
@@ -798,9 +825,7 @@ export default function SifConfigPage() {
                   {caseLookupResult.ok && caseLookupResult.case ? (
                     <>
                       <p className="font-semibold mb-2">Sak funnet</p>
-                      <pre className="mt-2 text-xs font-mono bg-green-100 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
-                        {JSON.stringify(caseLookupResult.case, null, 2)}
-                      </pre>
+                      <CopyableJson data={caseLookupResult.case} />
                     </>
                   ) : (
                     <>
