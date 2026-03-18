@@ -8,6 +8,8 @@ const CreateInspectionSchema = z.object({
   case_title: z.string().optional(),
   gnr: z.string().optional(),
   bnr: z.string().optional(),
+  snr: z.string().optional(),
+  fnr: z.string().optional(),
   applicant_name: z.string().optional(),
   inspector_name: z.string().optional(),
   inspection_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),

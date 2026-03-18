@@ -21,6 +21,8 @@ export default function NewInspectionPage() {
   const [caseTitle, setCaseTitle] = useState("");
   const [gnr, setGnr] = useState("");
   const [bnr, setBnr] = useState("");
+  const [snr, setSnr] = useState("");
+  const [fnr, setFnr] = useState("");
   const [applicantName, setApplicantName] = useState("");
   const [inspectorName, setInspectorName] = useState("");
   const [inspectionDate, setInspectionDate] = useState(
@@ -122,9 +124,9 @@ export default function NewInspectionPage() {
         setEstates(fetchedEstates);
         // Auto-select all estates
         setSelectedEstates(fetchedEstates);
-        // Build address from first estate if address field is empty
-        if (!propertyAddress && fetchedEstates[0]?.address) {
-          setPropertyAddress(fetchedEstates[0].address);
+        // Auto-fill property fields from first estate
+        if (fetchedEstates[0]) {
+          fillFromEstate(fetchedEstates[0]);
         }
       } else {
         setEstates([]);
@@ -136,6 +138,14 @@ export default function NewInspectionPage() {
   useEffect(() => {
     fetchCaseData(caseNumber);
   }, [caseNumber]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function fillFromEstate(estate: SifEstate) {
+    if (estate.address) setPropertyAddress(estate.address);
+    if (estate.gnr) setGnr(estate.gnr);
+    if (estate.bnr) setBnr(estate.bnr);
+    if (estate.snr) setSnr(estate.snr); else setSnr("");
+    if (estate.fnr) setFnr(estate.fnr); else setFnr("");
+  }
 
   function addParticipant() {
     if (!participantDropdown) return;
@@ -157,6 +167,8 @@ export default function NewInspectionPage() {
     if (selectedEstates.some((e) => e.recno === estate.recno)) return;
     setSelectedEstates((prev) => [...prev, estate]);
     setEstateDropdown("");
+    // Fill property fields if only this estate is selected
+    if (selectedEstates.length === 0) fillFromEstate(estate);
   }
 
   function removeEstate(recno: number) {
@@ -164,9 +176,11 @@ export default function NewInspectionPage() {
   }
 
   function estateLabel(e: SifEstate): string {
-    const parts = [e.address];
-    if (e.gnr && e.bnr) parts.push(`Gnr/Bnr: ${e.gnr}/${e.bnr}`);
-    return parts.filter(Boolean).join(" — ");
+    const parts: string[] = [];
+    if (e.address) parts.push(e.address);
+    const matrikkel = [e.gnr, e.bnr, e.snr, e.fnr].filter(Boolean).join("/");
+    if (matrikkel) parts.push(matrikkel);
+    return parts.join(" — ");
   }
 
   function toggleTag(tag: PropertyTag) {
@@ -202,6 +216,8 @@ export default function NewInspectionPage() {
         case_title: caseTitle || undefined,
         gnr: gnr || undefined,
         bnr: bnr || undefined,
+        snr: snr || undefined,
+        fnr: fnr || undefined,
         applicant_name: applicantName || undefined,
         inspector_name: inspectorName || undefined,
         inspection_date: inspectionDate,
@@ -297,7 +313,14 @@ export default function NewInspectionPage() {
                             key={e.recno}
                             className="inline-flex items-center gap-1 bg-brand-50 text-brand-700 border border-brand-200 rounded-full px-3 py-1 text-xs font-medium"
                           >
-                            {estateLabel(e)}
+                            <button
+                              type="button"
+                              onClick={() => fillFromEstate(e)}
+                              className="hover:underline text-left"
+                              title="Fyll inn adresse og matrikkelnummer herfra"
+                            >
+                              {estateLabel(e)}
+                            </button>
                             <button
                               onClick={() => removeEstate(e.recno)}
                               className="ml-1 text-brand-400 hover:text-brand-700 leading-none"
@@ -348,22 +371,81 @@ export default function NewInspectionPage() {
               </div>
             )}
 
-            {/* Property address */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Eiendomsadresse <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={propertyAddress}
-                onChange={(e) => setPropertyAddress(e.target.value)}
-                required
-                placeholder="Storgata 1, 0001 Oslo"
-                className="input"
-              />
+            {/* Eiendomsinformasjon – grouped card */}
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Eiendomsinformasjon
+              </p>
+
+              {/* Address */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Eiendomsadresse <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={propertyAddress}
+                  onChange={(e) => setPropertyAddress(e.target.value)}
+                  required
+                  placeholder="Storgata 1, 0001 Oslo"
+                  className="input bg-white"
+                />
+              </div>
+
+              {/* Matrikkel: Gnr / Bnr / Snr / Fnr */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Gnr
+                  </label>
+                  <input
+                    type="text"
+                    value={gnr}
+                    onChange={(e) => setGnr(e.target.value)}
+                    placeholder="123"
+                    className="input bg-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Bnr
+                  </label>
+                  <input
+                    type="text"
+                    value={bnr}
+                    onChange={(e) => setBnr(e.target.value)}
+                    placeholder="45"
+                    className="input bg-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Snr
+                  </label>
+                  <input
+                    type="text"
+                    value={snr}
+                    onChange={(e) => setSnr(e.target.value)}
+                    placeholder="0"
+                    className="input bg-white text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                    Fnr
+                  </label>
+                  <input
+                    type="text"
+                    value={fnr}
+                    onChange={(e) => setFnr(e.target.value)}
+                    placeholder="0"
+                    className="input bg-white text-sm"
+                  />
+                </div>
+              </div>
             </div>
 
-            {/* Date */}
+            {/* Date + Inspector */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -385,34 +467,6 @@ export default function NewInspectionPage() {
                   value={inspectorName}
                   onChange={(e) => setInspectorName(e.target.value)}
                   placeholder="Saksbehandler"
-                  className="input"
-                />
-              </div>
-            </div>
-
-            {/* Gnr/Bnr */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gårdsnummer (Gnr)
-                </label>
-                <input
-                  type="text"
-                  value={gnr}
-                  onChange={(e) => setGnr(e.target.value)}
-                  placeholder="123"
-                  className="input"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bruksnummer (Bnr)
-                </label>
-                <input
-                  type="text"
-                  value={bnr}
-                  onChange={(e) => setBnr(e.target.value)}
-                  placeholder="45"
                   className="input"
                 />
               </div>
