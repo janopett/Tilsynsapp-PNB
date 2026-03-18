@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
   try {
     const sifCase = await findCaseInSif({
       caseNumber,
-      externalId: externalId ? { Id: externalId } : undefined,
+      externalId,
       uid,
     });
     return NextResponse.json({ ok: true, case: sifCase });
