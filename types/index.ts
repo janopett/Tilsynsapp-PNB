@@ -131,6 +131,8 @@ export interface InspectionAnswer {
   checkpoint_definition_id: string;
   status: CheckpointStatus;
   comment?: string;
+  responsible_contact_recno?: number | null;
+  responsible_contact_name?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -201,6 +203,15 @@ export interface InspectionSummary {
 // ============================================================
 // SIF API types
 // ============================================================
+
+export interface SifContact {
+  recno: number;
+  name: string;
+  role?: string;
+  roleDescription?: string;
+  email?: string;
+  phone?: string;
+}
 
 export interface SifCase {
   recno: number;

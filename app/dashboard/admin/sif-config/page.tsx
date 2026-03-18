@@ -168,6 +168,86 @@ function CodeTablePicker({
   );
 }
 
+// ─── Title template field with variable reference ─────────────────────────────
+
+const TEMPLATE_VARIABLES = [
+  { variable: "{{propertyAddress}}", description: "Eiendomsadresse fra tilsynsskjemaet" },
+  { variable: "{{caseNumber}}", description: "Saksnummer fra Plan & Build / tilsynsskjemaet" },
+  { variable: "{{date}}", description: "Tilsynsdato (DD.MM.ÅÅÅÅ)" },
+];
+
+function TitleTemplateField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [showVars, setShowVars] = useState(false);
+
+  function insertVariable(variable: string) {
+    onChange(value + variable);
+    setShowVars(false);
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-1">
+        <label className="block text-sm font-medium text-gray-700">Tittelmal</label>
+        <button
+          type="button"
+          onClick={() => setShowVars((v) => !v)}
+          className="w-5 h-5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-500 text-xs font-bold flex items-center justify-center transition"
+          title="Vis tilgjengelige variabler"
+        >
+          ?
+        </button>
+      </div>
+
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="input"
+      />
+
+      {showVars && (
+        <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+          <div className="bg-gray-50 px-3 py-2 flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-600">Tilgjengelige variabler</span>
+            <button
+              type="button"
+              onClick={() => setShowVars(false)}
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
+              Lukk
+            </button>
+          </div>
+          <div className="divide-y divide-gray-100">
+            {TEMPLATE_VARIABLES.map(({ variable, description }) => (
+              <div key={variable} className="flex items-center justify-between px-3 py-2.5 gap-3">
+                <div>
+                  <code className="text-xs font-mono bg-gray-100 text-brand-700 px-1.5 py-0.5 rounded">
+                    {variable}
+                  </code>
+                  <p className="text-xs text-gray-500 mt-0.5">{description}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => insertVariable(variable)}
+                  className="text-xs text-brand-600 hover:text-brand-800 font-medium whitespace-nowrap flex-shrink-0"
+                >
+                  Sett inn
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function SifConfigPage() {
@@ -465,17 +545,10 @@ export default function SifConfigPage() {
             </Section>
 
             <Section title="Dokumenttittel">
-              <Field
-                label="Tittelmal"
-                hint="Variabler: {{propertyAddress}}, {{caseNumber}}, {{date}}"
-              >
-                <input
-                  type="text"
-                  value={form.docTitleTemplate}
-                  onChange={(e) => set("docTitleTemplate", e.target.value)}
-                  className="input"
-                />
-              </Field>
+              <TitleTemplateField
+                value={form.docTitleTemplate}
+                onChange={(v) => set("docTitleTemplate", v)}
+              />
             </Section>
 
             <Section title="Filrelasjonstyper">

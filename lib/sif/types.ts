@@ -39,6 +39,15 @@ export interface SifGetCasesQuery {
   AdditionalFields?: SifAdditionalField[];
 }
 
+export interface SifCaseContact {
+  Recno: number;
+  Name?: string;
+  Role?: string;
+  RoleDescription?: string;
+  Email?: string;
+  Phone?: string;
+}
+
 export interface SifCaseResult {
   Recno: number;
   CaseNumber: string;
@@ -54,12 +63,29 @@ export interface SifCaseResult {
     Recno: number;
     Name?: string;
   };
+  Contacts?: SifCaseContact[];
   AdditionalFields?: SifAdditionalField[];
 }
 
 export interface SifGetCasesResult {
   Successful: boolean;
   Cases?: SifCaseResult[];
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
+// CaseService - GetCaseContacts
+// ============================================================
+
+export interface SifGetCaseContactsQuery {
+  CaseRecno?: number;
+  CaseNumber?: string;
+}
+
+export interface SifGetCaseContactsResult {
+  Successful: boolean;
+  Contacts?: SifCaseContact[];
   ErrorMessage?: string;
   ErrorDetails?: string;
 }
