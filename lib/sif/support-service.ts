@@ -20,7 +20,7 @@ export async function getSifVersion(correlationId?: string): Promise<SifVersion>
   );
 
   return {
-    version: result.SIFVersion ?? "unknown",
+    version: result.SIFVersion ?? "(versjon ikke tilgjengelig)",
     buildDate: result.BuildDate,
   };
 }

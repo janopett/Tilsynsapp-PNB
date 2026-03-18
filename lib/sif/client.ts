@@ -183,16 +183,21 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
     throw mapHttpErrorToSifError(response.status, body, `${service}/${method}`);
   }
 
+  // Read body as text first so we can handle both empty and non-JSON responses.
+  const text = await response.text().catch(() => "");
+  if (!text.trim()) {
+    // Empty body on 200 OK — method exists but returns nothing (treat as {})
+    return {} as TOutput;
+  }
   let result: TOutput;
   try {
-    result = (await response.json()) as TOutput;
+    result = JSON.parse(text) as TOutput;
   } catch {
-    const text = await response.text().catch(() => "");
     const preview = text.slice(0, 120).replace(/\s+/g, " ").trim();
     throw new Error(
       `Serveren svarte ikke med gyldig JSON (HTTP ${response.status}).\n` +
       `URL: ${url}\n` +
-      `Svar: ${preview || "(tomt)"}\n\n` +
+      `Svar: ${preview}\n\n` +
       `Sjekk at Base URL og RPC-sti er riktig konfigurert.`
     );
   }
