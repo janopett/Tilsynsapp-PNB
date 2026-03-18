@@ -28,9 +28,13 @@ export default function NewInspectionPage() {
   useEffect(() => {
     createClient().auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
+      const meta = user.user_metadata ?? {};
       const name =
-        user.user_metadata?.full_name ??
-        user.user_metadata?.name ??
+        (meta.first_name && meta.last_name
+          ? `${meta.first_name} ${meta.last_name}`
+          : meta.first_name ?? meta.last_name ?? null) ??
+        meta.full_name ??
+        meta.name ??
         user.email ??
         "";
       setInspectorName(name);
@@ -201,7 +205,7 @@ export default function NewInspectionPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tilsynsmannens navn
+                Tilsynsfører
               </label>
               <input
                 type="text"

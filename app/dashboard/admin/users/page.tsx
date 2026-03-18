@@ -12,11 +12,26 @@ interface AdminUser {
   lastSignIn?: string | null;
 }
 
+interface CreateForm {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}
+
+const EMPTY_FORM: CreateForm = { firstName: "", lastName: "", email: "", password: "" };
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pending, setPending] = useState<string | null>(null); // userId being toggled
+  const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState<CreateForm>(EMPTY_FORM);
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -70,15 +85,145 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    setCreateError(null);
+    setCreateSuccess(null);
+    try {
+      const res = await authFetch("/api/admin/users/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (res.ok && data.user) {
+        setCreateSuccess(
+          `Bruker opprettet: ${data.user.name} (${data.user.email})`
+        );
+        setForm(EMPTY_FORM);
+        setShowCreate(false);
+        await loadUsers();
+      } else {
+        setCreateError(data.error ?? "Klarte ikke opprette bruker");
+      }
+    } catch {
+      setCreateError("Nettverksfeil");
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">
-        Brukere og admin-tilgang
-      </h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Brukere og admin-tilgang
+        </h1>
+        <button
+          onClick={() => {
+            setShowCreate((v) => !v);
+            setCreateError(null);
+            setCreateSuccess(null);
+          }}
+          className="text-sm font-medium bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl transition"
+        >
+          {showCreate ? "Avbryt" : "+ Legg til bruker"}
+        </button>
+      </div>
       <p className="text-sm text-gray-500 mb-6">
         Brukere med admin-tilgang kan konfigurere SIF og administrere
         applikasjonen.
       </p>
+
+      {/* Create user form */}
+      {showCreate && (
+        <form
+          onSubmit={handleCreate}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 space-y-4"
+        >
+          <h2 className="text-base font-semibold text-gray-800">
+            Legg til ny bruker
+          </h2>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Fornavn <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.firstName}
+                onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+                required
+                placeholder="Ola"
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Etternavn <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={form.lastName}
+                onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+                required
+                placeholder="Nordmann"
+                className="input"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              E-post <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+              required
+              placeholder="navn@kommune.no"
+              className="input"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Passord <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="password"
+              value={form.password}
+              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+              required
+              minLength={8}
+              placeholder="Minst 8 tegn"
+              className="input"
+            />
+          </div>
+
+          {createError && (
+            <div className="rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+              {createError}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={creating}
+              className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+            >
+              {creating ? "Oppretter…" : "Opprett bruker"}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {createSuccess && (
+        <div className="mb-4 rounded-xl bg-green-50 border border-green-200 text-green-800 px-4 py-3 text-sm">
+          {createSuccess}
+        </div>
+      )}
 
       {error && (
         <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
