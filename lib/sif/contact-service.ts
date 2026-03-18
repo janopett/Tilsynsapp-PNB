@@ -2,10 +2,11 @@
 // SIF ContactService - fetch contacts on a specific case
 //
 // Primary:  CaseService/GetCaseContacts  (returns only case-linked contacts)
-// Fallback: contacts embedded in CaseService/GetCases response
+// Fallback: ResponsiblePerson embedded in CaseService/GetCases response
 //
-// The old approach (ContactService/GetContactPersons etc.) returns ALL
-// contacts in the entire PNB system and is NOT used for case filtering.
+// GetCaseContacts throws IndexOutOfRangeException on some SIF instances
+// when the case has no contacts — we catch this and fall back to
+// extracting the responsible person from the case data.
 // ============================================================
 
 import { sifRpcCall } from "./client";
@@ -25,8 +26,9 @@ import type { SifContact } from "@/types";
  *
  * Strategy:
  * 1. Call CaseService/GetCaseContacts – returns only contacts on this case.
- * 2. If that returns nothing, fall back to contacts embedded in
- *    CaseService/GetCases (the Contacts[] array on the case result).
+ * 2. If that fails or returns nothing, fall back to:
+ *    a. Contacts[] embedded in CaseService/GetCases
+ *    b. ResponsiblePerson from the case as a synthetic contact
  *
  * Returns empty array if the case has no contacts or calls fail.
  */
@@ -57,31 +59,41 @@ export async function getCaseContacts(
     console.warn("[SIF] CaseService/GetCaseContacts failed, trying fallback", err);
   }
 
-  // ── Strategy 2: Contacts embedded in GetCases response ────────────────────
+  // ── Strategy 2: GetCases – extract Contacts[] + ResponsiblePerson ──────────
+  if (!caseNumber) return [];
+
   try {
-    const query: SifGetCasesQuery = { MaxResults: 1 };
-    if (caseRecno) {
-      // GetCases doesn't support filtering by recno directly; skip this fallback
-      // if we only have recno and strategy 1 already failed.
-    } else if (caseNumber) {
-      query.CaseNumber = caseNumber;
+    const query: SifGetCasesQuery = { CaseNumber: caseNumber, MaxResults: 1 };
+    const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
+      "CaseService",
+      "GetCases",
+      query,
+      correlationId
+    );
+
+    if (!result.Successful || !result.Cases?.length) return [];
+
+    const c = result.Cases[0];
+    const contacts: SifContact[] = [];
+
+    // a) Explicit contacts array
+    if (c.Contacts?.length) {
+      contacts.push(...mapCaseContacts(c.Contacts));
     }
 
-    if (query.CaseNumber) {
-      const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
-        "CaseService",
-        "GetCases",
-        query,
-        correlationId
-      );
-
-      if (result.Successful && result.Cases && result.Cases.length > 0) {
-        const caseContacts = result.Cases[0].Contacts ?? [];
-        if (caseContacts.length > 0) {
-          return mapCaseContacts(caseContacts);
-        }
-      }
+    // b) ResponsiblePerson as a synthetic contact (if not already included)
+    const rp = (c as unknown as RawCaseWithPerson).ResponsiblePerson;
+    if (rp?.Recno && !contacts.some((x) => x.recno === rp.Recno)) {
+      contacts.push({
+        recno: rp.Recno,
+        name: rp.Name ?? `Person ${rp.Recno}`,
+        role: "ResponsiblePerson",
+        roleDescription: "Saksbehandler",
+        email: rp.Email,
+      });
     }
+
+    return contacts;
   } catch (err) {
     console.warn("[SIF] GetCases contacts fallback failed", err);
   }
@@ -98,4 +110,13 @@ function mapCaseContacts(raw: SifCaseContact[]): SifContact[] {
     email: c.Email,
     phone: c.Phone,
   }));
+}
+
+interface RawCaseWithPerson {
+  ResponsiblePerson?: {
+    Recno: number;
+    Name?: string;
+    Email?: string;
+    UserId?: string;
+  };
 }
