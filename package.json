@@ -10,7 +10,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "db:generate": "supabase gen types typescript --local > types/supabase.ts"
+    "db:generate": "supabase gen types typescript --local > types/supabase.ts",
+    "set-admin": "npx tsx scripts/set-admin.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.1.0",
