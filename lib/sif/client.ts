@@ -170,7 +170,19 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
     );
   }
 
-  const result = (await response.json()) as TOutput;
+  let result: TOutput;
+  try {
+    result = (await response.json()) as TOutput;
+  } catch {
+    const text = await response.text().catch(() => "");
+    const preview = text.slice(0, 120).replace(/\s+/g, " ").trim();
+    throw new Error(
+      `Serveren svarte ikke med gyldig JSON (HTTP ${response.status}).\n` +
+      `URL: ${url}\n` +
+      `Svar: ${preview || "(tomt)"}\n\n` +
+      `Sjekk at Base URL og RPC-sti er riktig konfigurert.`
+    );
+  }
   return result;
 }
 

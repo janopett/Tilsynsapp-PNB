@@ -266,6 +266,7 @@ export default function SifConfigPage() {
     ok: boolean;
     version?: string;
     error?: string;
+    attemptedUrl?: string | null;
   } | null>(null);
 
   const loadSettings = useCallback(async () => {
@@ -645,17 +646,39 @@ export default function SifConfigPage() {
                 >
                   {testResult.ok ? (
                     <>
-                      <span className="font-semibold">Tilkobling OK</span>
+                      <p className="font-semibold">Tilkobling OK</p>
                       {testResult.version && (
-                        <span className="ml-2 text-green-600">
-                          – SIF versjon: {testResult.version}
-                        </span>
+                        <p className="mt-0.5 text-green-600">
+                          SIF versjon: {testResult.version}
+                        </p>
+                      )}
+                      {testResult.attemptedUrl && (
+                        <p className="mt-1 text-xs text-green-700 font-mono break-all">
+                          {testResult.attemptedUrl}
+                        </p>
                       )}
                     </>
                   ) : (
                     <>
-                      <span className="font-semibold">Feil:</span>{" "}
-                      {testResult.error}
+                      <p className="font-semibold mb-1">Tilkobling feilet</p>
+                      {testResult.attemptedUrl && (
+                        <p className="text-xs font-mono break-all mb-2 opacity-80">
+                          URL: {testResult.attemptedUrl}
+                        </p>
+                      )}
+                      <p className="whitespace-pre-wrap text-xs leading-relaxed">
+                        {testResult.error}
+                      </p>
+                      {testResult.error?.includes("ikke gyldig JSON") && (
+                        <div className="mt-3 pt-3 border-t border-red-200 text-xs space-y-1">
+                          <p className="font-semibold">Mulige årsaker:</p>
+                          <ul className="list-disc pl-4 space-y-0.5">
+                            <li>Base URL inneholder allerede hele RPC-stien — sett kun domenet som Base URL</li>
+                            <li>RPC-sti er feil (standard: <code className="font-mono">/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC</code>)</li>
+                            <li>Endepunktet returnerer en innloggingsside (AuthKey mangler eller er feil)</li>
+                          </ul>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
