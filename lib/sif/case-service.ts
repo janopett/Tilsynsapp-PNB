@@ -3,6 +3,7 @@
 // ============================================================
 
 import { sifRpcCall } from "./client";
+import { loadSifSettingsWithEnvFallback } from "./settings";
 import {
   SifCaseNotFoundError,
   SifMultipleCasesFoundError,
@@ -33,6 +34,8 @@ export interface FindCaseInput {
  */
 export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
   const { caseNumber, externalId, externalSystem, importedCaseNumber, uid, uidOrigin, title, correlationId } = input;
+  const settings = await loadSifSettingsWithEnvFallback();
+  const baseUrl = settings.baseUrl.replace(/\/$/, "");
 
   if (!caseNumber && !externalId && !importedCaseNumber && !uid && !title) {
     throw new SifValidationError(
@@ -84,7 +87,7 @@ export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
     throw new SifMultipleCasesFoundError(cases.length, criteria, cases);
   }
 
-  return mapToSifCase(cases[0]);
+  return mapToSifCase(cases[0], baseUrl);
 }
 
 /**
@@ -94,6 +97,9 @@ export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
 export async function searchCasesInSif(query: string, maxResults = 10): Promise<SifCase[]> {
   if (!query.trim()) return [];
   const q = query.trim();
+
+  const settings = await loadSifSettingsWithEnvFallback();
+  const baseUrl = settings.baseUrl.replace(/\/$/, "");
 
   const [byNumber, byTitle] = await Promise.allSettled([
     sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
@@ -112,7 +118,7 @@ export async function searchCasesInSif(query: string, maxResults = 10): Promise<
       for (const c of settled.value.Cases ?? []) {
         if (!seen.has(c.Recno)) {
           seen.add(c.Recno);
-          results.push(mapToSifCase(c));
+          results.push(mapToSifCase(c, baseUrl));
         }
       }
     }
@@ -121,12 +127,14 @@ export async function searchCasesInSif(query: string, maxResults = 10): Promise<
   return results.slice(0, maxResults);
 }
 
-function mapToSifCase(raw: SifCaseResult): SifCase {
+function mapToSifCase(raw: SifCaseResult, baseUrl = ""): SifCase {
+  const rawUrl = raw.URL ?? "";
+  const url = rawUrl.startsWith("/") ? `${baseUrl}${rawUrl}` : rawUrl;
   return {
     recno: raw.Recno,
     caseNumber: raw.CaseNumber,
     title: raw.Title,
-    url: raw.URL,
+    url: url || undefined,
     uid: raw.UID,
     uidOrigin: raw.UIDOrigin,
     raw,
