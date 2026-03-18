@@ -34,14 +34,17 @@ export function getSifClientConfig(): SifClientConfig {
 /**
  * Build a SIF RPC URL.
  * Pattern: {baseUrl}{rpcPath}/{service}/{method}
- * E.g.: https://customer.public360online.com/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC/CaseService/GetCases
+ * If authKey is provided it is appended as ?authkey=... (Public 360 style).
+ * E.g.: https://customer.public360online.com/Biz/v2/api/call/SI.Data.RPC/CaseService/GetCases?authkey=<guid>
  */
 export function buildRpcUrl(
   config: SifClientConfig,
   service: string,
   method: string
 ): string {
-  return `${config.baseUrl}${config.rpcPath}/${service}/${method}`;
+  const base = `${config.baseUrl}${config.rpcPath}/${service}/${method}`;
+  const authKey = config.authConfig?.authKey;
+  return authKey ? `${base}?authkey=${encodeURIComponent(authKey)}` : base;
 }
 
 /**
