@@ -496,7 +496,7 @@ export default function SifConfigPage() {
                       type="text"
                       value={form.oauthScope}
                       onChange={(e) => set("oauthScope", e.target.value)}
-                      placeholder="f.eks. https://graph.microsoft.com/.default"
+                      placeholder="f.eks. api://08494046-xxxx-xxxx-xxxx-xxxxxxxxxxxx/.default"
                       className="input"
                     />
                   </Field>
