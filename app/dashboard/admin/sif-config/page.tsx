@@ -768,7 +768,7 @@ export default function SifConfigPage() {
                   value={caseLookupInput}
                   onChange={(e) => { setCaseLookupInput(e.target.value); setCaseLookupResult(null); }}
                   onKeyDown={(e) => e.key === "Enter" && testCaseLookup()}
-                  placeholder="f.eks. 24/12345"
+                  placeholder="f.eks. TILSYN-26/00007"
                   className="input flex-1"
                 />
                 <button
@@ -843,7 +843,7 @@ export default function SifConfigPage() {
                   value={contactsInput}
                   onChange={(e) => { setContactsInput(e.target.value); setContactsResult(null); }}
                   onKeyDown={(e) => e.key === "Enter" && testCaseContacts()}
-                  placeholder="f.eks. 24/12345"
+                  placeholder="f.eks. TILSYN-26/00007"
                   className="input flex-1"
                 />
                 <button
