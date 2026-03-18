@@ -59,7 +59,8 @@ export async function uploadFileToSif(
     "FileService",
     "Upload",
     payload,
-    correlationId
+    correlationId,
+    true // write operation: wrap in {"parameter": ...}
   );
 
   if (!result.Successful || !result.FileReference) {

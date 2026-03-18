@@ -19,8 +19,11 @@ export async function getSifVersion(correlationId?: string): Promise<SifVersion>
     correlationId
   );
 
+  // GetSIFVersion may return a plain text string (e.g. "6.9.215") wrapped in _raw,
+  // or a JSON object with SIFVersion field — handle both.
+  const rawVersion = (result as unknown as { _raw?: string })._raw;
   return {
-    version: result.SIFVersion ?? "(versjon ikke tilgjengelig)",
+    version: result.SIFVersion ?? rawVersion ?? "(versjon ikke tilgjengelig)",
     buildDate: result.BuildDate,
   };
 }
