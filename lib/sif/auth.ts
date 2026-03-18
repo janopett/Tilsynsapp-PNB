@@ -66,18 +66,14 @@ export async function buildSifAuthHeaders(
     };
   }
 
-  // combined_daemon: fetch bearer token via client credentials
+  // combined_daemon: Client Credential Grant (CCGA).
+  // AuthKey is configured server-side on the endpoint — do NOT send it in the request.
+  // Only send Authorization: Bearer + optional ClientID.
   if (cfg.mode === "combined_daemon") {
-    if (!cfg.authKey) {
-      throw new SifAuthenticationError(
-        "SIF_AUTHKEY is required for combined_daemon mode."
-      );
-    }
     const bearerToken = await getBearerToken(cfg);
     const headers: SifAuthHeaders = {
       "Content-Type": "application/json",
       Authorization: `Bearer ${bearerToken}`,
-      AuthKey: cfg.authKey,
     };
     if (cfg.clientId) {
       headers["ClientID"] = cfg.clientId;

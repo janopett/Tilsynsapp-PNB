@@ -372,6 +372,19 @@ export default function SifConfigPage() {
         {tab === "connection" && (
           <div className="space-y-5">
             <Section title="SIF RPC-endepunkt">
+              {form.baseUrl && (
+                <div className="text-xs text-gray-500 bg-gray-50 rounded-xl px-4 py-3 mb-1">
+                  Swagger UI:{" "}
+                  <a
+                    href={`${form.baseUrl.replace(/\/$/, "")}/Biz/v2/api/swagger/SI.Data.RPC`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-600 underline font-mono"
+                  >
+                    {form.baseUrl.replace(/\/$/, "")}/Biz/v2/api/swagger/SI.Data.RPC
+                  </a>
+                </div>
+              )}
               <Field
                 label="Base URL"
                 hint="URL til 360°-installasjonen, f.eks. https://kunde.public360online.com"

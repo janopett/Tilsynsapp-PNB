@@ -111,7 +111,8 @@ export async function createInspectionDocumentInSif(
     "DocumentService",
     "CreateDocument",
     payload,
-    correlationId
+    correlationId,
+    true // write operation: wrap in {"parameter": ...}
   );
 
   if (!result.Successful) {

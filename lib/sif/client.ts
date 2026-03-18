@@ -55,7 +55,9 @@ export async function sifRpcCall<TInput, TOutput>(
   service: string,
   method: string,
   payload: TInput,
-  correlationId?: string
+  correlationId?: string,
+  /** Wrap payload in {"parameter": payload} — required for write operations (Create*, Update*, Upload, etc.) */
+  wrapInParameter = false
 ): Promise<TOutput> {
   const settings = await loadSifSettingsWithEnvFallback();
   const config = toSifClientConfig(settings);
@@ -69,7 +71,9 @@ export async function sifRpcCall<TInput, TOutput>(
     service,
     method,
     payload,
-    correlationId
+    correlationId,
+    0,
+    wrapInParameter
   );
 }
 
@@ -79,7 +83,8 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
   method: string,
   payload: TInput,
   correlationId?: string,
-  retryCount = 0
+  retryCount = 0,
+  wrapInParameter = false
 ): Promise<TOutput> {
   const url = buildRpcUrl(config, service, method);
   const authHeaders = await buildSifAuthHeaders(config.authConfig);
@@ -102,10 +107,11 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
 
   let response: Response;
   try {
+    const body = wrapInParameter ? { parameter: payload } : payload;
     response = await fetch(url, {
       method: "POST",
       headers: headers as HeadersInit,
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
   } catch (err) {
@@ -148,7 +154,8 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
       method,
       payload,
       correlationId,
-      retryCount + 1
+      retryCount + 1,
+      wrapInParameter
     );
   }
 
@@ -186,20 +193,16 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
   // Read body as text first so we can handle both empty and non-JSON responses.
   const text = await response.text().catch(() => "");
   if (!text.trim()) {
-    // Empty body on 200 OK — method exists but returns nothing (treat as {})
+    // Empty body on 200 OK — treat as {}
     return {} as TOutput;
   }
   let result: TOutput;
   try {
     result = JSON.parse(text) as TOutput;
   } catch {
-    const preview = text.slice(0, 120).replace(/\s+/g, " ").trim();
-    throw new Error(
-      `Serveren svarte ikke med gyldig JSON (HTTP ${response.status}).\n` +
-      `URL: ${url}\n` +
-      `Svar: ${preview}\n\n` +
-      `Sjekk at Base URL og RPC-sti er riktig konfigurert.`
-    );
+    // Some SIF methods return plain text on 200 (e.g. GetSIFVersion returns "6.9.215").
+    // Wrap it so callers can access via result._raw.
+    result = { _raw: text.trim() } as unknown as TOutput;
   }
   return result;
 }
