@@ -13,6 +13,10 @@ const CreateInspectionSchema = z.object({
   notes: z.string().optional(),
   measure_type_id: z.string().min(1),
   selected_tags: z.array(z.string()).default([]),
+  participants: z.array(z.record(z.unknown())).default([]),
+  estates: z.array(z.record(z.unknown())).default([]),
+  latitude: z.number().optional(),
+  longitude: z.number().optional(),
 });
 
 export async function POST(req: NextRequest) {

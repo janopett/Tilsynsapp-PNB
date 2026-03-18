@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MEASURE_TYPES, PROPERTY_QUESTIONS } from "@/data/seed/measure-types";
-import type { MeasureTypeId, PropertyTag } from "@/types";
+import type { MeasureTypeId, PropertyTag, SifContact, SifEstate } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
+import MapPickerModal from "@/components/ui/MapPickerModal";
 
 export default function NewInspectionPage() {
   const router = useRouter();
@@ -24,8 +25,32 @@ export default function NewInspectionPage() {
   const [inspectionDate, setInspectionDate] = useState(
     new Date().toISOString().slice(0, 10)
   );
+  const [notes, setNotes] = useState("");
 
-  // Auto-fill inspector name from logged-in user
+  // Contacts from case (for participants + ansvarlig)
+  const [caseContacts, setCaseContacts] = useState<SifContact[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+
+  // Participants
+  const [participants, setParticipants] = useState<SifContact[]>([]);
+  const [participantDropdown, setParticipantDropdown] = useState<number | "">("");
+
+  // Estates from case
+  const [estates, setEstates] = useState<SifEstate[]>([]);
+  const [estatesLoading, setEstatesLoading] = useState(false);
+  const [selectedEstates, setSelectedEstates] = useState<SifEstate[]>([]);
+  const [estateDropdown, setEstateDropdown] = useState<number | "">("");
+
+  // Map
+  const [showMap, setShowMap] = useState(false);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
+  // Step 2 fields
+  const [measureTypeId, setMeasureTypeId] = useState<MeasureTypeId | "">("");
+  const [selectedTags, setSelectedTags] = useState<PropertyTag[]>([]);
+
+  // Auto-fill inspector name
   useEffect(() => {
     createClient().auth.getUser().then(({ data: { user } }) => {
       if (!user) return;
@@ -41,11 +66,107 @@ export default function NewInspectionPage() {
       setInspectorName(name);
     });
   }, []);
-  const [notes, setNotes] = useState("");
 
-  // Step 2 fields
-  const [measureTypeId, setMeasureTypeId] = useState<MeasureTypeId | "">("");
-  const [selectedTags, setSelectedTags] = useState<PropertyTag[]>([]);
+  // Fetch contacts + estates when case number changes
+  const fetchCaseData = useCallback(
+    async (cn: string) => {
+      if (!cn) {
+        setCaseContacts([]);
+        setEstates([]);
+        return;
+      }
+
+      const supabase = createClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const headers = { Authorization: `Bearer ${session.access_token}` };
+
+      setContactsLoading(true);
+      setEstatesLoading(true);
+
+      // Fetch contacts and estates in parallel
+      const [contactsRes, estatesRes] = await Promise.allSettled([
+        fetch(
+          `/api/sif/case-contacts?caseNumber=${encodeURIComponent(cn)}`,
+          { headers }
+        ).then((r) => r.json()),
+        fetch(
+          `/api/sif/case-estates?caseNumber=${encodeURIComponent(cn)}`,
+          { headers }
+        ).then((r) => r.json()),
+      ]);
+
+      setContactsLoading(false);
+      setEstatesLoading(false);
+
+      if (
+        contactsRes.status === "fulfilled" &&
+        contactsRes.value.ok &&
+        contactsRes.value.contacts?.length > 0
+      ) {
+        setCaseContacts(contactsRes.value.contacts);
+      } else {
+        setCaseContacts([]);
+      }
+
+      if (
+        estatesRes.status === "fulfilled" &&
+        estatesRes.value.ok &&
+        estatesRes.value.estates?.length > 0
+      ) {
+        const fetchedEstates: SifEstate[] = estatesRes.value.estates;
+        setEstates(fetchedEstates);
+        // Auto-select all estates
+        setSelectedEstates(fetchedEstates);
+        // Build address from first estate if address field is empty
+        if (!propertyAddress && fetchedEstates[0]?.address) {
+          setPropertyAddress(fetchedEstates[0].address);
+        }
+      } else {
+        setEstates([]);
+      }
+    },
+    [propertyAddress]
+  );
+
+  useEffect(() => {
+    fetchCaseData(caseNumber);
+  }, [caseNumber]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function addParticipant() {
+    if (!participantDropdown) return;
+    const contact = caseContacts.find((c) => c.recno === participantDropdown);
+    if (!contact) return;
+    if (participants.some((p) => p.recno === contact.recno)) return;
+    setParticipants((prev) => [...prev, contact]);
+    setParticipantDropdown("");
+  }
+
+  function removeParticipant(recno: number) {
+    setParticipants((prev) => prev.filter((p) => p.recno !== recno));
+  }
+
+  function addEstate() {
+    if (!estateDropdown) return;
+    const estate = estates.find((e) => e.recno === estateDropdown);
+    if (!estate) return;
+    if (selectedEstates.some((e) => e.recno === estate.recno)) return;
+    setSelectedEstates((prev) => [...prev, estate]);
+    setEstateDropdown("");
+  }
+
+  function removeEstate(recno: number) {
+    setSelectedEstates((prev) => prev.filter((e) => e.recno !== recno));
+  }
+
+  function estateLabel(e: SifEstate): string {
+    const parts = [e.address];
+    if (e.gnr && e.bnr) parts.push(`Gnr/Bnr: ${e.gnr}/${e.bnr}`);
+    return parts.filter(Boolean).join(" — ");
+  }
 
   function toggleTag(tag: PropertyTag) {
     setSelectedTags((prev) =>
@@ -62,13 +183,17 @@ export default function NewInspectionPage() {
     setError("");
 
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
     const res = await fetch("/api/inspections", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        ...(session?.access_token
+          ? { Authorization: `Bearer ${session.access_token}` }
+          : {}),
       },
       body: JSON.stringify({
         property_address: propertyAddress,
@@ -81,6 +206,10 @@ export default function NewInspectionPage() {
         notes: notes || undefined,
         measure_type_id: measureTypeId,
         selected_tags: selectedTags,
+        participants,
+        estates: selectedEstates,
+        latitude: latitude ?? undefined,
+        longitude: longitude ?? undefined,
       }),
     });
 
@@ -128,6 +257,90 @@ export default function NewInspectionPage() {
         {/* Step 1: Case metadata */}
         {step === 1 && (
           <div className="space-y-4">
+            {/* Case number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Saksnummer
+              </label>
+              <CaseSearchInput
+                value={caseNumber}
+                onChange={setCaseNumber}
+                placeholder="Søk på saksnummer eller tittel…"
+              />
+            </div>
+
+            {/* Estates section */}
+            {(estatesLoading || estates.length > 0) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Eiendommer (fra sak)
+                </label>
+                {estatesLoading ? (
+                  <p className="text-sm text-gray-400 animate-pulse">
+                    Henter eiendommer…
+                  </p>
+                ) : (
+                  <>
+                    {/* Selected estates */}
+                    {selectedEstates.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-2">
+                        {selectedEstates.map((e) => (
+                          <span
+                            key={e.recno}
+                            className="inline-flex items-center gap-1 bg-brand-50 text-brand-700 border border-brand-200 rounded-full px-3 py-1 text-xs font-medium"
+                          >
+                            {estateLabel(e)}
+                            <button
+                              onClick={() => removeEstate(e.recno)}
+                              className="ml-1 text-brand-400 hover:text-brand-700 leading-none"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {/* Add estate dropdown */}
+                    {estates.some(
+                      (e) => !selectedEstates.find((s) => s.recno === e.recno)
+                    ) && (
+                      <div className="flex gap-2">
+                        <select
+                          value={estateDropdown}
+                          onChange={(ev) =>
+                            setEstateDropdown(
+                              ev.target.value ? Number(ev.target.value) : ""
+                            )
+                          }
+                          className="flex-1 input text-sm"
+                        >
+                          <option value="">— Legg til eiendom</option>
+                          {estates
+                            .filter(
+                              (e) =>
+                                !selectedEstates.find((s) => s.recno === e.recno)
+                            )
+                            .map((e) => (
+                              <option key={e.recno} value={e.recno}>
+                                {estateLabel(e)}
+                              </option>
+                            ))}
+                        </select>
+                        <button
+                          onClick={addEstate}
+                          disabled={!estateDropdown}
+                          className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
+                        >
+                          Legg til
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Property address */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Eiendomsadresse <span className="text-red-500">*</span>
@@ -141,17 +354,9 @@ export default function NewInspectionPage() {
                 className="input"
               />
             </div>
+
+            {/* Date */}
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Saksnummer
-                </label>
-                <CaseSearchInput
-                  value={caseNumber}
-                  onChange={setCaseNumber}
-                  placeholder="Søk på saksnummer eller tittel…"
-                />
-              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Dato for tilsyn <span className="text-red-500">*</span>
@@ -163,7 +368,21 @@ export default function NewInspectionPage() {
                   className="input"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tilsynsfører
+                </label>
+                <input
+                  type="text"
+                  value={inspectorName}
+                  onChange={(e) => setInspectorName(e.target.value)}
+                  placeholder="Saksbehandler"
+                  className="input"
+                />
+              </div>
             </div>
+
+            {/* Gnr/Bnr */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -190,30 +409,111 @@ export default function NewInspectionPage() {
                 />
               </div>
             </div>
+
+            {/* Applicant */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Søkers navn
               </label>
-              <input
-                type="text"
-                value={applicantName}
-                onChange={(e) => setApplicantName(e.target.value)}
-                placeholder="Ola Nordmann"
-                className="input"
-              />
+              {caseContacts.length > 0 ? (
+                <select
+                  value={applicantName}
+                  onChange={(e) => setApplicantName(e.target.value)}
+                  className="input"
+                >
+                  <option value="">— Velg fra sak eller skriv inn</option>
+                  {caseContacts.map((c) => (
+                    <option key={c.recno} value={c.name}>
+                      {c.name}
+                      {c.roleDescription ? ` (${c.roleDescription})` : ""}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={applicantName}
+                  onChange={(e) => setApplicantName(e.target.value)}
+                  placeholder={
+                    contactsLoading ? "Henter kontakter…" : "Ola Nordmann"
+                  }
+                  className="input"
+                />
+              )}
             </div>
+
+            {/* Participants */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tilsynsfører
+                Deltakere
               </label>
-              <input
-                type="text"
-                value={inspectorName}
-                onChange={(e) => setInspectorName(e.target.value)}
-                placeholder="Saksbehandler"
-                className="input"
-              />
+              {participants.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {participants.map((p) => (
+                    <span
+                      key={p.recno}
+                      className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium"
+                    >
+                      {p.name}
+                      {p.roleDescription && (
+                        <span className="text-gray-400">
+                          {" "}
+                          · {p.roleDescription}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => removeParticipant(p.recno)}
+                        className="ml-1 text-gray-400 hover:text-gray-700 leading-none"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {caseContacts.length > 0 ? (
+                <div className="flex gap-2">
+                  <select
+                    value={participantDropdown}
+                    onChange={(e) =>
+                      setParticipantDropdown(
+                        e.target.value ? Number(e.target.value) : ""
+                      )
+                    }
+                    className="flex-1 input text-sm"
+                  >
+                    <option value="">— Velg deltaker fra sak</option>
+                    {caseContacts
+                      .filter(
+                        (c) => !participants.find((p) => p.recno === c.recno)
+                      )
+                      .map((c) => (
+                        <option key={c.recno} value={c.recno}>
+                          {c.name}
+                          {c.roleDescription ? ` (${c.roleDescription})` : ""}
+                        </option>
+                      ))}
+                  </select>
+                  <button
+                    onClick={addParticipant}
+                    disabled={!participantDropdown}
+                    className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
+                  >
+                    Legg til
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-400">
+                  {contactsLoading
+                    ? "Henter kontakter fra sak…"
+                    : caseNumber
+                    ? "Ingen kontakter funnet på saken."
+                    : "Velg saksnummer for å hente kontakter."}
+                </p>
+              )}
             </div>
+
+            {/* Notes */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Generelle merknader
@@ -225,6 +525,39 @@ export default function NewInspectionPage() {
                 className="input resize-none"
                 placeholder="Eventuelle generelle kommentarer til tilsynet..."
               />
+            </div>
+
+            {/* Map */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Posisjon i kart
+              </label>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setShowMap(true)}
+                  type="button"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition text-gray-700"
+                >
+                  🗺️{" "}
+                  {latitude != null
+                    ? "Endre posisjon i kart"
+                    : "Velg posisjon i kart"}
+                </button>
+                {latitude != null && longitude != null && (
+                  <span className="text-xs text-gray-500">
+                    {latitude.toFixed(5)}°N, {longitude.toFixed(5)}°Ø
+                    <button
+                      onClick={() => {
+                        setLatitude(null);
+                        setLongitude(null);
+                      }}
+                      className="ml-2 text-gray-400 hover:text-gray-600"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -249,7 +582,9 @@ export default function NewInspectionPage() {
                   >
                     <span className="text-2xl">{mt.icon}</span>
                     <p className="font-medium text-sm mt-1">{mt.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">{mt.description}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {mt.description}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -260,7 +595,8 @@ export default function NewInspectionPage() {
                 Egenskaper ved tiltaket
               </h2>
               <p className="text-sm text-gray-500 mb-3">
-                Kryss av det som gjelder. Sjekklisten tilpasses basert på valgene dine.
+                Kryss av det som gjelder. Sjekklisten tilpasses basert på
+                valgene dine.
               </p>
               <div className="space-y-2">
                 {PROPERTY_QUESTIONS.map((q) => (
@@ -275,9 +611,13 @@ export default function NewInspectionPage() {
                       className="mt-0.5 w-5 h-5 accent-brand-600 flex-shrink-0"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{q.label}</p>
+                      <p className="text-sm font-medium text-gray-800">
+                        {q.label}
+                      </p>
                       {q.description && (
-                        <p className="text-xs text-gray-500 mt-0.5">{q.description}</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          {q.description}
+                        </p>
                       )}
                     </div>
                   </label>
@@ -330,6 +670,20 @@ export default function NewInspectionPage() {
           )}
         </div>
       </div>
+
+      {showMap && (
+        <MapPickerModal
+          initialLat={latitude}
+          initialLng={longitude}
+          title="Velg posisjon for tilsynet"
+          onSave={(lat, lng) => {
+            setLatitude(lat);
+            setLongitude(lng);
+            setShowMap(false);
+          }}
+          onClose={() => setShowMap(false)}
+        />
+      )}
     </div>
   );
 }

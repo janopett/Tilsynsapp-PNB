@@ -101,6 +101,16 @@ export interface Inspection {
   inspection_date: string;    // Dato for tilsyn (ISO date string)
   notes?: string;             // Generelle merknader
 
+  // Participants (kontakter som deltar på tilsynet)
+  participants: SifContact[];
+
+  // Estates (eiendommer knyttet til tilsynet)
+  estates: SifEstate[];
+
+  // Coordinates (kart)
+  latitude?: number | null;
+  longitude?: number | null;
+
   // Classification
   measure_type_id: MeasureTypeId;
   selected_tags: PropertyTag[];
@@ -119,6 +129,10 @@ export interface InspectionCreate {
   notes?: string;
   measure_type_id: MeasureTypeId;
   selected_tags: PropertyTag[];
+  participants?: SifContact[];
+  estates?: SifEstate[];
+  latitude?: number;
+  longitude?: number;
 }
 
 // ============================================================
@@ -133,6 +147,8 @@ export interface InspectionAnswer {
   comment?: string;
   responsible_contact_recno?: number | null;
   responsible_contact_name?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -212,6 +228,16 @@ export interface SifContact {
   email?: string;
   phone?: string;
   type?: "contactPerson" | "privatePerson" | "enterprise";
+}
+
+export interface SifEstate {
+  recno: number;
+  address?: string;
+  gnr?: string;
+  bnr?: string;
+  fnr?: string;
+  snr?: string;
+  municipality?: string;
 }
 
 export interface SifCase {
