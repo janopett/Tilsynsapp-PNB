@@ -87,6 +87,40 @@ export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
   return mapToSifCase(cases[0]);
 }
 
+/**
+ * Search for cases in SIF by partial case number or title.
+ * Runs both queries in parallel and merges deduplicated results.
+ */
+export async function searchCasesInSif(query: string, maxResults = 10): Promise<SifCase[]> {
+  if (!query.trim()) return [];
+  const q = query.trim();
+
+  const [byNumber, byTitle] = await Promise.allSettled([
+    sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
+      "CaseService", "GetCases", { CaseNumber: q, MaxResults: maxResults }
+    ),
+    sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
+      "CaseService", "GetCases", { Title: q, MaxResults: maxResults }
+    ),
+  ]);
+
+  const seen = new Set<number>();
+  const results: SifCase[] = [];
+
+  for (const settled of [byNumber, byTitle]) {
+    if (settled.status === "fulfilled" && settled.value.Successful) {
+      for (const c of settled.value.Cases ?? []) {
+        if (!seen.has(c.Recno)) {
+          seen.add(c.Recno);
+          results.push(mapToSifCase(c));
+        }
+      }
+    }
+  }
+
+  return results.slice(0, maxResults);
+}
+
 function mapToSifCase(raw: SifCaseResult): SifCase {
   return {
     recno: raw.Recno,

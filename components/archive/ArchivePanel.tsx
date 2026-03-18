@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
+import CaseSearchInput from "@/components/sif/CaseSearchInput";
 
 interface Props {
   inspection: InspectionWithAnswers;
@@ -118,16 +119,11 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Saksnummer i Plan & Build
             </label>
-            <input
-              type="text"
+            <CaseSearchInput
               value={caseNumber}
-              onChange={(e) => setCaseNumber(e.target.value)}
-              placeholder="F.eks. 2024/1234"
-              className="input"
+              onChange={setCaseNumber}
+              placeholder="Søk på saksnummer eller tittel…"
             />
-            <p className="text-xs text-gray-400 mt-1">
-              Saksnummer slik det fremstår i Plan & Build (f.eks. 24/1234 eller 2024/1234)
-            </p>
           </div>
 
           {/* Advanced fields */}
