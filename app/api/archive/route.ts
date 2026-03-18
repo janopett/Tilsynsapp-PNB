@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/server";
 import { archiveInspectionToSif } from "@/lib/sif/archival";
-import { generateInspectionPdf, buildPdfFileName } from "@/lib/pdf/generate";
+import { generateInspectionPdf, buildPdfFileName, generateInspectionJson, buildJsonFileName } from "@/lib/pdf/generate";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import type { InspectionWithAnswers, ArchiveInspectionResponse } from "@/types";
 
@@ -46,9 +46,11 @@ export async function POST(req: NextRequest) {
     attachments: attachRes.data ?? [],
   };
 
-  // Generate PDF
+  // Generate PDF and JSON export
   const pdfBuffer = generateInspectionPdf(inspection);
   const pdfFileName = buildPdfFileName(inspection);
+  const jsonBuffer = generateInspectionJson(inspection);
+  const jsonFileName = buildJsonFileName(inspection);
 
   // Download attachment files from Supabase Storage (parallel)
   const attachmentFiles = (
@@ -102,6 +104,8 @@ export async function POST(req: NextRequest) {
     measureTypeName,
     pdfBuffer,
     pdfFileName,
+    jsonBuffer,
+    jsonFileName,
     attachments: attachmentFiles,
     additionalFields,
   });

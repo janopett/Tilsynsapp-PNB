@@ -109,22 +109,20 @@ export function generateInspectionPdf(
       item.definition.title,
       STATUS_LABELS[item.answer?.status ?? "not_checked"],
       item.answer?.comment ?? "",
+      item.answer?.responsible_contact_name ?? "",
     ]);
 
     autoTable(doc, {
       startY: y,
-      head: [["Sjekkpunkt", "Status", "Kommentar"]],
+      head: [["Sjekkpunkt", "Status", "Kommentar", "Ansvarlig"]],
       body: rows,
       styles: { fontSize: 9, cellPadding: 2, overflow: "linebreak" },
       headStyles: { fillColor: [219, 234, 254], textColor: [30, 58, 138] },
       columnStyles: {
-        0: { cellWidth: 90 },
-        1: {
-          cellWidth: 30,
-          halign: "center",
-          fontStyle: "bold",
-        },
-        2: { cellWidth: 55 },
+        0: { cellWidth: 72 },
+        1: { cellWidth: 25, halign: "center", fontStyle: "bold" },
+        2: { cellWidth: 52 },
+        3: { cellWidth: 32 },
       },
       didParseCell: (data) => {
         if (data.column.index === 1 && data.cell.raw === "Avvik") {
@@ -154,13 +152,19 @@ export function generateInspectionPdf(
 
     autoTable(doc, {
       startY: y,
-      head: [["Sjekkpunkt", "Avviksbeskrivelse"]],
+      head: [["Sjekkpunkt", "Avviksbeskrivelse", "Ansvarlig"]],
       body: deviations.map((i) => [
         `${i.definition.title} (${CATEGORY_LABELS[i.definition.category]})`,
         i.answer?.comment ?? "(ingen kommentar)",
+        i.answer?.responsible_contact_name ?? "",
       ]),
       styles: { fontSize: 9, cellPadding: 2, overflow: "linebreak" },
       headStyles: { fillColor: [254, 226, 226], textColor: [185, 28, 28] },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 74 },
+        2: { cellWidth: 32 },
+      },
       margin: { left: 14 },
     });
   }
@@ -189,4 +193,76 @@ export function buildPdfFileName(inspection: InspectionWithAnswers): string {
     .replace(/\s+/g, "_")
     .slice(0, 30);
   return `Tilsynsrapport_${addr}_${date}.pdf`;
+}
+
+/**
+ * Build a structured JSON export of the inspection for archival.
+ * Returns a Buffer of the UTF-8 encoded JSON.
+ */
+export function generateInspectionJson(inspection: InspectionWithAnswers): Buffer {
+  const measureType = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
+
+  const relevantCheckpoints = filterCheckpoints(
+    inspection.measure_type_id,
+    inspection.selected_tags
+  );
+  const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
+
+  const export_ = {
+    tilsyn: {
+      id: inspection.id,
+      status: inspection.status,
+      dato: inspection.inspection_date,
+      opprettet: inspection.created_at,
+    },
+    sak: {
+      saksnummer: inspection.case_number ?? null,
+      sakstittel: inspection.case_title ?? null,
+    },
+    eiendom: {
+      adresse: inspection.property_address,
+      gnr: inspection.gnr ?? null,
+      bnr: inspection.bnr ?? null,
+      snr: inspection.snr ?? null,
+      fnr: inspection.fnr ?? null,
+    },
+    tilsynsinfo: {
+      tilsynsforer: inspection.inspector_name ?? null,
+      soeker: inspection.applicant_name ?? null,
+      tiltakstype: measureType?.name ?? inspection.measure_type_id,
+      merknader: inspection.notes ?? null,
+    },
+    deltakere: inspection.participants ?? [],
+    eiendommer: inspection.estates ?? [],
+    sjekkpunkter: merged.map((item) => ({
+      id: item.definition.id,
+      tittel: item.definition.title,
+      kategori: CATEGORY_LABELS[item.definition.category],
+      alvorlighet: item.definition.severity,
+      lovhjemmel: item.definition.legal_reference ?? null,
+      status: item.answer?.status ?? "not_checked",
+      kommentar: item.answer?.comment ?? null,
+      ansvarlig: item.answer?.responsible_contact_name ?? null,
+    })),
+    avvik: merged
+      .filter((i) => i.answer?.status === "deviation")
+      .map((item) => ({
+        id: item.definition.id,
+        tittel: item.definition.title,
+        kategori: CATEGORY_LABELS[item.definition.category],
+        kommentar: item.answer?.comment ?? null,
+        ansvarlig: item.answer?.responsible_contact_name ?? null,
+      })),
+  };
+
+  return Buffer.from(JSON.stringify(export_, null, 2), "utf-8");
+}
+
+export function buildJsonFileName(inspection: InspectionWithAnswers): string {
+  const date = inspection.inspection_date ?? new Date().toISOString().slice(0, 10);
+  const addr = inspection.property_address
+    .replace(/[^a-zA-Z0-9æøåÆØÅ ]/g, "")
+    .replace(/\s+/g, "_")
+    .slice(0, 30);
+  return `Tilsynsdata_${addr}_${date}.json`;
 }
