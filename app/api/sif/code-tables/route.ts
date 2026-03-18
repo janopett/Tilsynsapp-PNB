@@ -7,7 +7,7 @@ import {
 import { sifRpcCallWithConfig } from "@/lib/sif/client";
 
 // Known code table names in Public 360° / Plan & Build
-export const KNOWN_CODE_TABLES = [
+const KNOWN_CODE_TABLES = [
   "Document archive",
   "Document category",
   "Document status",
