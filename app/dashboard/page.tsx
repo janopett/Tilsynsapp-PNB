@@ -69,6 +69,11 @@ export default function DashboardPage() {
                     <p className="font-semibold text-gray-900 truncate">
                       {inspection.property_address}
                     </p>
+                    {(inspection as Inspection & { case_title?: string }).case_title && (
+                      <p className="text-sm text-gray-500 truncate mt-0.5">
+                        {(inspection as Inspection & { case_title?: string }).case_title}
+                      </p>
+                    )}
                     <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 flex-wrap">
                       <span>{mt?.icon} {mt?.name ?? inspection.measure_type_id}</span>
                       {inspection.case_number && (

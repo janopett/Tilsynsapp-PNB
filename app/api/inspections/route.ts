@@ -5,6 +5,7 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 const CreateInspectionSchema = z.object({
   property_address: z.string().min(1),
   case_number: z.string().optional(),
+  case_title: z.string().optional(),
   gnr: z.string().optional(),
   bnr: z.string().optional(),
   applicant_name: z.string().optional(),

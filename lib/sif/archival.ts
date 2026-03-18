@@ -24,6 +24,13 @@ export interface ArchivalContext {
   uid?: string;
   propertyAddress: string;
   inspectionDate: string;
+  // Optional metadata for title template variables
+  caseTitle?: string;
+  inspectorName?: string;
+  applicantName?: string;
+  gnr?: string;
+  bnr?: string;
+  measureTypeName?: string;
   pdfBuffer?: Buffer;
   pdfFileName?: string;
   attachments?: Array<{
@@ -103,12 +110,25 @@ export async function archiveInspectionToSif(
     const uploadedRefs = await uploadFilesToSif(filesToUpload);
 
     // Step 4: Build document title
+    const gnrBnr =
+      ctx.gnr && ctx.bnr
+        ? `${ctx.gnr}/${ctx.bnr}`
+        : ctx.gnr ?? ctx.bnr ?? "";
+    const year = ctx.inspectionDate?.slice(0, 4) ?? "";
+
     const title = buildDocumentTitle(
       sifMapping.inspectionReport.titleTemplate,
       {
         propertyAddress: ctx.propertyAddress,
         caseNumber: sifCase.caseNumber,
+        caseTitle: ctx.caseTitle,
         date: ctx.inspectionDate,
+        inspectorName: ctx.inspectorName,
+        applicantName: ctx.applicantName,
+        gnrBnr,
+        measureType: ctx.measureTypeName,
+        year,
+        inspectionId: ctx.inspectionId,
       }
     );
 

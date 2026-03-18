@@ -18,6 +18,7 @@ export default function NewInspectionPage() {
   // Step 1 fields
   const [propertyAddress, setPropertyAddress] = useState("");
   const [caseNumber, setCaseNumber] = useState("");
+  const [caseTitle, setCaseTitle] = useState("");
   const [gnr, setGnr] = useState("");
   const [bnr, setBnr] = useState("");
   const [applicantName, setApplicantName] = useState("");
@@ -198,6 +199,7 @@ export default function NewInspectionPage() {
       body: JSON.stringify({
         property_address: propertyAddress,
         case_number: caseNumber || undefined,
+        case_title: caseTitle || undefined,
         gnr: gnr || undefined,
         bnr: bnr || undefined,
         applicant_name: applicantName || undefined,
@@ -264,9 +266,15 @@ export default function NewInspectionPage() {
               </label>
               <CaseSearchInput
                 value={caseNumber}
-                onChange={setCaseNumber}
+                onChange={(val) => { setCaseNumber(val); if (!val) setCaseTitle(""); }}
+                onSelect={(c) => { setCaseNumber(c.caseNumber); setCaseTitle(c.title); }}
                 placeholder="Søk på saksnummer eller tittel…"
               />
+              {caseTitle && (
+                <p className="mt-1 text-xs text-gray-500 truncate" title={caseTitle}>
+                  {caseTitle}
+                </p>
+              )}
             </div>
 
             {/* Estates section */}

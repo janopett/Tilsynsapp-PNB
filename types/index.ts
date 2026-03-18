@@ -93,6 +93,7 @@ export interface Inspection {
 
   // Case metadata
   case_number?: string;       // Saksnummer
+  case_title?: string;        // Sakstittel fra PNB
   property_address: string;   // Eiendomsadresse
   gnr?: string;               // Gårdsnummer
   bnr?: string;               // Bruksnummer
@@ -121,6 +122,7 @@ export interface Inspection {
 export interface InspectionCreate {
   property_address: string;
   case_number?: string;
+  case_title?: string;
   gnr?: string;
   bnr?: string;
   applicant_name?: string;

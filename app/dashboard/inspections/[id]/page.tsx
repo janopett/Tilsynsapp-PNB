@@ -47,6 +47,7 @@ interface EditModalProps {
 function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProps) {
   const [propertyAddress, setPropertyAddress] = useState(inspection.property_address);
   const [caseNumber, setCaseNumber] = useState(inspection.case_number ?? "");
+  const [caseTitle, setCaseTitle] = useState(inspection.case_title ?? "");
   const [gnr, setGnr] = useState(inspection.gnr ?? "");
   const [bnr, setBnr] = useState(inspection.bnr ?? "");
   const [applicantName, setApplicantName] = useState(inspection.applicant_name ?? "");
@@ -108,6 +109,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
       .update({
         property_address: propertyAddress,
         case_number: caseNumber || null,
+        case_title: caseTitle || null,
         gnr: gnr || null,
         bnr: bnr || null,
         applicant_name: applicantName || null,
@@ -147,7 +149,15 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Case number */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Saksnummer</label>
-            <CaseSearchInput value={caseNumber} onChange={setCaseNumber} placeholder="Søk på saksnummer…" />
+            <CaseSearchInput
+              value={caseNumber}
+              onChange={(val) => { setCaseNumber(val); if (!val) setCaseTitle(""); }}
+              onSelect={(c) => { setCaseNumber(c.caseNumber); setCaseTitle(c.title); }}
+              placeholder="Søk på saksnummer…"
+            />
+            {caseTitle && (
+              <p className="mt-1 text-xs text-gray-500 truncate" title={caseTitle}>{caseTitle}</p>
+            )}
           </div>
 
           {/* Property address */}
@@ -559,7 +569,14 @@ export default function InspectionPage() {
             {inspection.property_address}
           </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 mt-1 flex-wrap">
-            {inspection.case_number && <span>Sak: {inspection.case_number}</span>}
+            {inspection.case_number && (
+              <span>
+                Sak: {inspection.case_number}
+                {inspection.case_title && (
+                  <span className="text-gray-400"> · {inspection.case_title}</span>
+                )}
+              </span>
+            )}
             <span>
               {new Date(inspection.inspection_date).toLocaleDateString("nb-NO")}
             </span>

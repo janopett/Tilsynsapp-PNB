@@ -74,21 +74,44 @@ export const sifMapping: SifMappingConfig = {
   },
 };
 
+export interface TitleTemplateVars {
+  propertyAddress?: string;
+  caseNumber?: string;
+  caseTitle?: string;
+  date?: string;
+  inspectorName?: string;
+  applicantName?: string;
+  gnrBnr?: string;
+  measureType?: string;
+  year?: string;
+  inspectionId?: string;
+}
+
 /**
  * Build a document title from the template and inspection metadata.
+ * Supports: {{propertyAddress}}, {{caseNumber}}, {{caseTitle}},
+ *           {{date}}, {{inspectorName}}, {{applicantName}},
+ *           {{gnrBnr}}, {{measureType}}, {{year}}, {{inspectionId}}
  */
 export function buildDocumentTitle(
   template: string,
-  vars: {
-    propertyAddress?: string;
-    caseNumber?: string;
-    date?: string;
-  }
+  vars: TitleTemplateVars
 ): string {
-  const date = vars.date ?? new Date().toISOString().slice(0, 10);
+  const rawDate = vars.date ?? new Date().toISOString().slice(0, 10);
+  // Format date as DD.MM.ÅÅÅÅ for Norwegian display
+  const [yyyy, mm, dd] = rawDate.split("-");
+  const formattedDate = dd && mm && yyyy ? `${dd}.${mm}.${yyyy}` : rawDate;
+
   return template
-    .replace("{{propertyAddress}}", vars.propertyAddress ?? "")
-    .replace("{{caseNumber}}", vars.caseNumber ?? "")
-    .replace("{{date}}", date)
+    .replace(/\{\{propertyAddress\}\}/g, vars.propertyAddress ?? "")
+    .replace(/\{\{caseNumber\}\}/g, vars.caseNumber ?? "")
+    .replace(/\{\{caseTitle\}\}/g, vars.caseTitle ?? "")
+    .replace(/\{\{date\}\}/g, formattedDate)
+    .replace(/\{\{inspectorName\}\}/g, vars.inspectorName ?? "")
+    .replace(/\{\{applicantName\}\}/g, vars.applicantName ?? "")
+    .replace(/\{\{gnrBnr\}\}/g, vars.gnrBnr ?? "")
+    .replace(/\{\{measureType\}\}/g, vars.measureType ?? "")
+    .replace(/\{\{year\}\}/g, vars.year ?? yyyy ?? "")
+    .replace(/\{\{inspectionId\}\}/g, vars.inspectionId ?? "")
     .trim();
 }
