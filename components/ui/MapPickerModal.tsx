@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 interface Props {
   initialLat?: number | null;
   initialLng?: number | null;
+  addressHint?: string; // Geocode this address if no coords are provided
   title?: string;
   onSave: (lat: number, lng: number) => void;
   onClose: () => void;
@@ -21,9 +22,23 @@ const LEAFLET_VERSION = "1.9.4";
 const DEFAULT_LAT = 59.9139; // Oslo
 const DEFAULT_LNG = 10.7522;
 
+/** Geocode an address using Nominatim (OSM). Returns null if not found. */
+async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&countrycodes=no&format=json&limit=1`;
+    const res = await fetch(url, { headers: { "Accept-Language": "no" } });
+    const data = await res.json();
+    if (!data.length) return null;
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  } catch {
+    return null;
+  }
+}
+
 export default function MapPickerModal({
   initialLat,
   initialLng,
+  addressHint,
   title = "Velg posisjon i kart",
   onSave,
   onClose,
@@ -36,42 +51,55 @@ export default function MapPickerModal({
   );
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const mapInstanceRef = useRef<any>(null);
   const leafletLoaded = useRef(false);
 
-  useEffect(() => {
-    function initMap() {
-      if (!mapRef.current || !window.L) return;
-      const L = window.L;
+  async function initMap() {
+    if (!mapRef.current || !window.L) return;
+    const L = window.L;
 
-      const lat = initialLat ?? DEFAULT_LAT;
-      const lng = initialLng ?? DEFAULT_LNG;
+    // Determine starting position: prefer provided coords, then geocode address, then default
+    let startLat = initialLat ?? DEFAULT_LAT;
+    let startLng = initialLng ?? DEFAULT_LNG;
+    let zoom = initialLat != null ? 16 : 13;
 
-      const map = L.map(mapRef.current).setView([lat, lng], 13);
-
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-        maxZoom: 19,
-      }).addTo(map);
-
-      if (initialLat != null && initialLng != null) {
-        markerRef.current = L.marker([initialLat, initialLng]).addTo(map);
+    if (initialLat == null && addressHint) {
+      const geo = await geocodeAddress(addressHint);
+      if (geo) {
+        startLat = geo.lat;
+        startLng = geo.lng;
+        zoom = 17;
       }
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      map.on("click", (e: any) => {
-        const { lat: clickLat, lng: clickLng } = e.latlng;
-        setCoords({ lat: clickLat, lng: clickLng });
-        if (markerRef.current) {
-          markerRef.current.setLatLng([clickLat, clickLng]);
-        } else {
-          markerRef.current = L.marker([clickLat, clickLng]).addTo(map);
-        }
-      });
     }
 
+    const map = L.map(mapRef.current).setView([startLat, startLng], zoom);
+    mapInstanceRef.current = map;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+      maxZoom: 19,
+    }).addTo(map);
+
+    if (initialLat != null && initialLng != null) {
+      markerRef.current = L.marker([initialLat, initialLng]).addTo(map);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    map.on("click", (e: any) => {
+      const { lat: clickLat, lng: clickLng } = e.latlng;
+      setCoords({ lat: clickLat, lng: clickLng });
+      if (markerRef.current) {
+        markerRef.current.setLatLng([clickLat, clickLng]);
+      } else {
+        markerRef.current = L.marker([clickLat, clickLng]).addTo(map);
+      }
+    });
+  }
+
+  useEffect(() => {
     if (window.L && !leafletLoaded.current) {
       leafletLoaded.current = true;
-      // Small delay to ensure the div is rendered
       setTimeout(initMap, 50);
       return;
     }
@@ -100,7 +128,6 @@ export default function MapPickerModal({
       };
       document.head.appendChild(script);
     } else {
-      // Script tag exists but may already be loaded
       const checkLoaded = setInterval(() => {
         if (window.L) {
           clearInterval(checkLoaded);

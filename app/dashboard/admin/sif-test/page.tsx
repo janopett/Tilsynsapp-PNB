@@ -30,15 +30,17 @@ function CopyableJson({ data, ok }: { data: unknown; ok: boolean }) {
   }
 
   return (
-    <div className="relative">
-      <button
-        onClick={copy}
-        className="absolute top-2 right-2 z-10 text-xs px-2 py-1 rounded bg-white/80 border border-gray-200 hover:bg-white text-gray-600 hover:text-gray-900 transition shadow-sm"
-      >
-        {copied ? "Kopiert!" : "Kopier"}
-      </button>
+    <div>
+      <div className="flex justify-end mb-1">
+        <button
+          onClick={copy}
+          className="text-xs px-2 py-1 rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-900 transition"
+        >
+          {copied ? "Kopiert!" : "Kopier"}
+        </button>
+      </div>
       <pre
-        className={`text-xs whitespace-pre-wrap overflow-auto rounded-xl p-3 max-h-72 pr-16 ${
+        className={`text-xs whitespace-pre-wrap overflow-auto rounded-xl p-3 max-h-72 ${
           ok
             ? "bg-gray-50 border border-gray-200 text-gray-700"
             : "bg-red-50 border border-red-200 text-red-700"

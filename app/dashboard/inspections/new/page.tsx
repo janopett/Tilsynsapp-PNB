@@ -737,6 +737,7 @@ export default function NewInspectionPage() {
         <MapPickerModal
           initialLat={latitude}
           initialLng={longitude}
+          addressHint={propertyAddress || undefined}
           title="Velg posisjon for tilsynet"
           onSave={(lat, lng) => {
             setLatitude(lat);
