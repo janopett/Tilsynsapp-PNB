@@ -6,6 +6,8 @@ import { authFetch } from "@/lib/auth-fetch";
 interface AdminUser {
   id: string;
   email?: string;
+  firstName?: string | null;
+  lastName?: string | null;
   name?: string | null;
   isAdmin: boolean;
   createdAt: string;
@@ -32,6 +34,13 @@ export default function AdminUsersPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
+
+  // Inline name editing
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFirst, setEditFirst] = useState("");
+  const [editLast, setEditLast] = useState("");
+  const [savingName, setSavingName] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -82,6 +91,36 @@ export default function AdminUsersPage() {
       setError("Nettverksfeil");
     } finally {
       setPending(null);
+    }
+  }
+
+  function startEdit(u: AdminUser) {
+    setEditingId(u.id);
+    setEditFirst(u.firstName ?? "");
+    setEditLast(u.lastName ?? "");
+    setNameError(null);
+  }
+
+  async function saveName(userId: string) {
+    setSavingName(true);
+    setNameError(null);
+    try {
+      const res = await authFetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, firstName: editFirst, lastName: editLast }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setEditingId(null);
+        await loadUsers();
+      } else {
+        setNameError(data.error ?? "Klarte ikke lagre");
+      }
+    } catch {
+      setNameError("Nettverksfeil");
+    } finally {
+      setSavingName(false);
     }
   }
 
@@ -242,47 +281,82 @@ export default function AdminUsersPage() {
           ) : (
             <ul className="divide-y divide-gray-100">
               {users.map((u) => (
-                <li
-                  key={u.id}
-                  className="flex items-center justify-between gap-4 px-5 py-4"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {u.name ?? u.email ?? u.id}
-                    </p>
-                    {u.name && (
+                <li key={u.id} className="px-5 py-4 space-y-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {u.name ?? <span className="text-gray-400 italic">Navn ikke satt</span>}
+                      </p>
                       <p className="text-xs text-gray-400 truncate">{u.email}</p>
-                    )}
-                    <p className="text-xs text-gray-300 mt-0.5">
-                      Sist innlogget:{" "}
-                      {u.lastSignIn
-                        ? new Date(u.lastSignIn).toLocaleDateString("nb-NO")
-                        : "aldri"}
-                    </p>
+                      <p className="text-xs text-gray-300 mt-0.5">
+                        Sist innlogget:{" "}
+                        {u.lastSignIn
+                          ? new Date(u.lastSignIn).toLocaleDateString("nb-NO")
+                          : "aldri"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {u.isAdmin && (
+                        <span className="text-xs font-medium bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">
+                          Admin
+                        </span>
+                      )}
+                      <button
+                        onClick={() => editingId === u.id ? setEditingId(null) : startEdit(u)}
+                        className="text-sm font-medium px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                      >
+                        {editingId === u.id ? "Avbryt" : "Rediger navn"}
+                      </button>
+                      <button
+                        onClick={() => toggleAdmin(u.id, u.isAdmin)}
+                        disabled={pending === u.id}
+                        className={`text-sm font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 ${
+                          u.isAdmin
+                            ? "bg-red-50 text-red-600 hover:bg-red-100"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        }`}
+                      >
+                        {pending === u.id ? "…" : u.isAdmin ? "Fjern admin" : "Gi admin"}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    {u.isAdmin && (
-                      <span className="text-xs font-medium bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">
-                        Admin
-                      </span>
-                    )}
-                    <button
-                      onClick={() => toggleAdmin(u.id, u.isAdmin)}
-                      disabled={pending === u.id}
-                      className={`text-sm font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 ${
-                        u.isAdmin
-                          ? "bg-red-50 text-red-600 hover:bg-red-100"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
-                    >
-                      {pending === u.id
-                        ? "…"
-                        : u.isAdmin
-                        ? "Fjern admin"
-                        : "Gi admin"}
-                    </button>
-                  </div>
+                  {editingId === u.id && (
+                    <div className="flex gap-2 items-end pt-1">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-0.5">Fornavn</label>
+                        <input
+                          type="text"
+                          value={editFirst}
+                          onChange={(e) => setEditFirst(e.target.value)}
+                          className="input text-sm py-1.5"
+                          placeholder="Fornavn"
+                          autoFocus
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-0.5">Etternavn</label>
+                        <input
+                          type="text"
+                          value={editLast}
+                          onChange={(e) => setEditLast(e.target.value)}
+                          className="input text-sm py-1.5"
+                          placeholder="Etternavn"
+                          onKeyDown={(e) => e.key === "Enter" && saveName(u.id)}
+                        />
+                      </div>
+                      <button
+                        onClick={() => saveName(u.id)}
+                        disabled={savingName || !editFirst.trim() || !editLast.trim()}
+                        className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-1.5 rounded-xl transition disabled:opacity-50 shrink-0"
+                      >
+                        {savingName ? "Lagrer…" : "Lagre"}
+                      </button>
+                      {nameError && (
+                        <p className="text-xs text-red-600">{nameError}</p>
+                      )}
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
