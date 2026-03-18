@@ -69,6 +69,13 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                     >
                       SIF Test
                     </Link>
+                    <Link
+                      href="/dashboard/admin/arkiveringslogg"
+                      onClick={() => setAdminOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      Arkiveringslogg
+                    </Link>
                     <div className="border-t border-gray-100 my-1" />
                     <Link
                       href="/dashboard/admin/users"
