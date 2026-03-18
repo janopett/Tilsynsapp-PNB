@@ -10,6 +10,7 @@ import {
   SifTimeoutError,
 } from "./errors";
 import type { SifAuthConfig } from "./auth";
+import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "./settings";
 
 export interface SifClientConfig {
   baseUrl: string;
@@ -53,7 +54,13 @@ export async function sifRpcCall<TInput, TOutput>(
   payload: TInput,
   correlationId?: string
 ): Promise<TOutput> {
-  const config = getSifClientConfig();
+  const settings = await loadSifSettingsWithEnvFallback();
+  const config = toSifClientConfig(settings);
+
+  if (!config.baseUrl) {
+    throw new Error("SIF_BASE_URL environment variable is not set.");
+  }
+
   return sifRpcCallWithConfig<TInput, TOutput>(
     config,
     service,
