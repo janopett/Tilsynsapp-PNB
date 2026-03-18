@@ -14,7 +14,8 @@ interface EstateQuery {
 
 interface RawEstate {
   Recno: number;
-  Address?: string;
+  // SIF may return Address as a plain string or as an object (e.g. { Value: "..." })
+  Address?: unknown;
   GNr?: string;
   BNr?: string;
   FNr?: string;
@@ -25,6 +26,17 @@ interface RawEstate {
   Bnr?: string;
   Fnr?: string;
   Snr?: string;
+}
+
+/** Extract a plain string from a SIF field that may be a string or a wrapped object. */
+function extractString(value: unknown): string | undefined {
+  if (typeof value === "string") return value || undefined;
+  if (value && typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    const v = obj.Value ?? obj.FormattedValue ?? obj.Text ?? obj.AddressLine1;
+    return typeof v === "string" ? v || undefined : undefined;
+  }
+  return undefined;
 }
 
 interface EstateListResult {
@@ -60,7 +72,7 @@ export async function getCaseEstates(
 
     return result.Estates.map((e) => ({
       recno: e.Recno,
-      address: e.Address,
+      address: extractString(e.Address),
       gnr: e.GNr ?? e.Gnr,
       bnr: e.BNr ?? e.Bnr,
       fnr: e.FNr ?? e.Fnr,

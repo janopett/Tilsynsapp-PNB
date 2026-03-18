@@ -97,6 +97,8 @@ export interface Inspection {
   property_address: string;   // Eiendomsadresse
   gnr?: string;               // Gårdsnummer
   bnr?: string;               // Bruksnummer
+  snr?: string;               // Seksjonsnummer
+  fnr?: string;               // Festenummer
   applicant_name?: string;    // Søkers navn
   inspector_name?: string;    // Tilsynsmannens navn
   inspection_date: string;    // Dato for tilsyn (ISO date string)
@@ -125,6 +127,8 @@ export interface InspectionCreate {
   case_title?: string;
   gnr?: string;
   bnr?: string;
+  snr?: string;
+  fnr?: string;
   applicant_name?: string;
   inspector_name?: string;
   inspection_date: string;
