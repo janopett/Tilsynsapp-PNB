@@ -97,7 +97,7 @@ export async function searchCasesInSif(query: string, maxResults = 10): Promise<
 
   const [byNumber, byTitle] = await Promise.allSettled([
     sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
-      "CaseService", "GetCases", { CaseNumber: `${q}%`, MaxResults: maxResults }
+      "CaseService", "GetCases", { CaseNumber: `%${q}%`, MaxResults: maxResults }
     ),
     sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
       "CaseService", "GetCases", { Title: `%${q}%`, MaxResults: maxResults }
