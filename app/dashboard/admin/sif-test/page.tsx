@@ -13,6 +13,11 @@ interface CaseLookupResult {
   case?: unknown;
   error?: string;
 }
+interface RawDebugResult {
+  ok: boolean;
+  raw?: unknown;
+  error?: string;
+}
 
 export default function SifTestPage() {
   const [versionResult, setVersionResult] = useState<VersionResult | null>(null);
@@ -22,6 +27,11 @@ export default function SifTestPage() {
   const [caseLookupResult, setCaseLookupResult] = useState<CaseLookupResult | null>(null);
   const [caseLoading, setCaseLoading] = useState(false);
 
+  const [debugCaseNumber, setDebugCaseNumber] = useState("");
+  const [estatesResult, setEstatesResult] = useState<RawDebugResult | null>(null);
+  const [contactsResult, setContactsResult] = useState<RawDebugResult | null>(null);
+  const [debugLoading, setDebugLoading] = useState(false);
+
   async function testConnection() {
     setVersionLoading(true);
     setVersionResult(null);
@@ -29,6 +39,22 @@ export default function SifTestPage() {
     const data = await res.json();
     setVersionResult(data);
     setVersionLoading(false);
+  }
+
+  async function debugRaw(e: React.FormEvent) {
+    e.preventDefault();
+    if (!debugCaseNumber.trim()) return;
+    setDebugLoading(true);
+    setEstatesResult(null);
+    setContactsResult(null);
+    const cn = encodeURIComponent(debugCaseNumber.trim());
+    const [estRes, conRes] = await Promise.all([
+      authFetch(`/api/sif/debug-raw?caseNumber=${cn}&service=estates`).then((r) => r.json()),
+      authFetch(`/api/sif/debug-raw?caseNumber=${cn}&service=contacts`).then((r) => r.json()),
+    ]);
+    setEstatesResult(estRes);
+    setContactsResult(conRes);
+    setDebugLoading(false);
   }
 
   async function lookupCase(e: React.FormEvent) {
@@ -134,6 +160,57 @@ export default function SifTestPage() {
                 <span className="font-semibold">Feil:</span> {caseLookupResult.error}
               </>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* Raw debug: estates + contacts */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+        <h2 className="text-base font-semibold mb-1">Rådata-debug: eiendommer og kontakter</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Viser det SIF faktisk returnerer fra <code>EstateService/GetEstates</code> og{" "}
+          <code>CaseService/GetCaseContacts</code> – brukes til å avdekke feltnavnfeil.
+        </p>
+        <form onSubmit={debugRaw} className="flex gap-3 mb-4">
+          <input
+            type="text"
+            value={debugCaseNumber}
+            onChange={(e) => setDebugCaseNumber(e.target.value)}
+            placeholder="F.eks. ULOV-25/00008"
+            className="input flex-1"
+          />
+          <button
+            type="submit"
+            disabled={debugLoading || !debugCaseNumber.trim()}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {debugLoading ? "Henter…" : "Hent rådata"}
+          </button>
+        </form>
+
+        {estatesResult && (
+          <div className="mb-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              EstateService/GetEstates
+            </p>
+            <pre className={`text-xs whitespace-pre-wrap overflow-auto rounded-xl p-3 max-h-72 ${
+              estatesResult.ok ? "bg-gray-50 border border-gray-200 text-gray-700" : "bg-red-50 border border-red-200 text-red-700"
+            }`}>
+              {JSON.stringify(estatesResult.ok ? estatesResult.raw : estatesResult.error, null, 2)}
+            </pre>
+          </div>
+        )}
+
+        {contactsResult && (
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+              CaseService/GetCaseContacts
+            </p>
+            <pre className={`text-xs whitespace-pre-wrap overflow-auto rounded-xl p-3 max-h-72 ${
+              contactsResult.ok ? "bg-gray-50 border border-gray-200 text-gray-700" : "bg-red-50 border border-red-200 text-red-700"
+            }`}>
+              {JSON.stringify(contactsResult.ok ? contactsResult.raw : contactsResult.error, null, 2)}
+            </pre>
           </div>
         )}
       </div>
