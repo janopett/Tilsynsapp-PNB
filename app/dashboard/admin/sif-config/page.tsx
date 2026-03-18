@@ -791,23 +791,9 @@ export default function SifConfigPage() {
                   {caseLookupResult.ok && caseLookupResult.case ? (
                     <>
                       <p className="font-semibold mb-2">Sak funnet</p>
-                      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
-                        {(
-                          [
-                            ["Saksnummer", (caseLookupResult.case as { caseNumber?: string }).caseNumber],
-                            ["Tittel", (caseLookupResult.case as { title?: string }).title],
-                            ["Recno", String((caseLookupResult.case as { recno?: number }).recno ?? "")],
-                            ["URL", (caseLookupResult.case as { url?: string }).url],
-                          ] as [string, string | undefined][]
-                        )
-                          .filter(([, v]) => v)
-                          .map(([label, value]) => (
-                            <>
-                              <dt key={`dt-${label}`} className="text-green-700 font-medium">{label}</dt>
-                              <dd key={`dd-${label}`} className="font-mono break-all">{value}</dd>
-                            </>
-                          ))}
-                      </dl>
+                      <pre className="mt-2 text-xs font-mono bg-green-100 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
+                        {JSON.stringify(caseLookupResult.case, null, 2)}
+                      </pre>
                     </>
                   ) : (
                     <>

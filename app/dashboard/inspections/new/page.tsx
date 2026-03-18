@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { MEASURE_TYPES, PROPERTY_QUESTIONS } from "@/data/seed/measure-types";
 import type { MeasureTypeId, PropertyTag } from "@/types";
 import { createClient } from "@/lib/supabase/client";
+import CaseSearchInput from "@/components/sif/CaseSearchInput";
 
 export default function NewInspectionPage() {
   const router = useRouter();
@@ -145,12 +146,10 @@ export default function NewInspectionPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Saksnummer
                 </label>
-                <input
-                  type="text"
+                <CaseSearchInput
                   value={caseNumber}
-                  onChange={(e) => setCaseNumber(e.target.value)}
-                  placeholder="2024/1234"
-                  className="input"
+                  onChange={setCaseNumber}
+                  placeholder="Søk på saksnummer eller tittel…"
                 />
               </div>
               <div>
