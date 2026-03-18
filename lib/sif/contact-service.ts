@@ -40,10 +40,12 @@ export async function getCaseContacts(
   if (!caseRecno && !caseNumber) return [];
 
   // ── Strategy 1: CaseService/GetCaseContacts ────────────────────────────────
+  // Prefer CaseRecno — some SIF instances throw IndexOutOfRangeException
+  // when using CaseNumber but work correctly with CaseRecno.
   try {
     const query: SifGetCaseContactsQuery = {};
     if (caseRecno) query.CaseRecno = caseRecno;
-    else if (caseNumber) query.CaseNumber = caseNumber;
+    if (caseNumber && !caseRecno) query.CaseNumber = caseNumber;
 
     const result = await sifRpcCall<SifGetCaseContactsQuery, SifGetCaseContactsResult>(
       "CaseService",

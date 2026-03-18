@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { getCaseContacts } from "@/lib/sif/contact-service";
+import { findCaseInSif } from "@/lib/sif/case-service";
 
 // ── GET /api/sif/case-contacts ────────────────────────────────────────────────
 // Returns contacts for a specific case. Accepts ?caseRecno=N or ?caseNumber=...
@@ -11,13 +12,24 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const caseRecnoStr = searchParams.get("caseRecno");
   const caseNumber = searchParams.get("caseNumber") ?? undefined;
-  const caseRecno = caseRecnoStr ? Number(caseRecnoStr) : undefined;
+  let caseRecno = caseRecnoStr ? Number(caseRecnoStr) : undefined;
 
   if (!caseRecno && !caseNumber) {
     return NextResponse.json(
       { error: "caseRecno or caseNumber is required" },
       { status: 400 }
     );
+  }
+
+  // Look up the case recno when not provided — GetCaseContacts works more
+  // reliably with CaseRecno than with CaseNumber on some SIF instances.
+  if (!caseRecno && caseNumber) {
+    try {
+      const sifCase = await findCaseInSif({ caseNumber });
+      caseRecno = sifCase.recno;
+    } catch {
+      // Continue without recno; contact-service will try caseNumber
+    }
   }
 
   try {
