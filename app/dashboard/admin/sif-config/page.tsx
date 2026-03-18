@@ -269,6 +269,24 @@ export default function SifConfigPage() {
     attemptedUrl?: string | null;
   } | null>(null);
 
+  // Case lookup test state
+  const [caseLookupInput, setCaseLookupInput] = useState("");
+  const [caseLookupLoading, setCaseLookupLoading] = useState(false);
+  const [caseLookupResult, setCaseLookupResult] = useState<{
+    ok: boolean;
+    case?: Record<string, unknown>;
+    error?: string;
+  } | null>(null);
+
+  // Case contacts test state
+  const [contactsInput, setContactsInput] = useState("");
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactsResult, setContactsResult] = useState<{
+    ok: boolean;
+    contacts?: Array<Record<string, unknown>>;
+    error?: string;
+  } | null>(null);
+
   const loadSettings = useCallback(async () => {
     setLoading(true);
     try {
@@ -324,6 +342,42 @@ export default function SifConfigPage() {
     const data = await res.json();
     setTestResult(data);
     setTestLoading(false);
+  }
+
+  async function testCaseLookup() {
+    if (!caseLookupInput.trim()) return;
+    setCaseLookupLoading(true);
+    setCaseLookupResult(null);
+    try {
+      const res = await authFetch("/api/sif/case-lookup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ caseNumber: caseLookupInput.trim() }),
+      });
+      const data = await res.json();
+      setCaseLookupResult(data);
+    } catch (err) {
+      setCaseLookupResult({ ok: false, error: err instanceof Error ? err.message : "Nettverksfeil" });
+    } finally {
+      setCaseLookupLoading(false);
+    }
+  }
+
+  async function testCaseContacts() {
+    if (!contactsInput.trim()) return;
+    setContactsLoading(true);
+    setContactsResult(null);
+    try {
+      const res = await authFetch(
+        `/api/sif/case-contacts?caseNumber=${encodeURIComponent(contactsInput.trim())}`
+      );
+      const data = await res.json();
+      setContactsResult(data);
+    } catch (err) {
+      setContactsResult({ ok: false, error: err instanceof Error ? err.message : "Nettverksfeil" });
+    } finally {
+      setContactsLoading(false);
+    }
   }
 
   if (loading) {
@@ -692,6 +746,165 @@ export default function SifConfigPage() {
                           </ul>
                         </div>
                       )}
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Case lookup test ─────────────────────────────────── */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-base font-semibold mb-1">Sakssøk</h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Kaller{" "}
+                <code className="text-xs bg-gray-100 px-1 rounded">
+                  CaseService/GetCases
+                </code>{" "}
+                med et saksnummer og viser resultatet.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={caseLookupInput}
+                  onChange={(e) => { setCaseLookupInput(e.target.value); setCaseLookupResult(null); }}
+                  onKeyDown={(e) => e.key === "Enter" && testCaseLookup()}
+                  placeholder="f.eks. 2024/1234"
+                  className="input flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={testCaseLookup}
+                  disabled={caseLookupLoading || !caseLookupInput.trim()}
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50 shrink-0"
+                >
+                  {caseLookupLoading ? "Søker…" : "Søk opp sak"}
+                </button>
+              </div>
+              {caseLookupResult && (
+                <div
+                  className={`mt-4 rounded-xl p-4 text-sm ${
+                    caseLookupResult.ok
+                      ? "bg-green-50 border border-green-200 text-green-800"
+                      : "bg-red-50 border border-red-200 text-red-800"
+                  }`}
+                >
+                  {caseLookupResult.ok && caseLookupResult.case ? (
+                    <>
+                      <p className="font-semibold mb-2">Sak funnet</p>
+                      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
+                        {(
+                          [
+                            ["Saksnummer", (caseLookupResult.case as { caseNumber?: string }).caseNumber],
+                            ["Tittel", (caseLookupResult.case as { title?: string }).title],
+                            ["Recno", String((caseLookupResult.case as { recno?: number }).recno ?? "")],
+                            ["URL", (caseLookupResult.case as { url?: string }).url],
+                          ] as [string, string | undefined][]
+                        )
+                          .filter(([, v]) => v)
+                          .map(([label, value]) => (
+                            <>
+                              <dt key={`dt-${label}`} className="text-green-700 font-medium">{label}</dt>
+                              <dd key={`dd-${label}`} className="font-mono break-all">{value}</dd>
+                            </>
+                          ))}
+                      </dl>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-semibold mb-1">Feil</p>
+                      <p className="text-xs whitespace-pre-wrap">{caseLookupResult.error}</p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Contacts test ─────────────────────────────────────── */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-base font-semibold mb-1">Kontakter på sak</h2>
+              <p className="text-sm text-gray-500 mb-4">
+                Kaller{" "}
+                <code className="text-xs bg-gray-100 px-1 rounded">
+                  ContactService/GetContactPersons
+                </code>
+                ,{" "}
+                <code className="text-xs bg-gray-100 px-1 rounded">
+                  GetPrivatePersons
+                </code>{" "}
+                og{" "}
+                <code className="text-xs bg-gray-100 px-1 rounded">
+                  GetEnterprises
+                </code>{" "}
+                og viser alle kontakter på saken.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={contactsInput}
+                  onChange={(e) => { setContactsInput(e.target.value); setContactsResult(null); }}
+                  onKeyDown={(e) => e.key === "Enter" && testCaseContacts()}
+                  placeholder="f.eks. 2024/1234"
+                  className="input flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={testCaseContacts}
+                  disabled={contactsLoading || !contactsInput.trim()}
+                  className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50 shrink-0"
+                >
+                  {contactsLoading ? "Henter…" : "Hent kontakter"}
+                </button>
+              </div>
+              {contactsResult && (
+                <div
+                  className={`mt-4 rounded-xl p-4 text-sm ${
+                    contactsResult.ok
+                      ? "bg-green-50 border border-green-200 text-green-800"
+                      : "bg-red-50 border border-red-200 text-red-800"
+                  }`}
+                >
+                  {contactsResult.ok ? (
+                    contactsResult.contacts && contactsResult.contacts.length > 0 ? (
+                      <>
+                        <p className="font-semibold mb-2">
+                          {contactsResult.contacts.length} kontakt
+                          {contactsResult.contacts.length !== 1 ? "er" : ""} funnet
+                        </p>
+                        <ul className="space-y-2">
+                          {contactsResult.contacts.map((c, i) => {
+                            const contact = c as {
+                              name?: string;
+                              type?: string;
+                              role?: string;
+                              roleDescription?: string;
+                              email?: string;
+                              phone?: string;
+                              recno?: number;
+                            };
+                            return (
+                              <li key={i} className="text-xs bg-green-100 rounded-lg px-3 py-2">
+                                <span className="font-medium">{contact.name ?? "(uten navn)"}</span>
+                                {contact.type && (
+                                  <span className="ml-2 opacity-70">({contact.type})</span>
+                                )}
+                                {(contact.roleDescription ?? contact.role) && (
+                                  <span className="ml-2 opacity-70">– {contact.roleDescription ?? contact.role}</span>
+                                )}
+                                {contact.email && (
+                                  <span className="ml-2 font-mono">{contact.email}</span>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </>
+                    ) : (
+                      <p className="font-semibold">Ingen kontakter funnet på saken.</p>
+                    )
+                  ) : (
+                    <>
+                      <p className="font-semibold mb-1">Feil</p>
+                      <p className="text-xs whitespace-pre-wrap">{contactsResult.error}</p>
                     </>
                   )}
                 </div>
