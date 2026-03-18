@@ -55,7 +55,7 @@ export const sifMapping: SifMappingConfig = {
     category: "recno:111",         // e.g. "Internt notat uten oppfølging"
     // TODO: Replace with correct status recno (J = Journalført)
     status: "J",
-    titleTemplate: "Tilsynsrapport - {{propertyAddress}} - {{date}}",
+    titleTemplate: "{{title}} - Tilsynsrapport - {{date}}",
     mainFileRelationType: "H",
     attachmentRelationType: "V",
   },
@@ -105,7 +105,8 @@ export function buildDocumentTitle(
   return template
     .replace(/\{\{propertyAddress\}\}/g, vars.propertyAddress ?? "")
     .replace(/\{\{caseNumber\}\}/g, vars.caseNumber ?? "")
-    .replace(/\{\{caseTitle\}\}/g, vars.caseTitle ?? "")
+    .replace(/\{\{title\}\}/g, vars.caseTitle ?? "")          // preferred alias
+    .replace(/\{\{caseTitle\}\}/g, vars.caseTitle ?? "")      // backward compat
     .replace(/\{\{date\}\}/g, formattedDate)
     .replace(/\{\{inspectorName\}\}/g, vars.inspectorName ?? "")
     .replace(/\{\{applicantName\}\}/g, vars.applicantName ?? "")
