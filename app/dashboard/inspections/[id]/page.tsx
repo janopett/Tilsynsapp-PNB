@@ -21,6 +21,7 @@ import {
 import CheckpointItem from "@/components/checklist/CheckpointItem";
 import ArchivePanel from "@/components/archive/ArchivePanel";
 import StatusBadge from "@/components/ui/StatusBadge";
+import type { SifContact } from "@/types";
 
 type Tab = "checklist" | "summary" | "archive";
 
@@ -33,6 +34,7 @@ export default function InspectionPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("checklist");
   const [activeCategory, setActiveCategory] = useState<CheckpointCategory | "all">("all");
+  const [caseContacts, setCaseContacts] = useState<SifContact[]>([]);
 
   const fetchInspection = useCallback(async () => {
     const supabase = createClient();
@@ -55,6 +57,17 @@ export default function InspectionPage() {
       archival: archivalRes.data ?? undefined,
     });
     setLoading(false);
+
+    // Load case contacts lazily if a case number is set
+    const caseNumber = inspRes.data.case_number;
+    if (caseNumber && session) {
+      fetch(`/api/sif/case-contacts?caseNumber=${encodeURIComponent(caseNumber)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then((r) => r.json())
+        .then((d) => { if (d.ok) setCaseContacts(d.contacts ?? []); })
+        .catch(() => {});
+    }
   }, [id, router]);
 
   useEffect(() => {
@@ -64,14 +77,23 @@ export default function InspectionPage() {
   async function updateAnswer(
     checkpointId: string,
     status: CheckpointStatus,
-    comment: string
+    comment: string,
+    contactRecno: number | null = null,
+    contactName: string | null = null
   ) {
     if (!inspection) return;
     setSavingId(checkpointId);
 
     const supabase = createClient();
     await supabase.from("inspection_answers").upsert(
-      { inspection_id: id, checkpoint_definition_id: checkpointId, status, comment: comment || null },
+      {
+        inspection_id: id,
+        checkpoint_definition_id: checkpointId,
+        status,
+        comment: comment || null,
+        responsible_contact_recno: contactRecno,
+        responsible_contact_name: contactName,
+      },
       { onConflict: "inspection_id,checkpoint_definition_id" }
     );
 
@@ -100,6 +122,8 @@ export default function InspectionPage() {
         checkpoint_definition_id: checkpointId,
         status,
         comment,
+        responsible_contact_recno: contactRecno,
+        responsible_contact_name: contactName,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -241,6 +265,7 @@ export default function InspectionPage() {
                 key={item.definition.id}
                 item={item}
                 isSaving={savingId === item.definition.id}
+                contacts={caseContacts}
                 onUpdate={updateAnswer}
               />
             ))}

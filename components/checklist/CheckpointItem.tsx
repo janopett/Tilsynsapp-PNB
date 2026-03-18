@@ -1,13 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import type { CheckpointWithAnswer, CheckpointStatus } from "@/types";
+import type { CheckpointWithAnswer, CheckpointStatus, SifContact } from "@/types";
 import { CATEGORY_LABELS } from "@/lib/checklist/filter-engine";
 
 interface Props {
   item: CheckpointWithAnswer;
   isSaving: boolean;
-  onUpdate: (id: string, status: CheckpointStatus, comment: string) => void;
+  contacts: SifContact[];
+  onUpdate: (
+    id: string,
+    status: CheckpointStatus,
+    comment: string,
+    contactRecno: number | null,
+    contactName: string | null
+  ) => void;
 }
 
 const STATUS_CONFIG: Record<CheckpointStatus, { label: string; cls: string; icon: string }> = {
@@ -16,23 +23,38 @@ const STATUS_CONFIG: Record<CheckpointStatus, { label: string; cls: string; icon
   deviation: { label: "Avvik", cls: "border-red-300 bg-red-50", icon: "⚠️" },
 };
 
-export default function CheckpointItem({ item, isSaving, onUpdate }: Props) {
+export default function CheckpointItem({ item, isSaving, contacts, onUpdate }: Props) {
   const { definition, answer } = item;
   const currentStatus: CheckpointStatus = answer?.status ?? "not_checked";
   const [comment, setComment] = useState(answer?.comment ?? "");
   const [expanded, setExpanded] = useState(currentStatus === "deviation");
+  const [selectedContactRecno, setSelectedContactRecno] = useState<number | null>(
+    answer?.responsible_contact_recno ?? null
+  );
 
   const cfg = STATUS_CONFIG[currentStatus];
 
+  function currentContactName(): string | null {
+    if (!selectedContactRecno) return null;
+    return contacts.find((c) => c.recno === selectedContactRecno)?.name ?? null;
+  }
+
   function handleStatus(status: CheckpointStatus) {
-    onUpdate(definition.id, status, comment);
+    onUpdate(definition.id, status, comment, selectedContactRecno, currentContactName());
     if (status === "deviation") setExpanded(true);
   }
 
   function handleCommentBlur() {
     if (comment !== (answer?.comment ?? "")) {
-      onUpdate(definition.id, currentStatus, comment);
+      onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName());
     }
+  }
+
+  function handleContactChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const recno = e.target.value ? Number(e.target.value) : null;
+    const name = recno ? (contacts.find((c) => c.recno === recno)?.name ?? null) : null;
+    setSelectedContactRecno(recno);
+    onUpdate(definition.id, currentStatus, comment, recno, name);
   }
 
   const severityDot =
@@ -98,6 +120,27 @@ export default function CheckpointItem({ item, isSaving, onUpdate }: Props) {
           </button>
         ))}
       </div>
+
+      {/* Ansvarlig (only shown when case contacts are available) */}
+      {contacts.length > 0 && (
+        <div className="mt-3">
+          <label className="block text-xs font-medium text-gray-500 mb-1">Ansvarlig</label>
+          <select
+            value={selectedContactRecno ?? ""}
+            onChange={handleContactChange}
+            disabled={isSaving}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-brand-400 text-gray-700"
+          >
+            <option value="">— Ikke valgt</option>
+            {contacts.map((c) => (
+              <option key={c.recno} value={c.recno}>
+                {c.name}
+                {c.roleDescription ? ` (${c.roleDescription})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Comment */}
       {(expanded || currentStatus === "deviation" || (answer?.comment ?? "")) && (
