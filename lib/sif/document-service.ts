@@ -3,6 +3,7 @@
 // ============================================================
 
 import { sifRpcCall } from "./client";
+import { loadSifSettingsWithEnvFallback } from "./settings";
 import { SifCreateDocumentError } from "./errors";
 import type {
   SifCreateDocumentInput,
@@ -129,11 +130,16 @@ export async function createInspectionDocumentInSif(
     url: result.URL,
   });
 
+  const settings = await loadSifSettingsWithEnvFallback();
+  const baseUrl = settings.baseUrl.replace(/\/$/, "");
+  const rawUrl = result.URL ?? "";
+  const docUrl = rawUrl.startsWith("/") ? `${baseUrl}${rawUrl}` : rawUrl;
+
   return {
     recno: result.Recno ?? 0,
     documentNumber: result.DocumentNumber,
     title,
-    url: result.URL,
+    url: docUrl || undefined,
     raw: result,
   };
 }
