@@ -23,6 +23,7 @@ export default function CaseSearchInput({
   const [results, setResults] = useState<SifCase[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [noResults, setNoResults] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -49,18 +50,22 @@ export default function CaseSearchInput({
       return;
     }
     setLoading(true);
+    setNoResults(false);
     try {
       const res = await authFetch(`/api/sif/case-search?q=${encodeURIComponent(q.trim())}`);
       const data = await res.json();
       if (data.ok && data.cases.length > 0) {
         setResults(data.cases);
+        setNoResults(false);
         setOpen(true);
       } else {
         setResults([]);
-        setOpen(false);
+        setNoResults(true);
+        setOpen(true);
       }
     } catch {
       setResults([]);
+      setNoResults(false);
     } finally {
       setLoading(false);
     }
@@ -70,7 +75,13 @@ export default function CaseSearchInput({
     const val = e.target.value;
     setQuery(val);
     onChange(val);
-
+    setNoResults(false);
+    if (val.trim().length < 2) {
+      setOpen(false);
+      setResults([]);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      return;
+    }
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => search(val), 300);
   }
@@ -102,20 +113,24 @@ export default function CaseSearchInput({
         )}
       </div>
 
-      {open && results.length > 0 && (
+      {open && (
         <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
-          {results.map((c) => (
-            <li key={c.recno}>
-              <button
-                type="button"
-                className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex flex-col gap-0.5"
-                onMouseDown={() => handleSelect(c)}
-              >
-                <span className="text-sm font-medium text-gray-900 font-mono">{c.caseNumber}</span>
-                <span className="text-xs text-gray-500 truncate">{c.title}</span>
-              </button>
-            </li>
-          ))}
+          {results.length > 0
+            ? results.map((c) => (
+                <li key={c.recno}>
+                  <button
+                    type="button"
+                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex flex-col gap-0.5"
+                    onMouseDown={() => handleSelect(c)}
+                  >
+                    <span className="text-sm font-medium text-gray-900 font-mono">{c.caseNumber}</span>
+                    <span className="text-xs text-gray-500 truncate">{c.title}</span>
+                  </button>
+                </li>
+              ))
+            : noResults && (
+                <li className="px-4 py-3 text-sm text-gray-400">Ingen treff i Plan &amp; Build</li>
+              )}
         </ul>
       )}
     </div>
