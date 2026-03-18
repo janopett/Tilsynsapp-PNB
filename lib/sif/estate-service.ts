@@ -1,6 +1,5 @@
 // ============================================================
-// SIF EstateService - fetch estates (eiendommer) on a case
-// Calls EstateService/GetEstates filtered by case number/recno.
+// SIF EstateService - fetch estates (eiendommer)
 // ============================================================
 
 import { sifRpcCall } from "./client";
@@ -9,6 +8,10 @@ import type { SifEstate } from "@/types";
 interface EstateQuery {
   CaseNumber?: string;
   CaseRecno?: number;
+  EstateNumber?: number;
+  WorkNumber?: number;
+  SectionNumber?: number;
+  LeaseHoldNumber?: number;
   MaxResults?: number;
 }
 
@@ -22,12 +25,12 @@ interface RawEstateAddress {
   Area?: string;
 }
 
-interface RawEstate {
+export interface RawEstate {
   Recno: number;
   Address?: RawEstateAddress;
-  EstateNumber?: number;    // gnr
-  WorkNumber?: number;      // bnr
-  SectionNumber?: number | null;  // snr
+  EstateNumber?: number;     // gnr
+  WorkNumber?: number;       // bnr
+  SectionNumber?: number | null;   // snr
   LeaseHoldNumber?: number | null; // fnr
   Type?: string;
   Description?: string;
@@ -40,8 +43,45 @@ interface EstateListResult {
   ErrorMessage?: string;
 }
 
+function rawToSifEstate(e: RawEstate): SifEstate {
+  return {
+    recno: e.Recno,
+    address: e.Address?.StreetAddress || undefined,
+    gnr: e.EstateNumber != null ? String(e.EstateNumber) : undefined,
+    bnr: e.WorkNumber != null ? String(e.WorkNumber) : undefined,
+    snr: e.SectionNumber != null && e.SectionNumber !== 0 ? String(e.SectionNumber) : undefined,
+    fnr: e.LeaseHoldNumber != null && e.LeaseHoldNumber !== 0 ? String(e.LeaseHoldNumber) : undefined,
+    municipality: e.Municipality,
+  };
+}
+
+/**
+ * Fetch a single estate by its matrikkel numbers (gnr/bnr).
+ * Used to enrich ArchiveCode-parsed estate data with address.
+ */
+export async function getEstateByMatrikkel(
+  gnr: number,
+  bnr: number,
+  correlationId?: string
+): Promise<RawEstate | null> {
+  try {
+    const result = await sifRpcCall<EstateQuery, EstateListResult>(
+      "EstateService",
+      "GetEstates",
+      { EstateNumber: gnr, WorkNumber: bnr, MaxResults: 10 },
+      correlationId
+    );
+    if (!result.Successful || !result.Estates?.length) return null;
+    return result.Estates[0];
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Fetch estates linked to a case via SIF EstateService/GetEstates.
+ * NOTE: CaseNumber/CaseRecno filtering is unreliable in SIF — prefer
+ * parseArchiveCodeEstates() for case-linked estate lookup.
  * Returns empty array if the case has no estates or if the call fails.
  */
 export async function getCaseEstates(
@@ -64,16 +104,7 @@ export async function getCaseEstates(
     );
 
     if (!result.Successful || !result.Estates) return [];
-
-    return result.Estates.map((e) => ({
-      recno: e.Recno,
-      address: e.Address?.StreetAddress || undefined,
-      gnr: e.EstateNumber != null ? String(e.EstateNumber) : undefined,
-      bnr: e.WorkNumber != null ? String(e.WorkNumber) : undefined,
-      snr: e.SectionNumber != null && e.SectionNumber !== 0 ? String(e.SectionNumber) : undefined,
-      fnr: e.LeaseHoldNumber != null && e.LeaseHoldNumber !== 0 ? String(e.LeaseHoldNumber) : undefined,
-      municipality: e.Municipality,
-    }));
+    return result.Estates.map(rawToSifEstate);
   } catch {
     return [];
   }

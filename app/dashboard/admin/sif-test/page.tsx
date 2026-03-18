@@ -19,6 +19,37 @@ interface RawDebugResult {
   error?: string;
 }
 
+function CopyableJson({ data, ok }: { data: unknown; ok: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const text = JSON.stringify(data, null, 2);
+
+  async function copy() {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={copy}
+        className="absolute top-2 right-2 z-10 text-xs px-2 py-1 rounded bg-white/80 border border-gray-200 hover:bg-white text-gray-600 hover:text-gray-900 transition shadow-sm"
+      >
+        {copied ? "Kopiert!" : "Kopier"}
+      </button>
+      <pre
+        className={`text-xs whitespace-pre-wrap overflow-auto rounded-xl p-3 max-h-72 pr-16 ${
+          ok
+            ? "bg-gray-50 border border-gray-200 text-gray-700"
+            : "bg-red-50 border border-red-200 text-red-700"
+        }`}
+      >
+        {text}
+      </pre>
+    </div>
+  );
+}
+
 export default function SifTestPage() {
   const [versionResult, setVersionResult] = useState<VersionResult | null>(null);
   const [versionLoading, setVersionLoading] = useState(false);
@@ -120,7 +151,7 @@ export default function SifTestPage() {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <h2 className="text-base font-semibold mb-4">Saksoppslag</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Slå opp en sak i Plan & Build ved hjelp av saksnummer.
+          Slå opp en sak i Plan &amp; Build ved hjelp av saksnummer.
           Bruk dette for å verifisere at saksnummer er riktig formatert.
         </p>
         <form onSubmit={lookupCase} className="flex gap-3">
@@ -141,24 +172,16 @@ export default function SifTestPage() {
         </form>
 
         {caseLookupResult && (
-          <div
-            className={`mt-4 rounded-xl p-4 text-sm ${
-              caseLookupResult.ok
-                ? "bg-green-50 border border-green-200 text-green-800"
-                : "bg-red-50 border border-red-200 text-red-800"
-            }`}
-          >
+          <div className="mt-4">
             {caseLookupResult.ok ? (
               <>
-                <p className="font-semibold mb-2">Sak funnet:</p>
-                <pre className="text-xs whitespace-pre-wrap overflow-auto bg-white rounded p-2 text-gray-700">
-                  {JSON.stringify(caseLookupResult.case, null, 2)}
-                </pre>
+                <p className="text-sm font-semibold text-green-700 mb-2">Sak funnet:</p>
+                <CopyableJson data={caseLookupResult.case} ok={true} />
               </>
             ) : (
-              <>
+              <div className="rounded-xl p-4 text-sm bg-red-50 border border-red-200 text-red-800">
                 <span className="font-semibold">Feil:</span> {caseLookupResult.error}
-              </>
+              </div>
             )}
           </div>
         )}
@@ -193,11 +216,10 @@ export default function SifTestPage() {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
               EstateService/GetEstates
             </p>
-            <pre className={`text-xs whitespace-pre-wrap overflow-auto rounded-xl p-3 max-h-72 ${
-              estatesResult.ok ? "bg-gray-50 border border-gray-200 text-gray-700" : "bg-red-50 border border-red-200 text-red-700"
-            }`}>
-              {JSON.stringify(estatesResult.ok ? estatesResult.raw : estatesResult.error, null, 2)}
-            </pre>
+            <CopyableJson
+              data={estatesResult.ok ? estatesResult.raw : estatesResult.error}
+              ok={estatesResult.ok}
+            />
           </div>
         )}
 
@@ -206,11 +228,10 @@ export default function SifTestPage() {
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
               CaseService/GetCaseContacts
             </p>
-            <pre className={`text-xs whitespace-pre-wrap overflow-auto rounded-xl p-3 max-h-72 ${
-              contactsResult.ok ? "bg-gray-50 border border-gray-200 text-gray-700" : "bg-red-50 border border-red-200 text-red-700"
-            }`}>
-              {JSON.stringify(contactsResult.ok ? contactsResult.raw : contactsResult.error, null, 2)}
-            </pre>
+            <CopyableJson
+              data={contactsResult.ok ? contactsResult.raw : contactsResult.error}
+              ok={contactsResult.ok}
+            />
           </div>
         )}
       </div>
