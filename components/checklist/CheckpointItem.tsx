@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { CheckpointWithAnswer, CheckpointStatus, SifContact } from "@/types";
 import { CATEGORY_LABELS } from "@/lib/checklist/filter-engine";
+import { buildLegalUrl } from "@/lib/legal-reference";
 
 interface Props {
   item: CheckpointWithAnswer;
@@ -78,9 +79,22 @@ export default function CheckpointItem({ item, isSaving, contacts, onUpdate }: P
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
               {CATEGORY_LABELS[definition.category]}
-              {definition.legal_reference && (
-                <span className="ml-1 text-gray-400">· {definition.legal_reference}</span>
-              )}
+              {definition.legal_reference && (() => {
+                const url = buildLegalUrl(definition.legal_reference);
+                return url ? (
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="ml-1 text-brand-600 hover:underline"
+                  >
+                    · {definition.legal_reference}
+                  </a>
+                ) : (
+                  <span className="ml-1 text-gray-400">· {definition.legal_reference}</span>
+                );
+              })()}
             </p>
           </div>
         </div>
