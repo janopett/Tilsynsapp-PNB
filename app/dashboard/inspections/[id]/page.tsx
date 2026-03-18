@@ -34,6 +34,7 @@ const DUMMY_CONTACTS: SifContact[] = [
 ];
 
 type Tab = "checklist" | "summary" | "archive";
+const TABS: Tab[] = ["checklist", "summary", "archive"];
 
 // ── Edit Modal ──────────────────────────────────────────────────────────────
 
@@ -460,7 +461,7 @@ export default function InspectionPage() {
     fetchInspection();
   }, [fetchInspection]);
 
-  async function updateAnswer(
+  const updateAnswer = useCallback(async (
     checkpointId: string,
     status: CheckpointStatus,
     comment: string,
@@ -468,7 +469,7 @@ export default function InspectionPage() {
     contactName: string | null = null,
     lat: number | null = null,
     lng: number | null = null
-  ) {
+  ) => {
     if (!inspection) return;
     setSavingId(checkpointId);
 
@@ -487,12 +488,11 @@ export default function InspectionPage() {
       { onConflict: "inspection_id,checkpoint_definition_id" }
     );
 
-    // Auto-update inspection status
-    const { data: answers } = await supabase
-      .from("inspection_answers")
-      .select("status")
-      .eq("inspection_id", id);
-    if (answers?.some((a) => a.status !== "not_checked")) {
+    // Auto-update inspection status – check locally instead of an extra DB query
+    const otherAnswersChecked = inspection.answers.some(
+      (a) => a.checkpoint_definition_id !== checkpointId && a.status !== "not_checked"
+    );
+    if (status !== "not_checked" || otherAnswersChecked) {
       await supabase
         .from("inspections")
         .update({ status: "in_progress" })
@@ -527,7 +527,7 @@ export default function InspectionPage() {
     });
 
     setSavingId(null);
-  }
+  }, [id, inspection]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading || !inspection) {
     return (
@@ -652,7 +652,7 @@ export default function InspectionPage() {
 
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
-        {(["checklist", "summary", "archive"] as Tab[]).map((tab) => (
+        {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}

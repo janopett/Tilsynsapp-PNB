@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import type { CheckpointWithAnswer, CheckpointStatus, SifContact } from "@/types";
 import { CATEGORY_LABELS } from "@/lib/checklist/filter-engine";
 import { buildLegalUrl } from "@/lib/legal-reference";
@@ -27,7 +27,7 @@ const STATUS_CONFIG: Record<CheckpointStatus, { label: string; cls: string; icon
   deviation: { label: "Avvik", cls: "border-red-300 bg-red-50", icon: "⚠️" },
 };
 
-export default function CheckpointItem({ item, isSaving, contacts, onUpdate }: Props) {
+const CheckpointItem = memo(function CheckpointItem({ item, isSaving, contacts, onUpdate }: Props) {
   const { definition, answer } = item;
   const currentStatus: CheckpointStatus = answer?.status ?? "not_checked";
   const [comment, setComment] = useState(answer?.comment ?? "");
@@ -222,4 +222,6 @@ export default function CheckpointItem({ item, isSaving, contacts, onUpdate }: P
       )}
     </>
   );
-}
+});
+
+export default CheckpointItem;
