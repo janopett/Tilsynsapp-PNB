@@ -172,8 +172,15 @@ function CodeTablePicker({
 
 const TEMPLATE_VARIABLES = [
   { variable: "{{propertyAddress}}", description: "Eiendomsadresse fra tilsynsskjemaet" },
-  { variable: "{{caseNumber}}", description: "Saksnummer fra Plan & Build / tilsynsskjemaet" },
+  { variable: "{{caseNumber}}", description: "Saksnummer fra Plan & Build (f.eks. BYGG-26/00042)" },
+  { variable: "{{caseTitle}}", description: "Tittel på saken i Plan & Build (f.eks. «Oppføring av garasje»)" },
   { variable: "{{date}}", description: "Tilsynsdato (DD.MM.ÅÅÅÅ)" },
+  { variable: "{{year}}", description: "Årstall alene (f.eks. 2026)" },
+  { variable: "{{inspectorName}}", description: "Tilsynsførerens navn" },
+  { variable: "{{applicantName}}", description: "Søkers / tiltakshavers navn" },
+  { variable: "{{gnrBnr}}", description: "Gårds- og bruksnummer (f.eks. 123/45)" },
+  { variable: "{{measureType}}", description: "Tiltakstype (f.eks. Garasje/carport)" },
+  { variable: "{{inspectionId}}", description: "Internt ID-nummer for tilsynet" },
 ];
 
 function TitleTemplateField({
@@ -811,17 +818,9 @@ export default function SifConfigPage() {
               <p className="text-sm text-gray-500 mb-4">
                 Kaller{" "}
                 <code className="text-xs bg-gray-100 px-1 rounded">
-                  ContactService/GetContactPersons
-                </code>
-                ,{" "}
-                <code className="text-xs bg-gray-100 px-1 rounded">
-                  GetPrivatePersons
+                  CaseService/GetCaseContacts
                 </code>{" "}
-                og{" "}
-                <code className="text-xs bg-gray-100 px-1 rounded">
-                  GetEnterprises
-                </code>{" "}
-                og viser alle kontakter på saken.
+                og viser kontaktene som er direkte knyttet til den angitte saken.
               </p>
               <div className="flex gap-2">
                 <input
