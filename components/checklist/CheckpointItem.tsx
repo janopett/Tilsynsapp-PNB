@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { Attachment, CheckpointWithAnswer, CheckpointStatus, SifContact } from "@/types";
 import { CATEGORY_LABELS } from "@/lib/checklist/filter-engine";
 import { buildLegalUrl } from "@/lib/legal-reference";
@@ -44,15 +44,19 @@ function AttachmentThumb({
 }) {
   const [signedUrl, setSignedUrl] = useState<string | null>(att.objectUrl ?? null);
 
-  // Load signed URL for existing DB attachments (not fresh uploads with objectUrl)
-  if (!att.objectUrl && att.file_type.startsWith("image/") && !signedUrl) {
+  // Load signed URL for existing DB attachments (not fresh uploads that already have objectUrl)
+  useEffect(() => {
+    if (att.objectUrl) return; // already have a preview URL
+    if (!att.file_type.startsWith("image/")) return; // not an image
+    let cancelled = false;
     createClient()
       .storage.from(STORAGE_BUCKET)
       .createSignedUrl(att.file_path, 3600)
       .then(({ data }) => {
-        if (data?.signedUrl) setSignedUrl(data.signedUrl);
+        if (!cancelled && data?.signedUrl) setSignedUrl(data.signedUrl);
       });
-  }
+    return () => { cancelled = true; };
+  }, [att.file_path, att.objectUrl, att.file_type]);
 
   const isImage = att.file_type.startsWith("image/");
 

@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Attachment, InspectionWithAnswers } from "@/types";
+import PrintButton from "@/components/ui/PrintButton";
 import {
   filterCheckpoints,
   mergeCheckpointsWithAnswers,
@@ -90,12 +91,7 @@ export default async function ReportPage({ params }: Props) {
         >
           ← Tilbake til tilsyn
         </Link>
-        <button
-          onClick={() => window.print()}
-          className="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-sm font-medium transition"
-        >
-          Skriv ut / PDF
-        </button>
+        <PrintButton />
       </div>
 
       {/* Report */}
