@@ -24,6 +24,9 @@ interface CodeTableRow {
 }
 
 interface GetCodeTableRowsResponse {
+  Successful?: boolean;
+  ErrorMessage?: string;
+  ErrorDetails?: string;
   Rows?: CodeTableRow[];
   TotalCount?: number;
 }
@@ -52,26 +55,54 @@ export async function GET(req: NextRequest) {
 
   const config = toSifClientConfig(settings);
 
-  try {
-    const result = await sifRpcCallWithConfig<
-      { CodeTable: string },
-      GetCodeTableRowsResponse
-    >(config, "SupportService", "GetCodeTableRows", {
-      CodeTable: tableName,
-    });
+  // Some SIF installations require { parameter: {...} } wrapping even for reads.
+  // Try without wrapping first; fall back to wrapped if the result indicates failure.
+  const tableNameStr: string = tableName;
+  async function fetchCodeTable(wrap: boolean): Promise<GetCodeTableRowsResponse> {
+    return sifRpcCallWithConfig<{ CodeTable: string }, GetCodeTableRowsResponse>(
+      config, "SupportService", "GetCodeTableRows",
+      { CodeTable: tableNameStr },
+      undefined, 0, wrap
+    );
+  }
 
-    const rows = (result.Rows ?? []).map((r) => ({
+  function mapRows(result: GetCodeTableRowsResponse) {
+    return (result.Rows ?? []).map((r) => ({
       recno: r.Recno,
       code: r.Code,
       description: r.Description,
       sortOrder: r.SortOrder,
       active: r.Active ?? true,
     }));
+  }
 
-    return NextResponse.json({ ok: true, table: tableName, rows });
+  let firstError: string | null = null;
+
+  // Attempt 1: no wrapping
+  try {
+    const result = await fetchCodeTable(false);
+    if (result.Successful !== false) {
+      return NextResponse.json({ ok: true, table: tableName, rows: mapRows(result) });
+    }
+    firstError = result.ErrorMessage ?? result.ErrorDetails ?? "SIF returnerte Successful:false";
+    console.info("[SIF code-tables] Successful:false without wrapping, retrying wrapped", { tableName, firstError });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[SIF code-tables] Error:", message);
-    return NextResponse.json({ ok: false, error: message }, { status: 502 });
+    firstError = err instanceof Error ? err.message : String(err);
+    console.info("[SIF code-tables] Failed without wrapping, retrying wrapped", { tableName, firstError });
+  }
+
+  // Attempt 2: with { parameter: {...} } wrapping
+  try {
+    const result = await fetchCodeTable(true);
+    if (result.Successful !== false) {
+      return NextResponse.json({ ok: true, table: tableName, rows: mapRows(result) });
+    }
+    const msg = result.ErrorMessage ?? result.ErrorDetails ?? firstError ?? "Ukjent SIF-feil";
+    console.error("[SIF code-tables] Both attempts failed", { tableName, msg });
+    return NextResponse.json({ ok: false, error: msg }, { status: 502 });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[SIF code-tables] Both attempts threw", { tableName, firstError, secondError: msg });
+    return NextResponse.json({ ok: false, error: firstError ?? msg }, { status: 502 });
   }
 }
