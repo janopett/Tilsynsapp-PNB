@@ -108,6 +108,8 @@ export async function POST(req: NextRequest) {
     externalParticipants: (inspection.external_participants ?? []).map((ep) => ({
       id: ep.id,
       name: ep.name,
+      firstName: ep.firstName,
+      lastName: ep.lastName,
       role: ep.role,
       company: ep.company,
       companyRecno: ep.companyRecno,

@@ -311,6 +311,36 @@ export interface SifGetEnterpriseResult {
 }
 
 // ============================================================
+// ContactService - SynchronizeContactPerson
+// ============================================================
+
+export interface SifSynchronizeContactPersonInput {
+  /** Stable external key — SIF upserts on this. Use a deterministic ID (e.g. our UUID per participant). */
+  ExternalId: string;
+  FirstName?: string;
+  MiddleName?: string;
+  LastName?: string;
+  /**
+   * Enterprise identifier for the person's employer in 360°.
+   * Use "recno:XXXX" when companyRecno is known, or a plain name string as fallback.
+   */
+  Enterprise?: string;
+  PhoneNumber?: string;
+  MobilePhone?: string;
+  Email?: string;
+  Title?: string;
+  Active?: boolean;
+}
+
+export interface SifSynchronizeContactPersonResult {
+  Successful: boolean;
+  /** Recno of the created or updated contact person in PNB */
+  Recno?: number;
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
 // SupportService
 // ============================================================
 

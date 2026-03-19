@@ -19,6 +19,8 @@ import type {
   SifGetEnterpriseQuery,
   SifGetEnterpriseResult,
   SifEnterpriseResult,
+  SifSynchronizeContactPersonInput,
+  SifSynchronizeContactPersonResult,
 } from "./types";
 import type { SifContact } from "@/types";
 
@@ -158,6 +160,53 @@ export async function searchEnterprises(query: string): Promise<SifEnterpriseRes
     }
   }
   return enterprises;
+}
+
+// ── SynchronizeContactPerson ───────────────────────────────────────────────────
+
+/**
+ * Create or update a contact person in PNB via ContactService/SynchronizeContactPerson.
+ * SIF upserts on ExternalId: creates the person if new, updates if already present.
+ *
+ * Enterprise should be:
+ *   - "recno:XXXX" when we have the PNB enterprise recno (from GetEnterprises search)
+ *   - Plain company name string as fallback
+ *
+ * Returns the PNB Recno of the created/updated contact person.
+ * This Recno can then be used as a copy recipient (kopimottaker) on CreateDocument.
+ */
+export async function synchronizeContactPerson(input: {
+  externalId: string;
+  firstName?: string;
+  lastName?: string;
+  enterprise?: string;
+  /** Maps to the Title field in 360° — use the person's role (e.g. "Brannvernleder") */
+  title?: string;
+}): Promise<number> {
+  const payload: SifSynchronizeContactPersonInput = {
+    ExternalId: input.externalId,
+    FirstName: input.firstName || undefined,
+    LastName: input.lastName || undefined,
+    Enterprise: input.enterprise || undefined,
+    Title: input.title || undefined,
+    Active: true,
+  };
+
+  const result = await sifRpcCall<SifSynchronizeContactPersonInput, SifSynchronizeContactPersonResult>(
+    "ContactService",
+    "SynchronizeContactPerson",
+    payload,
+    undefined,
+    true // write operation: wrap in {"parameter": ...}
+  );
+
+  if (!result.Successful || result.Recno === undefined) {
+    throw new Error(
+      result.ErrorMessage ?? result.ErrorDetails ?? "SynchronizeContactPerson returnerte ingen Recno"
+    );
+  }
+
+  return result.Recno;
 }
 
 function mapCaseContacts(raw: SifCaseContact[]): SifContact[] {
