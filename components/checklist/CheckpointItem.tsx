@@ -293,7 +293,7 @@ const CheckpointItem = memo(function CheckpointItem({
                   : "border-gray-200 bg-white text-gray-600 hover:border-gray-300"
               }`}
             >
-              {st === "ok" ? "✅ OK" : st === "deviation" ? "⚠️ Avvik" : "— Ikke sjekket"}
+              {st === "ok" ? "✅ OK" : st === "deviation" ? "⚠️ Avvik" : "Ikke sjekket"}
             </button>
           ))}
         </div>
