@@ -276,7 +276,7 @@ export interface SifDispatchDocumentsResult {
 }
 
 // ============================================================
-// ContactService - GetEnterprise
+// ContactService - GetEnterprises
 // ============================================================
 
 export interface SifGetEnterpriseQuery {
