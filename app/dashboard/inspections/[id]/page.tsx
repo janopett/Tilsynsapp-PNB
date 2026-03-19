@@ -523,6 +523,19 @@ export default function InspectionPage() {
     setSavingId(null);
   }, [id, inspection]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Must be before any conditional returns (rules of hooks)
+  const attachmentsByCheckpoint = useMemo(() => {
+    const map = new Map<string, Attachment[]>();
+    for (const att of inspection?.attachments ?? []) {
+      if (att.checkpoint_definition_id) {
+        const list = map.get(att.checkpoint_definition_id) ?? [];
+        list.push(att);
+        map.set(att.checkpoint_definition_id, list);
+      }
+    }
+    return map;
+  }, [inspection?.attachments]);
+
   if (loading || !inspection) {
     return (
       <div className="flex justify-center items-center h-64 text-gray-400">
@@ -547,19 +560,6 @@ export default function InspectionPage() {
 
   const participants: SifContact[] = inspection.participants ?? [];
   const estates: SifEstate[] = inspection.estates ?? [];
-
-  // Group attachments by checkpoint_definition_id for efficient lookup
-  const attachmentsByCheckpoint = useMemo(() => {
-    const map = new Map<string, Attachment[]>();
-    for (const att of inspection.attachments ?? []) {
-      if (att.checkpoint_definition_id) {
-        const list = map.get(att.checkpoint_definition_id) ?? [];
-        list.push(att);
-        map.set(att.checkpoint_definition_id, list);
-      }
-    }
-    return map;
-  }, [inspection.attachments]);
 
   return (
     <div>
