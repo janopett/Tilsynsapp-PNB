@@ -13,8 +13,9 @@ import type {
   SifGetCasesQuery,
   SifGetCasesResult,
   SifCaseResult,
+  SifCaseStage as RawSifCaseStage,
 } from "./types";
-import type { SifCase } from "@/types";
+import type { SifCase, SifCaseStage } from "@/types";
 
 export interface FindCaseInput {
   caseNumber?: string;
@@ -48,6 +49,7 @@ export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
     IncludeReferringCases: true,
     IncludeCaseContacts: true,
     IncludeCaseEstates: true,
+    IncludeStages: true,
   };
 
   if (caseNumber) {
@@ -132,6 +134,19 @@ export async function searchCasesInSif(query: string, maxResults = 10): Promise<
   return results.slice(0, maxResults);
 }
 
+function mapStage(s: RawSifCaseStage): SifCaseStage {
+  return {
+    recno: s.Recno,
+    title: s.Title,
+    startDate: s.StartDate,
+    deadlineDate: s.DeadlineDate,
+    notes: s.Notes,
+    stageType: s.StageType ? { code: s.StageType.Code, description: s.StageType.Description } : undefined,
+    stageStatus: s.StageStatus ? { code: s.StageStatus.Code, description: s.StageStatus.Description } : undefined,
+    remainingDays: s.RemainingDays,
+  };
+}
+
 function mapToSifCase(raw: SifCaseResult, baseUrl = ""): SifCase {
   const rawUrl = raw.URL ?? "";
   const url = rawUrl.startsWith("/") ? `${baseUrl}${rawUrl}` : rawUrl;
@@ -142,6 +157,7 @@ function mapToSifCase(raw: SifCaseResult, baseUrl = ""): SifCase {
     url: url || undefined,
     uid: raw.UID,
     uidOrigin: raw.UIDOrigin,
+    stages: raw.Stages?.map(mapStage),
     raw,
   };
 }
