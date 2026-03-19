@@ -116,6 +116,7 @@ const CheckpointItem = memo(function CheckpointItem({
   type LocalAttachment = Attachment & { objectUrl?: string };
   const [attachments, setAttachments] = useState<LocalAttachment[]>(initialAttachments);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -164,18 +165,20 @@ const CheckpointItem = memo(function CheckpointItem({
     e.target.value = "";
 
     setUploading(true);
+    setUploadError(null);
     const supabase = createClient();
 
     const ext = file.name.split(".").pop() ?? "bin";
     const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const filePath = `${inspectionId}/${definition.id}/${safeName}`;
 
-    const { error: uploadError } = await supabase.storage
+    const { error: storageError } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(filePath, file, { contentType: file.type, upsert: false });
 
-    if (uploadError) {
-      console.error("[CheckpointItem] Upload failed", uploadError);
+    if (storageError) {
+      console.error("[CheckpointItem] Upload failed", storageError);
+      setUploadError(`Opplasting feilet: ${storageError.message}`);
       setUploading(false);
       return;
     }
@@ -196,6 +199,9 @@ const CheckpointItem = memo(function CheckpointItem({
     setUploading(false);
     if (dbError || !data) {
       console.error("[CheckpointItem] DB insert failed", dbError);
+      setUploadError(`Kunne ikke lagre vedlegg: ${dbError?.message ?? "ukjent feil"}`);
+      // Clean up the uploaded file since DB insert failed
+      await supabase.storage.from(STORAGE_BUCKET).remove([filePath]);
       return;
     }
 
@@ -380,6 +386,13 @@ const CheckpointItem = memo(function CheckpointItem({
             {uploading ? "⏳ Laster opp…" : "📎 Legg ved fil"}
           </button>
         </div>
+
+        {/* Upload error */}
+        {uploadError && (
+          <p className="mt-2 text-xs text-red-600 bg-red-50 rounded-lg px-3 py-1.5">
+            ⚠️ {uploadError}
+          </p>
+        )}
 
         {/* Attachment thumbnails */}
         {attachments.length > 0 && (
