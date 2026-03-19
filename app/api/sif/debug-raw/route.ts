@@ -58,6 +58,8 @@ export async function GET(req: NextRequest) {
       raw = await sifRpcCall("CaseService", "GetCases", {
         CaseNumber: caseNumber,
         MaxResults: 1,
+        IncludeReferringCases: true,
+        IncludeCaseContacts: true,
       });
     } else {
       return NextResponse.json({ error: "service must be 'estates', 'contacts', or 'cases'" }, { status: 400 });

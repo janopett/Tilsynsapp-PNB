@@ -36,6 +36,8 @@ export interface SifGetCasesQuery {
   UIDOrigin?: string;
   Title?: string;
   MaxResults?: number;
+  IncludeReferringCases?: boolean;
+  IncludeCaseContacts?: boolean;
   AdditionalFields?: SifAdditionalField[];
 }
 

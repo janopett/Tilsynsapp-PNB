@@ -80,7 +80,12 @@ export async function getCaseContacts(
   if (!caseNumber) return [];
 
   try {
-    const query: SifGetCasesQuery = { CaseNumber: caseNumber, MaxResults: 1 };
+    const query: SifGetCasesQuery = {
+      CaseNumber: caseNumber,
+      MaxResults: 1,
+      IncludeReferringCases: true,
+      IncludeCaseContacts: true,
+    };
     const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
       "CaseService",
       "GetCases",
