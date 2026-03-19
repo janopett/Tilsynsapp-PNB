@@ -54,22 +54,13 @@ export async function GET(req: NextRequest) {
       }
       raw = results;
     } else if (service === "cases") {
-      // Raw GetCase (singular) with include-flags — shows full case incl. contacts
-      let caseRecno: number | undefined;
-      try {
-        const sifCase = await findCaseInSif({ caseNumber });
-        caseRecno = sifCase.recno;
-      } catch { /* ignore */ }
-
-      if (caseRecno) {
-        raw = await sifRpcCall("CaseService", "GetCase", {
-          CaseRecno: caseRecno,
-          IncludeReferringCases: true,
-          IncludeCaseContacts: true,
-        });
-      } else {
-        raw = { error: "Could not resolve CaseRecno for GetCase call" };
-      }
+      // Raw GetCases with include-flags — shows Contacts and ReferringCases
+      raw = await sifRpcCall("CaseService", "GetCases", {
+        CaseNumber: caseNumber,
+        MaxResults: 1,
+        IncludeReferringCases: true,
+        IncludeCaseContacts: true,
+      });
     } else {
       return NextResponse.json({ error: "service must be 'estates', 'contacts', or 'cases'" }, { status: 400 });
     }
