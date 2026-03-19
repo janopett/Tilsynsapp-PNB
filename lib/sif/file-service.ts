@@ -84,21 +84,13 @@ export async function uploadFileToSif(
 }
 
 /**
- * Upload multiple files and return all references.
- * On partial failure, throws with clear context.
+ * Upload multiple files in parallel and return all references.
+ * Order is preserved (matches input array order).
  */
 export async function uploadFilesToSif(
   files: UploadFileInput[]
 ): Promise<SifUploadedFileReference[]> {
-  const results: SifUploadedFileReference[] = [];
-
-  for (const file of files) {
-    // Sequential upload to avoid rate limiting
-    const ref = await uploadFileToSif(file);
-    results.push(ref);
-  }
-
-  return results;
+  return Promise.all(files.map((file) => uploadFileToSif(file)));
 }
 
 /**

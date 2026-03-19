@@ -61,9 +61,6 @@ export async function archiveInspectionToSif(
 ): Promise<Omit<InspectionArchival, "id" | "created_at" | "updated_at">> {
   const correlationId = uuidv4();
 
-  // Load document mapping from DB settings (admin-configurable)
-  const settings = await loadSifSettingsWithEnvFallback();
-
   console.info("[SIF] Starting archival", {
     correlationId,
     inspectionId: ctx.inspectionId,
@@ -79,13 +76,16 @@ export async function archiveInspectionToSif(
   };
 
   try {
-    // Step 1: Find case
-    const sifCase = await findCaseInSif({
-      caseNumber: ctx.caseNumber,
-      externalId: ctx.externalId,
-      uid: ctx.uid,
-      correlationId,
-    });
+    // Step 1: Load settings + find case in parallel (independent calls)
+    const [settings, sifCase] = await Promise.all([
+      loadSifSettingsWithEnvFallback(),
+      findCaseInSif({
+        caseNumber: ctx.caseNumber,
+        externalId: ctx.externalId,
+        uid: ctx.uid,
+        correlationId,
+      }),
+    ]);
 
     // Step 2 + 3: Upload files
     const filesToUpload: Array<{

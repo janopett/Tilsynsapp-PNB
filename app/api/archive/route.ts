@@ -115,25 +115,19 @@ export async function POST(req: NextRequest) {
     additionalFields,
   });
 
-  // Update archival record and (if successful) inspection status in parallel
+  // Update archival record and (if successful) inspection status in parallel.
+  // Use .select().single() on the update to avoid a separate re-fetch.
   const archivalId = archival?.id;
-  await Promise.all([
+  const [archivalUpdateRes] = await Promise.all([
     archivalId
-      ? serviceClient.from("inspection_archivals").update(result).eq("id", archivalId)
-      : serviceClient.from("inspection_archivals").insert(result),
+      ? serviceClient.from("inspection_archivals").update(result).eq("id", archivalId).select().single()
+      : serviceClient.from("inspection_archivals").insert(result).select().single(),
     result.status === "success"
       ? supabase.from("inspections").update({ status: "archived" }).eq("id", inspectionId)
       : Promise.resolve(),
   ]);
 
-  // Fetch updated archival record
-  const { data: finalArchival } = await serviceClient
-    .from("inspection_archivals")
-    .select("*")
-    .eq("inspection_id", inspectionId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .single();
+  const finalArchival = archivalUpdateRes.data;
 
   const response: ArchiveInspectionResponse = {
     success: result.status === "success",
