@@ -41,6 +41,10 @@ export interface ArchivalContext {
     fileData: Buffer;
     mimeType: string;
   }>;
+  /** Recno of the søker contact in 360°. Set as mottaker (roleApplicantRecipient) on the document. */
+  applicantRecno?: number;
+  /** Deltakere on the inspection. Set as kopimottakere (roleCopyRecipient), deduplicating søker. */
+  participants?: Array<{ recno: number; name: string }>;
   additionalFields?: Array<{ name: string; value: string }>;
 }
 
@@ -163,7 +167,22 @@ export async function archiveInspectionToSif(
 
     const allAdditionalFields = ctx.additionalFields ?? [];
 
-    // Step 5: Create document
+    // Step 5: Build document contacts
+    // – søker → mottaker (roleApplicantRecipient)
+    // – deltakere → kopimottakere (roleCopyRecipient), excluding søker to avoid duplicates
+    const docContacts: Array<{ role: string; recno: number }> = [];
+    if (ctx.applicantRecno) {
+      docContacts.push({
+        role: settings.roleApplicantRecipient,
+        recno: ctx.applicantRecno,
+      });
+    }
+    for (const p of ctx.participants ?? []) {
+      if (p.recno === ctx.applicantRecno) continue; // already added as mottaker
+      docContacts.push({ role: settings.roleCopyRecipient, recno: p.recno });
+    }
+
+    // Step 6: Create document
     const sifDocument = await createInspectionDocumentInSif({
       caseNumber: sifCase.caseNumber,
       title,
@@ -175,6 +194,7 @@ export async function archiveInspectionToSif(
           ? settings.responsiblePersonRecno
           : undefined,
       files: docFiles,
+      contacts: docContacts.length > 0 ? docContacts : undefined,
       additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
       documentDate: ctx.inspectionDate,
       accessCode: settings.docAccessCode || undefined,

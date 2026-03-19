@@ -35,6 +35,7 @@ export default function NewInspectionPage() {
   // Contacts from case (for participants + ansvarlig)
   const [caseContacts, setCaseContacts] = useState<SifContact[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
+  const [applicantRecno, setApplicantRecno] = useState<number | null>(null);
 
   // Participants
   const [participants, setParticipants] = useState<SifContact[]>([]);
@@ -221,6 +222,7 @@ export default function NewInspectionPage() {
         snr: snr || undefined,
         fnr: fnr || undefined,
         applicant_name: applicantName || undefined,
+        applicant_recno: applicantRecno ?? undefined,
         inspector_name: inspectorName || undefined,
         inspection_date: inspectionDate,
         notes: notes || undefined,
@@ -450,7 +452,12 @@ export default function NewInspectionPage() {
               {caseContacts.length > 0 ? (
                 <select
                   value={applicantName}
-                  onChange={(e) => setApplicantName(e.target.value)}
+                  onChange={(e) => {
+                    const name = e.target.value;
+                    setApplicantName(name);
+                    const contact = caseContacts.find((c) => c.name === name);
+                    setApplicantRecno(contact ? contact.recno : null);
+                  }}
                   className="input"
                 >
                   <option value="">{t.newInspection.selectFromCaseOrType}</option>

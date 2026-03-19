@@ -79,6 +79,7 @@ export async function PUT(req: NextRequest) {
     ),
     role_municipality_sender: String(body.roleMunicipalitySender ?? "AV"),
     role_applicant_recipient: String(body.roleApplicantRecipient ?? "EM"),
+    role_copy_recipient: String(body.roleCopyRecipient ?? "KM"),
     responsible_person_recno: Number(body.responsiblePersonRecno ?? 0),
     doc_access_code: String(body.docAccessCode ?? ""),
   };

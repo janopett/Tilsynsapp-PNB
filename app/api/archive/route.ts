@@ -99,6 +99,11 @@ export async function POST(req: NextRequest) {
     caseTitle: inspection.case_title ?? undefined,
     inspectorName: inspection.inspector_name ?? undefined,
     applicantName: inspection.applicant_name ?? undefined,
+    applicantRecno: inspection.applicant_recno ?? undefined,
+    participants: (inspection.participants ?? []).map((p) => ({
+      recno: p.recno,
+      name: p.name,
+    })),
     gnr: inspection.gnr ?? undefined,
     bnr: inspection.bnr ?? undefined,
     measureTypeName,
