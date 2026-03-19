@@ -54,6 +54,7 @@ interface Checkpoint {
   required_tags: string[];
   severity: string;
   legal_reference: string | null;
+  legal_reference_url: string | null;
   active: boolean;
   sort_order: number;
 }
@@ -71,6 +72,7 @@ const EMPTY_DRAFT: DraftCheckpoint = {
   required_tags: [],
   severity: "info",
   legal_reference: "",
+  legal_reference_url: "",
 };
 
 // ── CheckpointForm ─────────────────────────────────────────────────────────────
@@ -199,6 +201,18 @@ function CheckpointForm({
           placeholder="F.eks. pbl § 21-4"
           className="input w-full text-sm"
         />
+        <div className="mt-1.5">
+          <input
+            type="url"
+            value={draft.legal_reference_url ?? ""}
+            onChange={(e) => setDraft((d) => ({ ...d, legal_reference_url: e.target.value }))}
+            placeholder="Hyperlenke (valgfritt) — f.eks. https://lovdata.no/…"
+            className="input w-full text-sm"
+          />
+          <p className="text-xs text-gray-400 mt-0.5">
+            Brukes som lenke på lovhenvisningen. Overstyrer auto-generert Lovdata-lenke.
+          </p>
+        </div>
       </div>
 
       {/* Applies to — measure types */}
@@ -312,6 +326,7 @@ function CheckpointRow({
         required_tags: draft.required_tags,
         severity: draft.severity,
         legal_reference: draft.legal_reference || null,
+        legal_reference_url: draft.legal_reference_url || null,
       }),
     });
     const json = await res.json();
@@ -390,6 +405,7 @@ function CheckpointRow({
               required_tags: checkpoint.required_tags,
               severity: checkpoint.severity,
               legal_reference: checkpoint.legal_reference ?? "",
+              legal_reference_url: checkpoint.legal_reference_url ?? "",
             }}
             onSave={handleSave}
             onCancel={() => setExpanded(false)}
@@ -432,6 +448,7 @@ export default function CheckpointsAdminPage() {
         required_tags: draft.required_tags,
         severity: draft.severity,
         legal_reference: draft.legal_reference || null,
+        legal_reference_url: draft.legal_reference_url || null,
       }),
     });
     const json = await res.json();

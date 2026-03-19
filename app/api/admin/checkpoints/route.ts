@@ -57,6 +57,7 @@ export async function POST(req: NextRequest) {
       required_tags: body.required_tags ?? [],
       severity: body.severity ?? "info",
       legal_reference: body.legal_reference?.trim() || null,
+      legal_reference_url: body.legal_reference_url?.trim() || null,
       active: true,
       sort_order: nextOrder,
     })
@@ -80,7 +81,7 @@ export async function PATCH(req: NextRequest) {
   const allowed: Record<string, unknown> = {};
   const allowedFields = [
     "title", "category", "description", "applies_to",
-    "required_tags", "severity", "legal_reference", "active", "sort_order",
+    "required_tags", "severity", "legal_reference", "legal_reference_url", "active", "sort_order",
   ];
   for (const f of allowedFields) {
     if (f in fields) allowed[f] = fields[f];
