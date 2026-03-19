@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -24,6 +24,8 @@ import {
   CATEGORY_ORDER,
   calculateSummary,
 } from "@/lib/checklist/filter-engine";
+import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
+import type { CheckpointDefinition } from "@/types";
 import CheckpointItem from "@/components/checklist/CheckpointItem";
 import ArchivePanel from "@/components/archive/ArchivePanel";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -629,6 +631,8 @@ export default function InspectionPage() {
   const [activeCategory, setActiveCategory] = useState<CheckpointCategory | "all">("all");
   const [caseContacts, setCaseContacts] = useState<SifContact[]>([]);
   const [showEdit, setShowEdit] = useState(false);
+  const [checkpointDefs, setCheckpointDefs] = useState<CheckpointDefinition[]>(CHECKPOINT_DEFINITIONS);
+  const checkpointsFetched = useRef(false);
 
   const fetchInspection = useCallback(async () => {
     const supabase = createClient();
@@ -676,6 +680,23 @@ export default function InspectionPage() {
   useEffect(() => {
     fetchInspection();
   }, [fetchInspection]);
+
+  // Fetch checkpoint definitions from DB (falls back to hardcoded if unavailable)
+  useEffect(() => {
+    if (checkpointsFetched.current) return;
+    checkpointsFetched.current = true;
+    fetch("/api/checkpoints", {
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.ok && d.checkpoints?.length > 0) {
+          setCheckpointDefs(d.checkpoints);
+        }
+      })
+      .catch(() => { /* keep hardcoded fallback */ });
+  }, []);
 
   const updateAnswer = useCallback(async (
     checkpointId: string,
@@ -768,7 +789,8 @@ export default function InspectionPage() {
 
   const relevantCheckpoints = filterCheckpoints(
     inspection.measure_type_id,
-    inspection.selected_tags
+    inspection.selected_tags,
+    checkpointDefs
   );
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const summary = calculateSummary(merged);
