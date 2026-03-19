@@ -35,6 +35,8 @@ export interface SifSettings {
   responsiblePersonRecno: number;
   // Access code (tilgangskode). Empty = use 360° default (no explicit code).
   docAccessCode: string;
+  // Automatically dispatch document to recipients after archiving.
+  autoDispatch: boolean;
 }
 
 /** Row shape returned by Supabase for sif_settings */
@@ -60,6 +62,7 @@ interface SifSettingsRow {
   role_copy_recipient: string;
   responsible_person_recno: number;
   doc_access_code: string;
+  auto_dispatch: boolean;
 }
 
 function rowToSettings(row: SifSettingsRow): SifSettings {
@@ -84,6 +87,7 @@ function rowToSettings(row: SifSettingsRow): SifSettings {
     roleCopyRecipient: row.role_copy_recipient ?? "KM",
     responsiblePersonRecno: row.responsible_person_recno,
     docAccessCode: row.doc_access_code ?? "",
+    autoDispatch: row.auto_dispatch ?? false,
   };
 }
 
@@ -155,6 +159,7 @@ export async function loadSifSettingsWithEnvFallback(): Promise<SifSettings> {
     responsiblePersonRecno:
       db?.responsiblePersonRecno ?? sifMapping.defaults.responsiblePersonRecno,
     docAccessCode: db?.docAccessCode ?? "",
+    autoDispatch: db?.autoDispatch ?? false,
   };
 }
 

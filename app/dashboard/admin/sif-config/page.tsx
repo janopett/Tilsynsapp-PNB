@@ -58,6 +58,7 @@ interface SifSettingsForm {
   // Defaults
   responsiblePersonRecno: number;
   docAccessCode: string;
+  autoDispatch: boolean;
   // Meta (from server)
   hasAuthkey?: boolean;
   hasOauthClientSecret?: boolean;
@@ -91,6 +92,7 @@ const DEFAULT_FORM: SifSettingsForm = {
   roleCopyRecipient: "KM",
   responsiblePersonRecno: 0,
   docAccessCode: "",
+  autoDispatch: false,
 };
 
 type Tab = "connection" | "mapping" | "test";
@@ -740,6 +742,22 @@ export default function SifConfigPage() {
                   placeholder="F.eks. U (unntatt offentlighet) – la stå tom for standard"
                   className="input"
                 />
+              </Field>
+              <Field
+                label="Send dokument automatisk ved arkivering"
+                hint="Kaller DispatchDocuments rett etter at dokumentet er opprettet i 360°. Sender tilsynsrapporten til alle mottakere via deres foretrukne forsendelseskanal. Merk: svaret bekrefter kun at forsendelsen er startet – sjekk status i 360° for å bekrefte levering."
+              >
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={form.autoDispatch}
+                    onChange={(e) => set("autoDispatch", e.target.checked)}
+                    className="w-4 h-4 accent-brand-600"
+                  />
+                  <span className="text-sm text-gray-700">
+                    Aktiver automatisk forsendelse
+                  </span>
+                </label>
               </Field>
             </Section>
           </div>

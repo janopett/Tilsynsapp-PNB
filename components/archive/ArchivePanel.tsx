@@ -27,7 +27,7 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
           status: existingArchival.status,
           message:
             existingArchival.status === "success"
-              ? `Arkivert som dokument ${existingArchival.sif_document_number ?? existingArchival.sif_document_recno}`
+              ? `Arkivert som dokument ${existingArchival.sif_document_number ?? existingArchival.sif_document_recno}${existingArchival.dispatched ? " · Forsendelse startet" : existingArchival.dispatched === false ? ` · Forsendelse feilet: ${existingArchival.dispatch_error ?? "ukjent feil"}` : ""}`
               : existingArchival.error_message ?? "Feil ved arkivering",
           url: existingArchival.sif_document_url ?? undefined,
           documentNumber: existingArchival.sif_document_number ?? undefined,
@@ -57,11 +57,17 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
     const data = await res.json();
 
     if (data.success && data.archival) {
+      const a = data.archival;
+      const dispatchNote = a.dispatched
+        ? " · Forsendelse startet"
+        : a.dispatched === false
+        ? ` · Forsendelse feilet: ${a.dispatch_error ?? "ukjent feil"}`
+        : "";
       setResult({
         status: "success",
-        message: `Arkivert som dokument ${data.archival.sif_document_number ?? data.archival.sif_document_recno ?? "(ukjent)"}`,
-        url: data.archival.sif_document_url,
-        documentNumber: data.archival.sif_document_number,
+        message: `Arkivert som dokument ${a.sif_document_number ?? a.sif_document_recno ?? "(ukjent)"}${dispatchNote}`,
+        url: a.sif_document_url,
+        documentNumber: a.sif_document_number,
       });
       onArchived();
     } else {
@@ -88,7 +94,7 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
             <span className="text-xl">{result.status === "success" ? "✅" : "❌"}</span>
             <div>
               <p className={`font-semibold text-sm ${result.status === "success" ? "text-green-800" : "text-red-800"}`}>
-                {result.status === "success" ? "Arkivert i Plan & Build" : "Arkivering feilet"}
+                {result.status === "success" ? "Sendt og arkivert i Plan & Build" : "Arkivering feilet"}
               </p>
               <p className={`text-sm ${result.status === "success" ? "text-green-700" : "text-red-700"}`}>
                 {result.message}
@@ -109,9 +115,9 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
       )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-1">Arkiver i Plan & Build</h2>
+        <h2 className="font-semibold text-gray-900 mb-1">Send og arkiver i Plan & Build</h2>
         <p className="text-sm text-gray-500 mb-4">
-          Generer tilsynsrapport (PDF) og arkiver den på tilhørende sak i Plan & Build / Public 360.
+          Generer tilsynsrapport (PDF), arkiver den på saken i Plan & Build og send den til mottakerne.
         </p>
 
         <div className="space-y-3">
@@ -168,21 +174,22 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
           {loading ? (
             <>
               <span className="animate-spin">⏳</span>
-              Arkiverer...
+              Arkiverer og sender...
             </>
           ) : (
-            <>📁 Arkiver i Plan &amp; Build</>
+            <>📨 Send og arkiver i Plan &amp; Build</>
           )}
         </button>
       </div>
 
       {/* Info boxes */}
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-700">
-        <p className="font-semibold mb-1">Hva skjer ved arkivering?</p>
+        <p className="font-semibold mb-1">Hva skjer?</p>
         <ol className="list-decimal list-inside space-y-0.5">
           <li>Tilsynsrapport genereres som PDF</li>
           <li>Eventuelle bilder/vedlegg lastes opp til SIF</li>
           <li>Dokument opprettes på saken i Plan & Build</li>
+          <li>Dokumentet sendes til mottakerne (hvis aktivert i admin)</li>
           <li>Dokumentreferansen lagres i appen</li>
         </ol>
       </div>

@@ -249,6 +249,33 @@ export interface SifCreateDocumentResult {
 }
 
 // ============================================================
+// DocumentService - DispatchDocuments
+// ============================================================
+
+export interface SifDispatchDocumentItem {
+  /** Use either Recno OR DocumentNumber */
+  Recno?: number;
+  DocumentNumber?: string;
+}
+
+export interface SifDispatchDocumentsInput {
+  Documents: SifDispatchDocumentItem[];
+}
+
+export interface SifDispatchDocumentsResult {
+  Successful: boolean;
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+  DocumentResult?: Array<{
+    Successful: boolean;
+    Recno?: number;
+    DocumentNumber?: string;
+    ErrorMessage?: string;
+    ErrorDetails?: string;
+  }>;
+}
+
+// ============================================================
 // SupportService
 // ============================================================
 
