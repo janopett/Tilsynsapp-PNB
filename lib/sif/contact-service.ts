@@ -355,8 +355,13 @@ function contactEnterpriseMatches(
 }
 
 function parseEnterpriseRecno(enterprise: string): number | null {
+  // "recno:12345" format (used by production flow)
   const m = enterprise.match(/^recno:(\d+)$/i);
-  return m ? parseInt(m[1], 10) : null;
+  if (m) return parseInt(m[1], 10);
+  // Bare integer (e.g. typed directly in the admin test page)
+  const bare = enterprise.trim();
+  if (/^\d+$/.test(bare)) return parseInt(bare, 10);
+  return null;
 }
 
 function deriveEnterpriseKey(enterprise?: string): string {
