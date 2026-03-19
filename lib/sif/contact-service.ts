@@ -192,20 +192,36 @@ export async function synchronizeContactPerson(input: {
   title?: string;
 }): Promise<number> {
   // Pre-check: look up existing contact by ExternalId.
-  // Gracefully skipped if GetContactPersons is unavailable on this SIF instance.
+  // ExternalId is treated as the authoritative key — if we find a match we trust it's
+  // the same person regardless of how PNB may have reformatted the name.
   const existing = await lookupContactPersonByExternalId(input.externalId);
 
   if (existing) {
-    const namesMatch = contactNamesMatch(existing, input.firstName, input.lastName);
     const sameEnterprise = contactEnterpriseMatches(existing, input.enterprise);
+    const inputNameFull = [input.firstName, input.lastName].filter(Boolean).join(" ").trim().toLowerCase();
+    const storedNameFull = (
+      existing.Name ??
+      [existing.FirstName, existing.LastName].filter(Boolean).join(" ")
+    ).trim().toLowerCase();
 
-    if (namesMatch && sameEnterprise) {
-      // Same person, same employer: update Title if it differs, then return existing Recno.
+    console.info("[SIF] GetContactPersons hit", {
+      externalId: input.externalId,
+      storedRecno: existing.Recno,
+      storedName: storedNameFull,
+      inputName: inputNameFull,
+      storedEnterprise: existing.Enterprise,
+      storedEnterpriseRecno: existing.EnterpriseRecno,
+      inputEnterprise: input.enterprise,
+      sameEnterprise,
+    });
+
+    if (sameEnterprise) {
+      // Same person, same employer: update Title if it differs, return existing Recno.
       if (input.title && existing.Title !== input.title) {
         await callSynchronize({
           externalId: input.externalId,
-          // Prefer the stored names; fall back to our input (confirmed to match case-insensitively).
-          // Ensures PNB identifies this as an update, not a new person.
+          // Re-send name fields so PNB recognises this as an update, not a new record.
+          // Prefer stored names to stay consistent with what PNB already has.
           firstName: existing.FirstName ?? input.firstName,
           lastName: existing.LastName ?? input.lastName,
           enterprise: input.enterprise,
@@ -215,15 +231,18 @@ export async function synchronizeContactPerson(input: {
       return existing.Recno;
     }
 
-    if (namesMatch && !sameEnterprise) {
-      // Same person, changed employer → create a new contact for the new employer.
-      // Use an enterprise-scoped ExternalId to keep old and new employer records separate.
-      const scopedId = `${input.externalId}:e:${deriveEnterpriseKey(input.enterprise)}`;
-      return callSynchronize({ ...input, externalId: scopedId });
-    }
+    // Same ExternalId but different employer → person changed jobs.
+    // Create a new contact for the new employer using an enterprise-scoped ExternalId.
+    const scopedId = `${input.externalId}:e:${deriveEnterpriseKey(input.enterprise)}`;
+    console.info("[SIF] Enterprise changed — creating new contact with scoped ExternalId", {
+      originalId: input.externalId,
+      scopedId,
+      inputEnterprise: input.enterprise,
+    });
+    return callSynchronize({ ...input, externalId: scopedId });
   }
 
-  // Not found (or name mismatch): create / update via SynchronizeContactPerson.
+  // Not found: create new contact.
   return callSynchronize(input);
 }
 
@@ -239,6 +258,7 @@ async function lookupContactPersonByExternalId(
       undefined,
       true // GetContactPersons requires {"parameter": ...} wrapper per SIF API schema
     );
+    console.info("[SIF] GetContactPersons raw result", { externalId, result });
     return result.Successful && result.ContactPersons?.length ? result.ContactPersons[0] : null;
   } catch (err) {
     console.warn("[SIF] GetContactPersons lookup failed (non-fatal)", {
@@ -247,23 +267,6 @@ async function lookupContactPersonByExternalId(
     });
     return null; // Fall through to SynchronizeContactPerson
   }
-}
-
-/** True if the stored contact's name matches firstName + lastName (case-insensitive). */
-function contactNamesMatch(
-  existing: SifContactPersonResult,
-  firstName?: string,
-  lastName?: string
-): boolean {
-  const normalize = (s?: string) => (s ?? "").trim().toLowerCase();
-  const inputFull = [firstName, lastName].filter(Boolean).map(normalize).join(" ");
-  if (!inputFull) return true; // no name supplied → can't distinguish → treat as match
-  // Use Name (full name) if present, otherwise combine FirstName + LastName
-  const storedFull =
-    existing.Name
-      ? normalize(existing.Name)
-      : [existing.FirstName, existing.LastName].filter(Boolean).map(normalize).join(" ");
-  return storedFull === inputFull;
 }
 
 /**

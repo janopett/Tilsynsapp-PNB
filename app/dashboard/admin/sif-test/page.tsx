@@ -80,6 +80,11 @@ export default function SifTestPage() {
   const [syncResult, setSyncResult] = useState<SyncContactResult | null>(null);
   const [syncLoading, setSyncLoading] = useState(false);
 
+  // GetContactPersons lookup
+  const [lookupExternalId, setLookupExternalId] = useState("");
+  const [lookupResult, setLookupResult] = useState<RawDebugResult | null>(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
+
   async function syncContact(e: React.FormEvent) {
     e.preventDefault();
     if (!syncFirstName.trim() && !syncLastName.trim()) return;
@@ -102,6 +107,19 @@ export default function SifTestPage() {
     const data = await res.json();
     setSyncResult(data);
     setSyncLoading(false);
+  }
+
+  async function lookupContact(e: React.FormEvent) {
+    e.preventDefault();
+    if (!lookupExternalId.trim()) return;
+    setLookupLoading(true);
+    setLookupResult(null);
+    const res = await authFetch(
+      `/api/sif/sync-contact-person?externalId=${encodeURIComponent(lookupExternalId.trim())}`
+    );
+    const data = await res.json();
+    setLookupResult(data);
+    setLookupLoading(false);
   }
 
   async function testConnection() {
@@ -322,6 +340,39 @@ export default function SifTestPage() {
               </div>
             )}
           </div>
+        )}
+      </div>
+
+      {/* GetContactPersons lookup */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+        <h2 className="text-base font-semibold mb-1">Debug: GetContactPersons</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Slår opp råsvaret fra{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">ContactService/GetContactPersons</code>{" "}
+          for et gitt ExternalId. Bruk dette for å verifisere at oppslaget fungerer og for å se
+          nøyaktig hvilke feltnavn og verdier PNB returnerer (Name, FirstName, LastName, Enterprise, osv.).
+        </p>
+        <form onSubmit={lookupContact} className="flex gap-3 mb-4">
+          <input
+            type="text"
+            value={lookupExternalId}
+            onChange={(e) => setLookupExternalId(e.target.value)}
+            placeholder="ExternalId (UUID)"
+            className="input flex-1 font-mono text-sm"
+          />
+          <button
+            type="submit"
+            disabled={lookupLoading || !lookupExternalId.trim()}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {lookupLoading ? "Henter…" : "Slå opp"}
+          </button>
+        </form>
+        {lookupResult && (
+          <CopyableJson
+            data={lookupResult.ok ? lookupResult.raw : lookupResult.error}
+            ok={lookupResult.ok}
+          />
         )}
       </div>
 
