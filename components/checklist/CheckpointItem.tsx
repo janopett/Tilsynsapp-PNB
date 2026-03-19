@@ -1,15 +1,21 @@
 "use client";
 
-import { memo, useState } from "react";
-import type { CheckpointWithAnswer, CheckpointStatus, SifContact } from "@/types";
+import { memo, useRef, useState } from "react";
+import type { Attachment, CheckpointWithAnswer, CheckpointStatus, SifContact } from "@/types";
 import { CATEGORY_LABELS } from "@/lib/checklist/filter-engine";
 import { buildLegalUrl } from "@/lib/legal-reference";
 import MapPickerModal from "@/components/ui/MapPickerModal";
+import { createClient } from "@/lib/supabase/client";
+
+const STORAGE_BUCKET = "inspection-attachments";
 
 interface Props {
   item: CheckpointWithAnswer;
   isSaving: boolean;
   contacts: SifContact[];
+  inspectionId: string;
+  addressHint?: string;
+  initialAttachments: Attachment[];
   onUpdate: (
     id: string,
     status: CheckpointStatus,
@@ -27,7 +33,70 @@ const STATUS_CONFIG: Record<CheckpointStatus, { label: string; cls: string; icon
   deviation: { label: "Avvik", cls: "border-red-300 bg-red-50", icon: "⚠️" },
 };
 
-const CheckpointItem = memo(function CheckpointItem({ item, isSaving, contacts, onUpdate }: Props) {
+// ── Attachment thumbnail ───────────────────────────────────────────────────
+
+function AttachmentThumb({
+  att,
+  onRemove,
+}: {
+  att: Attachment & { objectUrl?: string };
+  onRemove: (att: Attachment) => void;
+}) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(att.objectUrl ?? null);
+
+  // Load signed URL for existing DB attachments (not fresh uploads with objectUrl)
+  if (!att.objectUrl && att.file_type.startsWith("image/") && !signedUrl) {
+    createClient()
+      .storage.from(STORAGE_BUCKET)
+      .createSignedUrl(att.file_path, 3600)
+      .then(({ data }) => {
+        if (data?.signedUrl) setSignedUrl(data.signedUrl);
+      });
+  }
+
+  const isImage = att.file_type.startsWith("image/");
+
+  return (
+    <div className="relative group flex-shrink-0">
+      {isImage && signedUrl ? (
+        <img
+          src={signedUrl}
+          alt={att.file_name}
+          className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+        />
+      ) : (
+        <div className="w-16 h-16 flex flex-col items-center justify-center bg-gray-100 rounded-lg border border-gray-200 text-center px-1">
+          <span className="text-lg">📄</span>
+          <span className="text-[10px] text-gray-500 leading-tight truncate w-full text-center">
+            {att.file_name.split(".").pop()?.toUpperCase()}
+          </span>
+        </div>
+      )}
+      <button
+        onClick={() => onRemove(att)}
+        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 text-white text-[10px] items-center justify-center hidden group-hover:flex leading-none"
+        title="Fjern vedlegg"
+      >
+        ✕
+      </button>
+      <span className="text-[10px] text-gray-400 truncate block max-w-[64px] text-center mt-0.5">
+        {att.file_name.length > 10 ? att.file_name.slice(0, 8) + "…" : att.file_name}
+      </span>
+    </div>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────
+
+const CheckpointItem = memo(function CheckpointItem({
+  item,
+  isSaving,
+  contacts,
+  inspectionId,
+  addressHint,
+  initialAttachments,
+  onUpdate,
+}: Props) {
   const { definition, answer } = item;
   const currentStatus: CheckpointStatus = answer?.status ?? "not_checked";
   const [comment, setComment] = useState(answer?.comment ?? "");
@@ -38,6 +107,12 @@ const CheckpointItem = memo(function CheckpointItem({ item, isSaving, contacts, 
   const [lat, setLat] = useState<number | null>(answer?.latitude ?? null);
   const [lng, setLng] = useState<number | null>(answer?.longitude ?? null);
   const [showMap, setShowMap] = useState(false);
+
+  // Attachments
+  type LocalAttachment = Attachment & { objectUrl?: string };
+  const [attachments, setAttachments] = useState<LocalAttachment[]>(initialAttachments);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const cfg = STATUS_CONFIG[currentStatus];
 
@@ -75,6 +150,63 @@ const CheckpointItem = memo(function CheckpointItem({ item, isSaving, contacts, 
     setLat(null);
     setLng(null);
     onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), null, null);
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset so the same file can be re-selected
+    e.target.value = "";
+
+    setUploading(true);
+    const supabase = createClient();
+
+    const ext = file.name.split(".").pop() ?? "bin";
+    const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const filePath = `${inspectionId}/${definition.id}/${safeName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(STORAGE_BUCKET)
+      .upload(filePath, file, { contentType: file.type, upsert: false });
+
+    if (uploadError) {
+      console.error("[CheckpointItem] Upload failed", uploadError);
+      setUploading(false);
+      return;
+    }
+
+    const { data, error: dbError } = await supabase
+      .from("attachments")
+      .insert({
+        inspection_id: inspectionId,
+        checkpoint_definition_id: definition.id,
+        file_name: file.name,
+        file_path: filePath,
+        file_type: file.type,
+        file_size_bytes: file.size,
+      })
+      .select()
+      .single();
+
+    setUploading(false);
+    if (dbError || !data) {
+      console.error("[CheckpointItem] DB insert failed", dbError);
+      return;
+    }
+
+    // Use object URL for immediate preview (avoids async signed URL on fresh upload)
+    const objectUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined;
+    setAttachments((prev) => [...prev, { ...(data as Attachment), objectUrl }]);
+  }
+
+  async function removeAttachment(att: LocalAttachment) {
+    const supabase = createClient();
+    await Promise.all([
+      supabase.storage.from(STORAGE_BUCKET).remove([att.file_path]),
+      supabase.from("attachments").delete().eq("id", att.id),
+    ]);
+    if (att.objectUrl) URL.revokeObjectURL(att.objectUrl);
+    setAttachments((prev) => prev.filter((a) => a.id !== att.id));
   }
 
   const severityDot =
@@ -155,7 +287,7 @@ const CheckpointItem = memo(function CheckpointItem({ item, isSaving, contacts, 
           ))}
         </div>
 
-        {/* Ansvarlig (only shown when case contacts are available) */}
+        {/* Ansvarlig */}
         {contacts.length > 0 && (
           <div className="mt-3">
             <label className="block text-xs font-medium text-gray-500 mb-1">Ansvarlig</label>
@@ -169,7 +301,7 @@ const CheckpointItem = memo(function CheckpointItem({ item, isSaving, contacts, 
               {contacts.map((c) => (
                 <option key={c.recno} value={c.recno}>
                   {c.name}
-                  {c.roleDescription ? ` (${c.roleDescription})` : ""}
+                  {c.role ? ` (${c.role})` : ""}
                 </option>
               ))}
             </select>
@@ -188,8 +320,8 @@ const CheckpointItem = memo(function CheckpointItem({ item, isSaving, contacts, 
           />
         )}
 
-        {/* Map pin */}
-        <div className="mt-3 flex items-center gap-2">
+        {/* Map pin + file upload row */}
+        <div className="mt-3 flex items-center gap-4 flex-wrap">
           <button
             onClick={() => setShowMap(true)}
             type="button"
@@ -200,21 +332,45 @@ const CheckpointItem = memo(function CheckpointItem({ item, isSaving, contacts, 
           {lat != null && lng != null && (
             <span className="text-xs text-gray-400">
               {lat.toFixed(5)}°N, {lng.toFixed(5)}°Ø
-              <button
-                onClick={clearCoords}
-                className="ml-1 text-gray-300 hover:text-gray-500"
-              >
+              <button onClick={clearCoords} className="ml-1 text-gray-300 hover:text-gray-500">
                 ✕
               </button>
             </span>
           )}
+
+          {/* File upload */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf,.doc,.docx"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="text-xs text-gray-500 hover:text-brand-600 flex items-center gap-1 transition disabled:opacity-50"
+          >
+            {uploading ? "⏳ Laster opp…" : "📎 Legg til bilde / fil"}
+          </button>
         </div>
+
+        {/* Attachment thumbnails */}
+        {attachments.length > 0 && (
+          <div className="mt-3 flex gap-3 flex-wrap">
+            {attachments.map((att) => (
+              <AttachmentThumb key={att.id} att={att} onRemove={removeAttachment} />
+            ))}
+          </div>
+        )}
       </div>
 
       {showMap && (
         <MapPickerModal
           initialLat={lat}
           initialLng={lng}
+          addressHint={lat == null ? addressHint : undefined}
           title={`Posisjon: ${definition.title}`}
           onSave={handleMapSave}
           onClose={() => setShowMap(false)}
