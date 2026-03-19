@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 type InspectionListItem = Pick<
   import("@/types").Inspection,
-  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id" | "gnr" | "bnr" | "snr" | "fnr" | "estates" | "participants"
+  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id" | "gnr" | "bnr" | "snr" | "fnr" | "estates" | "participants" | "external_participants"
 >;
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
       const { data } = await supabase
         .from("inspections")
-        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants")
+        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants, external_participants")
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -65,6 +65,7 @@ export default function DashboardPage() {
             const mt = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
             const estates = (inspection.estates ?? []) as Array<{ recno?: number; address?: string }>;
             const participants = (inspection.participants ?? []) as Array<{ recno?: number; name: string; role?: string; roleDescription?: string }>;
+            const extParticipants = (inspection.external_participants ?? []) as Array<{ id: string; name: string; role?: string; company?: string }>;
 
             // Build heading: case_number · matrikkel – addresses – case_title
             const matrikkel = [inspection.gnr, inspection.bnr, inspection.snr, inspection.fnr]
@@ -104,6 +105,16 @@ export default function DashboardPage() {
                             {(p.roleDescription ?? p.role) && (
                               <span className="text-gray-400"> · {p.roleDescription ?? p.role}</span>
                             )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {extParticipants.length > 0 && (
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+                        {extParticipants.map((ep) => (
+                          <span key={ep.id} className="text-xs text-amber-700">
+                            {ep.name}
+                            {ep.role && <span className="text-amber-400"> · {ep.role}</span>}
                           </span>
                         ))}
                       </div>

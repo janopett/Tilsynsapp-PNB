@@ -12,6 +12,7 @@ import type {
   CheckpointCategory,
   SifContact,
   SifEstate,
+  ExternalParticipant,
 } from "@/types";
 
 const EMPTY_ATTACHMENTS: Attachment[] = [];
@@ -100,6 +101,32 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
     inspection.estates ?? []
   );
 
+  // External participants
+  const [externalParticipants, setExternalParticipants] = useState<ExternalParticipant[]>(
+    inspection.external_participants ?? []
+  );
+  const [extDraft, setExtDraft] = useState<{ name: string; role: string; company: string }>({ name: "", role: "", company: "" });
+  const [showExtForm, setShowExtForm] = useState(false);
+
+  function addExternalParticipant() {
+    if (!extDraft.name.trim()) return;
+    setExternalParticipants((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        name: extDraft.name.trim(),
+        role: extDraft.role.trim() || undefined,
+        company: extDraft.company.trim() || undefined,
+      },
+    ]);
+    setExtDraft({ name: "", role: "", company: "" });
+    setShowExtForm(false);
+  }
+
+  function removeExternalParticipant(id: string) {
+    setExternalParticipants((prev) => prev.filter((p) => p.id !== id));
+  }
+
   // Map
   const [showMap, setShowMap] = useState(false);
   const [latitude, setLatitude] = useState<number | null>(inspection.latitude ?? null);
@@ -150,6 +177,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         inspection_date: inspectionDate,
         notes: notes || null,
         participants,
+        external_participants: externalParticipants,
         estates: selectedEstates,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
@@ -328,6 +356,82 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
             ) : caseContacts.length === 0 ? (
               <p className="text-xs text-gray-400">{t.inspection.linkCaseForParticipants}</p>
             ) : null}
+          </div>
+
+          {/* External participants */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Eksterne deltakere
+              <span className="ml-1 text-xs font-normal text-gray-400">(f.eks. Brannvernleder, Verneombud)</span>
+            </label>
+            {externalParticipants.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {externalParticipants.map((p) => (
+                  <span
+                    key={p.id}
+                    className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-3 py-1 text-xs font-medium"
+                  >
+                    {p.name}
+                    {p.role && <span className="text-amber-500"> · {p.role}</span>}
+                    {p.company && <span className="text-amber-500"> · {p.company}</span>}
+                    <button
+                      onClick={() => removeExternalParticipant(p.id)}
+                      className="ml-1 text-amber-400 hover:text-amber-700"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {showExtForm ? (
+              <div className="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
+                <input
+                  type="text"
+                  placeholder="Navn *"
+                  value={extDraft.name}
+                  onChange={(e) => setExtDraft((d) => ({ ...d, name: e.target.value }))}
+                  className="input w-full text-sm"
+                  autoFocus
+                />
+                <input
+                  type="text"
+                  placeholder="Rolle (f.eks. Brannvernleder)"
+                  value={extDraft.role}
+                  onChange={(e) => setExtDraft((d) => ({ ...d, role: e.target.value }))}
+                  className="input w-full text-sm"
+                />
+                <input
+                  type="text"
+                  placeholder="Foretak"
+                  value={extDraft.company}
+                  onChange={(e) => setExtDraft((d) => ({ ...d, company: e.target.value }))}
+                  className="input w-full text-sm"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={addExternalParticipant}
+                    disabled={!extDraft.name.trim()}
+                    className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
+                  >
+                    Legg til
+                  </button>
+                  <button
+                    onClick={() => { setShowExtForm(false); setExtDraft({ name: "", role: "", company: "" }); }}
+                    className="px-3 py-2 text-gray-500 text-sm hover:text-gray-700"
+                  >
+                    Avbryt
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setShowExtForm(true)}
+                className="text-xs text-brand-600 hover:text-brand-800 font-medium"
+              >
+                + Legg til ekstern deltaker
+              </button>
+            )}
           </div>
 
           {/* Estates */}
@@ -655,6 +759,7 @@ export default function InspectionPage() {
       : grouped.get(activeCategory) ?? [];
 
   const participants: SifContact[] = inspection.participants ?? [];
+  const externalParticipantsDisplay: ExternalParticipant[] = inspection.external_participants ?? [];
   const estates: SifEstate[] = inspection.estates ?? [];
 
   return (
@@ -696,6 +801,21 @@ export default function InspectionPage() {
                   {p.role && (
                     <span className="text-gray-400 ml-1">· {p.role}</span>
                   )}
+                </span>
+              ))}
+            </div>
+          )}
+          {/* External participants row */}
+          {externalParticipantsDisplay.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {externalParticipantsDisplay.map((ep) => (
+                <span
+                  key={ep.id}
+                  className="inline-flex items-center bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2 py-0.5 text-xs"
+                >
+                  {ep.name}
+                  {ep.role && <span className="text-amber-500 ml-1">· {ep.role}</span>}
+                  {ep.company && <span className="text-amber-500 ml-1">· {ep.company}</span>}
                 </span>
               ))}
             </div>
