@@ -36,6 +36,8 @@ export interface SifGetCasesQuery {
   UIDOrigin?: string;
   Title?: string;
   MaxResults?: number;
+  IncludeReferringCases?: boolean;
+  IncludeCaseContacts?: boolean;
   AdditionalFields?: SifAdditionalField[];
 }
 
@@ -70,6 +72,23 @@ export interface SifCaseResult {
 export interface SifGetCasesResult {
   Successful: boolean;
   Cases?: SifCaseResult[];
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
+// CaseService - GetCase (singular, by Recno)
+// ============================================================
+
+export interface SifGetCaseQuery {
+  CaseRecno: number;
+  IncludeReferringCases?: boolean;
+  IncludeCaseContacts?: boolean;
+}
+
+export interface SifGetCaseResult {
+  Successful: boolean;
+  Case?: SifCaseResult;
   ErrorMessage?: string;
   ErrorDetails?: string;
 }
