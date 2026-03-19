@@ -52,6 +52,27 @@ interface EditModalProps {
 function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProps) {
   const { t } = useLanguage();
   const [propertyAddress, setPropertyAddress] = useState(inspection.property_address);
+
+  // Configurable lists
+  const [tilsynsomradeItems, setTilsynsomradeItems] = useState<string[]>([]);
+  const [tilsynstypeItems, setTilsynstypeItems] = useState<string[]>([]);
+  const [tilsynsomrade, setTilsynsomrade] = useState(inspection.tilsynsomrade ?? "");
+  const [tilsynstype, setTilsynstype] = useState(inspection.tilsynstype ?? "");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      const headers = { Authorization: `Bearer ${session.access_token}` };
+      Promise.all([
+        fetch("/api/inspection-config?category=tilsynsomrade", { headers }).then((r) => r.json()),
+        fetch("/api/inspection-config?category=tilsynstype", { headers }).then((r) => r.json()),
+      ]).then(([a, b]) => {
+        setTilsynsomradeItems((a.items ?? []).map((i: { label: string }) => i.label));
+        setTilsynstypeItems((b.items ?? []).map((i: { label: string }) => i.label));
+      });
+    });
+  }, []);
   const [caseNumber, setCaseNumber] = useState(inspection.case_number ?? "");
   const [caseTitle, setCaseTitle] = useState(inspection.case_title ?? "");
   const [gnr, setGnr] = useState(inspection.gnr ?? "");
@@ -128,6 +149,8 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         estates: selectedEstates,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
+        tilsynsomrade: tilsynsomrade || null,
+        tilsynstype: tilsynstype || null,
       })
       .eq("id", inspection.id);
 
@@ -324,6 +347,36 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               </div>
             </div>
           )}
+
+          {/* Tilsynsområde + Tilsynstype */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tilsynsområde</label>
+              <select
+                value={tilsynsomrade}
+                onChange={(e) => setTilsynsomrade(e.target.value)}
+                className="input"
+              >
+                <option value="">— Velg —</option>
+                {tilsynsomradeItems.map((label) => (
+                  <option key={label} value={label}>{label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tilsynstype</label>
+              <select
+                value={tilsynstype}
+                onChange={(e) => setTilsynstype(e.target.value)}
+                className="input"
+              >
+                <option value="">— Velg —</option>
+                {tilsynstypeItems.map((label) => (
+                  <option key={label} value={label}>{label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
 
           {/* Notes */}
           <div>

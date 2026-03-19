@@ -57,9 +57,30 @@ export default function NewInspectionPage() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
+  // Configurable lists
+  const [tilsynsomradeItems, setTilsynsomradeItems] = useState<string[]>([]);
+  const [tilsynstypeItems, setTilsynstypeItems] = useState<string[]>([]);
+  const [tilsynsomrade, setTilsynsomrade] = useState("");
+  const [tilsynstype, setTilsynstype] = useState("");
+
   // Step 2 fields
   const [measureTypeId, setMeasureTypeId] = useState<MeasureTypeId | "">("");
   const [selectedTags, setSelectedTags] = useState<PropertyTag[]>([]);
+
+  // Fetch configurable lists on mount
+  useEffect(() => {
+    createClient().auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      const headers = { Authorization: `Bearer ${session.access_token}` };
+      Promise.all([
+        fetch("/api/inspection-config?category=tilsynsomrade", { headers }).then((r) => r.json()),
+        fetch("/api/inspection-config?category=tilsynstype", { headers }).then((r) => r.json()),
+      ]).then(([a, b]) => {
+        setTilsynsomradeItems((a.items ?? []).map((i: { label: string }) => i.label));
+        setTilsynstypeItems((b.items ?? []).map((i: { label: string }) => i.label));
+      });
+    });
+  }, []);
 
   // Auto-fill inspector name
   useEffect(() => {
@@ -264,6 +285,8 @@ export default function NewInspectionPage() {
         latitude: latitude ?? undefined,
         longitude: longitude ?? undefined,
         sif_stage_recno: selectedStageRecno ?? undefined,
+        tilsynsomrade: tilsynsomrade || undefined,
+        tilsynstype: tilsynstype || undefined,
       }),
     });
 
@@ -606,6 +629,40 @@ export default function NewInspectionPage() {
                     : t.newInspection.selectCaseForContacts}
                 </p>
               )}
+            </div>
+
+            {/* Tilsynsområde + Tilsynstype */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tilsynsområde
+                </label>
+                <select
+                  value={tilsynsomrade}
+                  onChange={(e) => setTilsynsomrade(e.target.value)}
+                  className="input"
+                >
+                  <option value="">— Velg —</option>
+                  {tilsynsomradeItems.map((label) => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tilsynstype
+                </label>
+                <select
+                  value={tilsynstype}
+                  onChange={(e) => setTilsynstype(e.target.value)}
+                  className="input"
+                >
+                  <option value="">— Velg —</option>
+                  {tilsynstypeItems.map((label) => (
+                    <option key={label} value={label}>{label}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {/* Notes */}
