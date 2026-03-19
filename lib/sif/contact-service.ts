@@ -118,18 +118,46 @@ export async function getCaseContacts(
 // ── Enterprise search ──────────────────────────────────────────────────────────
 
 /**
- * Search for enterprises (foretak) in SIF/PNB by name.
+ * Search for enterprises (foretak) in SIF/PNB by name or org.nr.
+ * Uses wildcard matching (%query%) for partial name matching,
+ * consistent with how cases are searched in searchCasesInSif.
+ * If the query looks like an org.nr (9 digits), searches by EnterpriseNumber as well.
  */
-export async function searchEnterprises(name: string): Promise<SifEnterpriseResult[]> {
-  const result = await sifRpcCall<SifGetEnterpriseQuery, SifGetEnterpriseResult>(
-    "ContactService",
-    "GetEnterprise",
-    { Name: name, MaxRows: 10 }
+export async function searchEnterprises(query: string): Promise<SifEnterpriseResult[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  // Detect org.nr: 9 consecutive digits (possibly with spaces/dashes stripped)
+  const digitsOnly = q.replace(/[\s-]/g, "");
+  const isOrgNr = /^\d{9}$/.test(digitsOnly);
+
+  const queries: SifGetEnterpriseQuery[] = isOrgNr
+    ? [{ EnterpriseNumber: digitsOnly, MaxRows: 10 }]
+    : [{ Name: `%${q}%`, MaxRows: 10 }];
+
+  const results = await Promise.allSettled(
+    queries.map((payload) =>
+      sifRpcCall<SifGetEnterpriseQuery, SifGetEnterpriseResult>(
+        "ContactService",
+        "GetEnterprise",
+        payload
+      )
+    )
   );
-  if (result.Successful && result.Enterprises && result.Enterprises.length > 0) {
-    return result.Enterprises;
+
+  const seen = new Set<number>();
+  const enterprises: SifEnterpriseResult[] = [];
+  for (const r of results) {
+    if (r.status === "fulfilled" && r.value.Successful && r.value.Enterprises) {
+      for (const e of r.value.Enterprises) {
+        if (!seen.has(e.Recno)) {
+          seen.add(e.Recno);
+          enterprises.push(e);
+        }
+      }
+    }
   }
-  return [];
+  return enterprises;
 }
 
 function mapCaseContacts(raw: SifCaseContact[]): SifContact[] {

@@ -25,6 +25,7 @@ export default function CaseSearchInput({
   const [open, setOpen] = useState(false);
   const [noResults, setNoResults] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Keep internal query in sync when parent resets value
@@ -49,10 +50,18 @@ export default function CaseSearchInput({
       setOpen(false);
       return;
     }
+    // Cancel any in-flight request before starting a new one
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setNoResults(false);
     try {
-      const res = await authFetch(`/api/sif/case-search?q=${encodeURIComponent(q.trim())}`);
+      const res = await authFetch(
+        `/api/sif/case-search?q=${encodeURIComponent(q.trim())}`,
+        { signal: controller.signal }
+      );
       const data = await res.json();
       if (data.ok && data.cases.length > 0) {
         setResults(data.cases);
@@ -63,7 +72,8 @@ export default function CaseSearchInput({
         setNoResults(true);
         setOpen(true);
       }
-    } catch {
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
       setResults([]);
       setNoResults(false);
     } finally {
