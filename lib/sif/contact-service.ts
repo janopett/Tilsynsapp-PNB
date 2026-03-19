@@ -99,7 +99,8 @@ export async function getCaseContacts(
     }
 
     // b) ResponsiblePerson as a synthetic contact (if not already included)
-    const rp = (c as unknown as RawCaseWithPerson).ResponsiblePerson;
+    const raw = c as unknown as RawCaseFields;
+    const rp = raw.ResponsiblePerson;
     if (rp?.Recno && !contacts.some((x) => x.recno === rp.Recno)) {
       contacts.push({
         recno: rp.Recno,
@@ -107,6 +108,19 @@ export async function getCaseContacts(
         role: "ResponsiblePerson",
         roleDescription: "Saksbehandler",
         email: rp.Email,
+      });
+    }
+
+    // c) ResponsibleEnterprise — company on the case (e.g. tiltakshaver / subject)
+    const re = raw.ResponsibleEnterprise;
+    if (re?.Recno && !contacts.some((x) => x.recno === re.Recno)) {
+      contacts.push({
+        recno: re.Recno,
+        name: re.Name ?? `Virksomhet ${re.Recno}`,
+        role: "ResponsibleEnterprise",
+        roleDescription: re.RoleDescription ?? "Ansvarlig virksomhet",
+        email: re.Email,
+        phone: re.Phone,
       });
     }
 
@@ -129,11 +143,18 @@ function mapCaseContacts(raw: SifCaseContact[]): SifContact[] {
   }));
 }
 
-interface RawCaseWithPerson {
+interface RawCaseFields {
   ResponsiblePerson?: {
     Recno: number;
     Name?: string;
     Email?: string;
     UserId?: string;
+  };
+  ResponsibleEnterprise?: {
+    Recno: number;
+    Name?: string;
+    Email?: string;
+    Phone?: string;
+    RoleDescription?: string;
   };
 }
