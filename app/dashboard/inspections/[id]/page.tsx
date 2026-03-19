@@ -679,9 +679,6 @@ export default function InspectionPage() {
               : inspection.property_address}
           </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 mt-1 flex-wrap">
-            {inspection.case_number && (
-              <span>{inspection.property_address}</span>
-            )}
             <span>
               {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
             </span>
