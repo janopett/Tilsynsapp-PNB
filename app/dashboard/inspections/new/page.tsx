@@ -3,9 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MEASURE_TYPES, PROPERTY_QUESTIONS } from "@/data/seed/measure-types";
-import type { MeasureTypeId, PropertyTag, SifContact, SifEstate, SifCaseStage } from "@/types";
+import type { MeasureTypeId, PropertyTag, SifContact, SifEstate, SifCaseStage, ExternalParticipant } from "@/types";
+import type { SifEnterpriseResult } from "@/lib/sif/types";
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
+import EnterpriseSearchInput from "@/components/sif/EnterpriseSearchInput";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import { useLanguage } from "@/lib/i18n";
 
@@ -40,6 +42,11 @@ export default function NewInspectionPage() {
   // Participants
   const [participants, setParticipants] = useState<SifContact[]>([]);
   const [participantDropdown, setParticipantDropdown] = useState<number | "">("");
+
+  // External participants
+  const [externalParticipants, setExternalParticipants] = useState<ExternalParticipant[]>([]);
+  const [extDraft, setExtDraft] = useState<{ firstName: string; lastName: string; role: string; company: string; companyRecno?: number }>({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
+  const [showExtForm, setShowExtForm] = useState(false);
 
   // Stages from case
   const [stages, setStages] = useState<SifCaseStage[]>([]);
@@ -250,6 +257,27 @@ export default function NewInspectionPage() {
     setSelectedEstates((prev) => prev.filter((e) => e.recno !== recno));
   }
 
+  function addExternalParticipant() {
+    if (!extDraft.firstName.trim() && !extDraft.lastName.trim()) return;
+    const firstName = extDraft.firstName.trim();
+    const lastName = extDraft.lastName.trim();
+    setExternalParticipants((prev) => [...prev, {
+      id: crypto.randomUUID(),
+      name: [firstName, lastName].filter(Boolean).join(" "),
+      firstName,
+      lastName,
+      role: extDraft.role.trim() || undefined,
+      company: extDraft.company.trim() || undefined,
+      companyRecno: extDraft.companyRecno,
+    }]);
+    setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
+    setShowExtForm(false);
+  }
+
+  function removeExternalParticipant(id: string) {
+    setExternalParticipants((prev) => prev.filter((p) => p.id !== id));
+  }
+
   function estateLabel(e: SifEstate): string {
     const parts: string[] = [];
     if (e.address) parts.push(e.address);
@@ -301,6 +329,7 @@ export default function NewInspectionPage() {
         measure_type_id: measureTypeId,
         selected_tags: selectedTags,
         participants,
+        external_participants: externalParticipants,
         estates: selectedEstates,
         latitude: latitude ?? undefined,
         longitude: longitude ?? undefined,
@@ -649,6 +678,95 @@ export default function NewInspectionPage() {
                     ? t.newInspection.noContactsFound
                     : t.newInspection.selectCaseForContacts}
                 </p>
+              )}
+            </div>
+
+            {/* External participants */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Eksterne deltakere{" "}
+                <span className="text-gray-400 font-normal text-xs">(f.eks. Brannvernleder, Verneombud)</span>
+              </label>
+              {externalParticipants.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {externalParticipants.map((ep) => (
+                    <span
+                      key={ep.id}
+                      className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-3 py-1 text-xs font-medium"
+                    >
+                      {ep.name}
+                      {ep.role && <span className="text-amber-500"> · {ep.role}</span>}
+                      {ep.company && <span className="text-amber-500"> · {ep.company}</span>}
+                      <button
+                        onClick={() => removeExternalParticipant(ep.id)}
+                        className="ml-1 text-amber-400 hover:text-amber-700 leading-none"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              )}
+              {showExtForm ? (
+                <div className="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      placeholder="Fornavn"
+                      value={extDraft.firstName}
+                      onChange={(e) => setExtDraft((d) => ({ ...d, firstName: e.target.value }))}
+                      className="input text-sm"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Etternavn"
+                      value={extDraft.lastName}
+                      onChange={(e) => setExtDraft((d) => ({ ...d, lastName: e.target.value }))}
+                      className="input text-sm"
+                    />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Rolle (valgfri)"
+                    value={extDraft.role}
+                    onChange={(e) => setExtDraft((d) => ({ ...d, role: e.target.value }))}
+                    className="input text-sm"
+                  />
+                  <EnterpriseSearchInput
+                    value={extDraft.company}
+                    onChange={(name) => setExtDraft((d) => ({ ...d, company: name, companyRecno: undefined }))}
+                    onSelect={(enterprise: SifEnterpriseResult) =>
+                      setExtDraft((d) => ({ ...d, company: enterprise.Name, companyRecno: enterprise.Recno }))
+                    }
+                    placeholder="Søk på foretak i Plan & Build (valgfri)"
+                    className="input text-sm"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setShowExtForm(false); setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined }); }}
+                      className="text-sm text-gray-500 hover:text-gray-700"
+                    >
+                      Avbryt
+                    </button>
+                    <button
+                      type="button"
+                      onClick={addExternalParticipant}
+                      disabled={!extDraft.firstName.trim() && !extDraft.lastName.trim()}
+                      className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-sm disabled:opacity-40 hover:bg-brand-700 transition"
+                    >
+                      Legg til
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowExtForm(true)}
+                  className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                >
+                  + Legg til ekstern deltaker
+                </button>
               )}
             </div>
 
