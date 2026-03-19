@@ -3,19 +3,23 @@
 import { useState } from "react";
 import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
+import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
 
 interface Props {
   inspection: InspectionWithAnswers;
   onArchived: () => void;
+  onMarkCompleted?: () => void;
 }
 
-export default function ArchivePanel({ inspection, onArchived }: Props) {
+export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }: Props) {
   const existingArchival = inspection.archival;
   const [caseNumber, setCaseNumber] = useState(inspection.case_number ?? "");
   const [externalId, setExternalId] = useState("");
   const [uid, setUid] = useState("");
   const [loading, setLoading] = useState(false);
+  const [completing, setCompleting] = useState(false);
+  const isCompleted = inspection.status === "completed";
   const [result, setResult] = useState<{
     status: ArchivalStatus;
     message: string;
@@ -34,6 +38,21 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
         }
       : null
   );
+
+  async function handleMarkCompleted() {
+    setCompleting(true);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from("inspections")
+      .update({ status: "completed" })
+      .eq("id", inspection.id);
+    setCompleting(false);
+    if (error) {
+      alert("Kunne ikke sette som avsluttet: " + error.message);
+    } else {
+      onMarkCompleted?.();
+    }
+  }
 
   async function handleArchive() {
     if (!caseNumber.trim() && !externalId.trim() && !uid.trim()) {
@@ -101,16 +120,32 @@ export default function ArchivePanel({ inspection, onArchived }: Props) {
               </p>
             </div>
           </div>
-          {result.url && (
-            <a
-              href={result.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-800 font-medium"
-            >
-              Åpne dokument i 360° →
-            </a>
-          )}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {result.url && (
+              <a
+                href={result.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-800 font-medium"
+              >
+                Åpne dokument i 360° →
+              </a>
+            )}
+            {result.status === "success" && !isCompleted && (
+              <button
+                onClick={handleMarkCompleted}
+                disabled={completing}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition disabled:opacity-50"
+              >
+                {completing ? "⏳ Avslutter…" : "✅ Sett som avsluttet"}
+              </button>
+            )}
+            {isCompleted && (
+              <span className="inline-flex items-center gap-1 text-sm text-green-700 font-medium">
+                ✅ Tilsynet er avsluttet
+              </span>
+            )}
+          </div>
         </div>
       )}
 

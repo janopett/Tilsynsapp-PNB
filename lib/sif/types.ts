@@ -276,6 +276,41 @@ export interface SifDispatchDocumentsResult {
 }
 
 // ============================================================
+// ContactService - GetEnterprise
+// ============================================================
+
+export interface SifGetEnterpriseQuery {
+  Name?: string;
+  Recno?: number;
+  ExternalID?: string;
+  /** Organisation number (orgnr) */
+  EnterpriseNumber?: string;
+  MaxRows?: number;
+  Active?: boolean;
+  IncludeCustomFields?: boolean;
+}
+
+export interface SifEnterpriseResult {
+  Recno: number;
+  Name: string;
+  OrgNo?: string;
+  Email?: string;
+  AlternativeEmail?: string;
+  Phone?: string;
+  Address?: string;
+  ZipCode?: string;
+  ZipPlace?: string;
+  ExternalID?: string;
+}
+
+export interface SifGetEnterpriseResult {
+  Successful: boolean;
+  Enterprises?: SifEnterpriseResult[];
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
 // SupportService
 // ============================================================
 

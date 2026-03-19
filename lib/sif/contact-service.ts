@@ -16,6 +16,9 @@ import type {
   SifCaseContact,
   SifGetCasesQuery,
   SifGetCasesResult,
+  SifGetEnterpriseQuery,
+  SifGetEnterpriseResult,
+  SifEnterpriseResult,
 } from "./types";
 import type { SifContact } from "@/types";
 
@@ -109,6 +112,23 @@ export async function getCaseContacts(
     console.warn("[SIF] GetCases contacts fallback failed", err);
   }
 
+  return [];
+}
+
+// ── Enterprise search ──────────────────────────────────────────────────────────
+
+/**
+ * Search for enterprises (foretak) in SIF/PNB by name.
+ */
+export async function searchEnterprises(name: string): Promise<SifEnterpriseResult[]> {
+  const result = await sifRpcCall<SifGetEnterpriseQuery, SifGetEnterpriseResult>(
+    "ContactService",
+    "GetEnterprise",
+    { Name: name, MaxRows: 10 }
+  );
+  if (result.Successful && result.Enterprises && result.Enterprises.length > 0) {
+    return result.Enterprises;
+  }
   return [];
 }
 
