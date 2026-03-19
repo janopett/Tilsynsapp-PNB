@@ -292,13 +292,13 @@ export default function SifTestPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Foretak <span className="text-gray-400 font-normal">(bruk &quot;recno:1234&quot; eller foretaksnavn)</span>
+              Foretak <span className="text-gray-400 font-normal">(kun &quot;recno:1234&quot; — fritekst-navn støttes ikke)</span>
             </label>
             <input
               type="text"
               value={syncEnterprise}
               onChange={(e) => setSyncEnterprise(e.target.value)}
-              placeholder='recno:1234 eller "Brannvesen Trondheim"'
+              placeholder='recno:1234 (fritekst-navn sendes ikke til 360°)'
               className="input text-sm"
             />
           </div>
