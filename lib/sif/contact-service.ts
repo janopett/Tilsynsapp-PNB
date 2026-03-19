@@ -174,6 +174,12 @@ export async function searchEnterprises(query: string): Promise<SifEnterpriseRes
  *
  * Returns the PNB Recno of the created/updated contact person.
  * This Recno can then be used as a copy recipient (kopimottaker) on CreateDocument.
+ *
+ * Two-phase sync to prevent duplicate contact creation when only Title changes:
+ *   Phase 1 — find/create by ExternalId + name (no Title) → stable Recno
+ *   Phase 2 — update Title on the existing contact using ExternalId only (non-fatal)
+ * Sending Title together with name fields causes PNB to create a new contact person
+ * when the same ExternalId already exists with a different Title stored in 360°.
  */
 export async function synchronizeContactPerson(input: {
   externalId: string;
@@ -183,19 +189,21 @@ export async function synchronizeContactPerson(input: {
   /** Maps to the Title field in 360° — use the person's role (e.g. "Brannvernleder") */
   title?: string;
 }): Promise<number> {
-  const payload: SifSynchronizeContactPersonInput = {
+  // Phase 1: find or create contact by ExternalId + name WITHOUT Title.
+  // Omitting Title here ensures PNB matches the existing record by ExternalId
+  // rather than treating a changed title as a new person and creating a duplicate.
+  const phase1Payload: SifSynchronizeContactPersonInput = {
     ExternalId: input.externalId,
     FirstName: input.firstName || undefined,
     LastName: input.lastName || undefined,
     Enterprise: input.enterprise || undefined,
-    Title: input.title || undefined,
     Active: true,
   };
 
   const result = await sifRpcCall<SifSynchronizeContactPersonInput, SifSynchronizeContactPersonResult>(
     "ContactService",
     "SynchronizeContactPerson",
-    payload,
+    phase1Payload,
     undefined,
     true // write operation: wrap in {"parameter": ...}
   );
@@ -204,6 +212,27 @@ export async function synchronizeContactPerson(input: {
     throw new Error(
       result.ErrorMessage ?? result.ErrorDetails ?? "SynchronizeContactPerson returnerte ingen Recno"
     );
+  }
+
+  // Phase 2: update Title on the now-known contact using ExternalId only (no name fields).
+  // This updates the existing record without risking a duplicate creation.
+  // Non-fatal: a failed title update does not affect the returned Recno.
+  if (input.title) {
+    try {
+      await sifRpcCall<SifSynchronizeContactPersonInput, SifSynchronizeContactPersonResult>(
+        "ContactService",
+        "SynchronizeContactPerson",
+        { ExternalId: input.externalId, Title: input.title, Active: true },
+        undefined,
+        true
+      );
+    } catch (err) {
+      console.warn("[SIF] Could not update Title on contact person (non-fatal)", {
+        externalId: input.externalId,
+        title: input.title,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
   }
 
   return result.Recno;
