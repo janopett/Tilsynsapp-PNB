@@ -604,6 +604,11 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         <MapPickerModal
           initialLat={latitude}
           initialLng={longitude}
+          addressHint={[
+            propertyAddress,
+            inspection.estates?.[0]?.zipCode,
+            inspection.estates?.[0]?.zipPlace,
+          ].filter(Boolean).join(" ") || undefined}
           title={t.inspection.mapTitle}
           onSave={(lat, lng) => {
             setLatitude(lat);

@@ -279,6 +279,8 @@ export interface SifContact {
 export interface SifEstate {
   recno: number;
   address?: string;
+  zipCode?: string;
+  zipPlace?: string;
   gnr?: string;
   bnr?: string;
   fnr?: string;

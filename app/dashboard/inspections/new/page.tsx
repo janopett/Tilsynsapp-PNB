@@ -52,6 +52,10 @@ export default function NewInspectionPage() {
   const [selectedEstates, setSelectedEstates] = useState<SifEstate[]>([]);
   const [estateDropdown, setEstateDropdown] = useState<number | "">("");
 
+  // Postal code from estate — used to improve map geocoding
+  const [estateZipCode, setEstateZipCode] = useState<string>("");
+  const [estateZipPlace, setEstateZipPlace] = useState<string>("");
+
   // Map
   const [showMap, setShowMap] = useState(false);
   const [latitude, setLatitude] = useState<number | null>(null);
@@ -204,6 +208,8 @@ export default function NewInspectionPage() {
     if (estate.bnr) setBnr(estate.bnr);
     if (estate.snr) setSnr(estate.snr); else setSnr("");
     if (estate.fnr) setFnr(estate.fnr); else setFnr("");
+    setEstateZipCode(estate.zipCode ?? "");
+    setEstateZipPlace(estate.zipPlace ?? "");
   }
 
   function addParticipant() {
@@ -862,7 +868,7 @@ export default function NewInspectionPage() {
         <MapPickerModal
           initialLat={latitude}
           initialLng={longitude}
-          addressHint={propertyAddress || undefined}
+          addressHint={[propertyAddress, estateZipCode, estateZipPlace].filter(Boolean).join(" ") || undefined}
           title={t.newInspection.mapTitle}
           onSave={(lat, lng) => {
             setLatitude(lat);

@@ -41,6 +41,8 @@ function caseEstateToSifEstate(e: SifCaseEstate): SifEstate {
   return {
     recno: Number(e.Recno),
     address: e.Address?.StreetAddress || undefined,
+    zipCode: e.Address?.ZipCode || undefined,
+    zipPlace: e.Address?.ZipPlace || undefined,
     gnr,
     bnr,
     fnr,
@@ -97,6 +99,8 @@ export async function GET(req: NextRequest) {
       return {
         recno: enriched?.Recno ?? -(m.gnr * 100000 + m.bnr),
         address: enriched?.Address?.StreetAddress || undefined,
+        zipCode: enriched?.Address?.ZipCode || undefined,
+        zipPlace: enriched?.Address?.ZipPlace || undefined,
         gnr: String(m.gnr),
         bnr: String(m.bnr),
         snr: m.snr ? String(m.snr) : undefined,
