@@ -31,15 +31,20 @@ function parseArchiveCodes(archiveCodes: RawArchiveCode[]): Array<{ gnr: number;
     .filter((x): x is NonNullable<typeof x> => x !== null);
 }
 
+// Parse CaseEstates.EstateNumber string "gnr/bnr/fnr/snr" e.g. "168/200/0/1"
 function caseEstateToSifEstate(e: SifCaseEstate): SifEstate {
+  const parts = (e.EstateNumber ?? "").split("/");
+  const gnr = parts[0] && parts[0] !== "0" ? parts[0] : undefined;
+  const bnr = parts[1] && parts[1] !== "0" ? parts[1] : undefined;
+  const fnr = parts[2] && parts[2] !== "0" ? parts[2] : undefined;
+  const snr = parts[3] && parts[3] !== "0" ? parts[3] : undefined;
   return {
-    recno: e.Recno,
+    recno: Number(e.Recno),
     address: e.Address?.StreetAddress || undefined,
-    gnr: e.EstateNumber != null ? String(e.EstateNumber) : undefined,
-    bnr: e.WorkNumber != null ? String(e.WorkNumber) : undefined,
-    snr: e.SectionNumber != null && e.SectionNumber !== 0 ? String(e.SectionNumber) : undefined,
-    fnr: e.LeaseHoldNumber != null && e.LeaseHoldNumber !== 0 ? String(e.LeaseHoldNumber) : undefined,
-    municipality: e.Municipality,
+    gnr,
+    bnr,
+    fnr,
+    snr,
   };
 }
 
