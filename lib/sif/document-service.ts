@@ -30,6 +30,8 @@ export interface CreateInspectionDocumentInput {
     role: string;
     /** 360° internal contact recno — used as ExternalId when no externalId is given */
     recno?: number;
+    /** Display name sent to 360° so it renders even if recno lookup is incomplete */
+    name?: string;
     externalId?: string;
     externalSystem?: string;
   }>;
@@ -92,6 +94,7 @@ export async function createInspectionDocumentInSif(
             Role: c.role,
             // Use internal 360° Recno when available (ExternalId is for external system IDs)
             ...(c.recno ? { Recno: c.recno } : {}),
+            ...(c.name ? { ContactName: c.name } : {}),
             ...(c.externalId ? { ExternalId: c.externalId } : {}),
             ...(c.externalSystem ? { ExternalSystem: c.externalSystem } : {}),
           })),

@@ -168,6 +168,8 @@ export interface SifDocumentContact {
   Role: string;                 // code or recno
   /** Internal 360° contact recno — use this for contacts fetched from SIF */
   Recno?: number;
+  /** Display name of the contact. Passed to 360° so it renders even if recno lookup is incomplete. */
+  ContactName?: string;
   ExternalId?: string;          // External system ID (personnummer, org.nr, etc.)
   ExternalSystem?: string;
   IsUnofficial?: boolean;
