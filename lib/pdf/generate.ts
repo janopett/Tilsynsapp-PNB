@@ -119,6 +119,9 @@ export async function generateInspectionPdf(
 
   if (inspection.tilsynsomrade) metaRows.push(["Tilsynsområde", inspection.tilsynsomrade]);
   if (inspection.tilsynstype) metaRows.push(["Tilsynstype", inspection.tilsynstype]);
+  if (inspection.bakgrunn?.length) {
+    metaRows.push(["Bakgrunn", inspection.bakgrunn.join(", ")]);
+  }
 
   autoTable(doc, {
     startY: y,
@@ -410,6 +413,7 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
       tiltakstype: measureType?.name ?? inspection.measure_type_id,
       tilsynsomrade: inspection.tilsynsomrade ?? null,
       tilsynstype: inspection.tilsynstype ?? null,
+      bakgrunn: inspection.bakgrunn?.length ? inspection.bakgrunn : null,
       merknader: inspection.notes ?? null,
     },
     selected_tags: inspection.selected_tags ?? [],

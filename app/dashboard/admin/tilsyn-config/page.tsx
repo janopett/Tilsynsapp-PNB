@@ -11,7 +11,7 @@ interface ListItem {
 }
 
 interface CategorySectionProps {
-  category: "tilsynsomrade" | "tilsynstype";
+  category: "tilsynsomrade" | "tilsynstype" | "bakgrunn";
   title: string;
 }
 
@@ -118,6 +118,7 @@ export default function TilsynConfigPage() {
 
       <CategorySection category="tilsynsomrade" title="Tilsynsområde" />
       <CategorySection category="tilsynstype" title="Tilsynstype" />
+      <CategorySection category="bakgrunn" title="Bakgrunn for tilsynet" />
     </div>
   );
 }

@@ -60,8 +60,10 @@ export default function NewInspectionPage() {
   // Configurable lists
   const [tilsynsomradeItems, setTilsynsomradeItems] = useState<string[]>([]);
   const [tilsynstypeItems, setTilsynstypeItems] = useState<string[]>([]);
+  const [bakgrunnItems, setBakgrunnItems] = useState<string[]>([]);
   const [tilsynsomrade, setTilsynsomrade] = useState("");
   const [tilsynstype, setTilsynstype] = useState("");
+  const [selectedBakgrunn, setSelectedBakgrunn] = useState<string[]>([]);
 
   // Step 2 fields
   const [measureTypeId, setMeasureTypeId] = useState<MeasureTypeId | "">("");
@@ -75,9 +77,11 @@ export default function NewInspectionPage() {
       Promise.all([
         fetch("/api/inspection-config?category=tilsynsomrade", { headers }).then((r) => r.json()),
         fetch("/api/inspection-config?category=tilsynstype", { headers }).then((r) => r.json()),
-      ]).then(([a, b]) => {
+        fetch("/api/inspection-config?category=bakgrunn", { headers }).then((r) => r.json()),
+      ]).then(([a, b, c]) => {
         setTilsynsomradeItems((a.items ?? []).map((i: { label: string }) => i.label));
         setTilsynstypeItems((b.items ?? []).map((i: { label: string }) => i.label));
+        setBakgrunnItems((c.items ?? []).map((i: { label: string }) => i.label));
       });
     });
   }, []);
@@ -287,6 +291,7 @@ export default function NewInspectionPage() {
         sif_stage_recno: selectedStageRecno ?? undefined,
         tilsynsomrade: tilsynsomrade || undefined,
         tilsynstype: tilsynstype || undefined,
+        bakgrunn: selectedBakgrunn,
       }),
     });
 
@@ -664,6 +669,37 @@ export default function NewInspectionPage() {
                 </select>
               </div>
             </div>
+
+            {/* Bakgrunn for tilsynet */}
+            {bakgrunnItems.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bakgrunn for tilsynet
+                </label>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  {bakgrunnItems.map((item) => (
+                    <label
+                      key={item}
+                      className="flex items-center gap-2 cursor-pointer select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedBakgrunn.includes(item)}
+                        onChange={() =>
+                          setSelectedBakgrunn((prev) =>
+                            prev.includes(item)
+                              ? prev.filter((v) => v !== item)
+                              : [...prev, item]
+                          )
+                        }
+                        className="w-4 h-4 accent-brand-600 flex-shrink-0"
+                      />
+                      <span className="text-sm text-gray-700">{item}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Notes */}
             <div>

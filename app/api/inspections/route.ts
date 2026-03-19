@@ -23,6 +23,7 @@ const CreateInspectionSchema = z.object({
   sif_stage_recno: z.number().optional(),
   tilsynsomrade: z.string().optional(),
   tilsynstype: z.string().optional(),
+  bakgrunn: z.array(z.string()).default([]),
 });
 
 export async function POST(req: NextRequest) {
