@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/api-auth";
 import { searchEnterprises } from "@/lib/sif/contact-service";
 
 // ── GET /api/sif/enterprise-search?q=... ─────────────────────────────────────
-// Searches SIF ContactService/GetEnterprise by name. Returns up to 10 matches.
+// Searches SIF ContactService/GetEnterprises by name. Returns up to 10 matches.
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;

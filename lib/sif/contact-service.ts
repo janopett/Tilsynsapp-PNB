@@ -139,7 +139,7 @@ export async function searchEnterprises(query: string): Promise<SifEnterpriseRes
     queries.map((payload) =>
       sifRpcCall<SifGetEnterpriseQuery, SifGetEnterpriseResult>(
         "ContactService",
-        "GetEnterprise",
+        "GetEnterprises",
         payload
       )
     )
