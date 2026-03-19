@@ -72,7 +72,9 @@ export default function DashboardPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 truncate">
-                      {inspection.property_address}
+                      {inspection.case_number
+                        ? inspection.case_number
+                        : inspection.property_address}
                     </p>
                     {inspection.case_title && (
                       <p className="text-sm text-gray-500 truncate mt-0.5">
@@ -81,9 +83,6 @@ export default function DashboardPage() {
                     )}
                     <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 flex-wrap">
                       <span>{mt?.icon} {mt?.name ?? inspection.measure_type_id}</span>
-                      {inspection.case_number && (
-                        <span className="text-gray-400">· {t.dashboard.case} {inspection.case_number}</span>
-                      )}
                       <span className="text-gray-400">
                         · {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
                       </span>

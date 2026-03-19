@@ -8,6 +8,8 @@ import { SifCreateDocumentError } from "./errors";
 import type {
   SifCreateDocumentInput,
   SifCreateDocumentResult,
+  SifDispatchDocumentsInput,
+  SifDispatchDocumentsResult,
   SifFileInput,
 } from "./types";
 import type { SifDocument, SifUploadedFileReference } from "@/types";
@@ -149,4 +151,43 @@ export async function createInspectionDocumentInSif(
     url: docUrl || undefined,
     raw: result,
   };
+}
+
+/**
+ * Trigger the dispatch process for a document already created in 360°.
+ * Identified by recno (preferred) or document number.
+ * Returns whether dispatch was started successfully — does NOT confirm delivery.
+ * Check status in 360° to confirm the dispatch completed.
+ */
+export async function dispatchDocumentsInSif(
+  documents: Array<{ recno?: number; documentNumber?: string }>,
+  correlationId?: string
+): Promise<SifDispatchDocumentsResult> {
+  const payload: SifDispatchDocumentsInput = {
+    Documents: documents.map((d) => ({
+      ...(d.recno ? { Recno: d.recno } : {}),
+      ...(d.documentNumber ? { DocumentNumber: d.documentNumber } : {}),
+    })),
+  };
+
+  console.info("[SIF] DocumentService/DispatchDocuments", {
+    correlationId,
+    documents,
+  });
+
+  const result = await sifRpcCall<SifDispatchDocumentsInput, SifDispatchDocumentsResult>(
+    "DocumentService",
+    "DispatchDocuments",
+    payload,
+    correlationId,
+    true // write operation
+  );
+
+  console.info("[SIF] DispatchDocuments result", {
+    correlationId,
+    successful: result.Successful,
+    errorMessage: result.ErrorMessage,
+  });
+
+  return result;
 }

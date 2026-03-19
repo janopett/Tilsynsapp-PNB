@@ -208,6 +208,8 @@ export interface InspectionArchival {
   request_payload_json?: Record<string, unknown>;
   response_payload_json?: Record<string, unknown>;
   error_message?: string;
+  dispatched?: boolean;
+  dispatch_error?: string;
   archived_at?: string;
   created_at: string;
   updated_at: string;

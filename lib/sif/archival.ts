@@ -6,7 +6,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { findCaseInSif } from "./case-service";
 import { uploadFilesToSif } from "./file-service";
-import { createInspectionDocumentInSif } from "./document-service";
+import { createInspectionDocumentInSif, dispatchDocumentsInSif } from "./document-service";
 import { loadSifSettingsWithEnvFallback } from "./settings";
 import { buildDocumentTitle } from "@/config/sif-mapping";
 import {
@@ -221,6 +221,36 @@ export async function archiveInspectionToSif(
       documentNumber: sifDocument.documentNumber,
     });
 
+    // Step 7: Auto-dispatch if configured
+    let dispatched: boolean | undefined;
+    let dispatchError: string | undefined;
+
+    if (settings.autoDispatch && sifDocument.recno) {
+      try {
+        const dispatchResult = await dispatchDocumentsInSif(
+          [{ recno: sifDocument.recno }],
+          correlationId
+        );
+        dispatched = dispatchResult.Successful;
+        if (!dispatchResult.Successful) {
+          dispatchError =
+            dispatchResult.ErrorMessage ??
+            dispatchResult.ErrorDetails ??
+            "DispatchDocuments feilet";
+        }
+      } catch (dispatchErr) {
+        dispatched = false;
+        dispatchError =
+          dispatchErr instanceof Error
+            ? dispatchErr.message
+            : String(dispatchErr);
+        console.error("[SIF] DispatchDocuments failed", {
+          correlationId,
+          dispatchError,
+        });
+      }
+    }
+
     return {
       inspection_id: ctx.inspectionId,
       status: "success",
@@ -231,6 +261,8 @@ export async function archiveInspectionToSif(
       sif_document_url: sifDocument.url,
       request_payload_json: requestPayload,
       response_payload_json: { sifCase, sifDocument },
+      dispatched,
+      dispatch_error: dispatchError,
       archived_at: new Date().toISOString(),
     };
   } catch (err) {
