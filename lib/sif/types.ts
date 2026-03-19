@@ -360,7 +360,8 @@ export interface SifSynchronizeContactPersonInput {
   LastName?: string;
   /**
    * Enterprise identifier for the person's employer in 360°.
-   * Use "recno:XXXX" when companyRecno is known, or a plain name string as fallback.
+   * Use "recno:XXXX" when companyRecno is known.
+   * Plain name strings are NOT forwarded to 360° — they cause a LookupException.
    */
   Enterprise?: string;
   PhoneNumber?: string;

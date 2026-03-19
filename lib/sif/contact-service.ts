@@ -271,9 +271,11 @@ async function lookupContactPersonByExternalId(
 
 /**
  * True if the stored contact is linked to the same enterprise as `enterprise`.
- * Compares by recno when the enterprise string is in "recno:XXXX" format,
- * otherwise falls back to case-insensitive name comparison.
- * If no enterprise is supplied, always returns true (no employer restriction).
+ * Only compares when both sides provide a reliable recno ("recno:XXXX" format).
+ * Plain name strings are not used as a discriminator: PNB may store the name
+ * differently (capitalisation, abbreviation, etc.), so a name mismatch does NOT
+ * mean the person changed employer — we default to "same employer" to prevent
+ * spurious duplicate contacts.
  */
 function contactEnterpriseMatches(
   existing: SifContactPersonResult,
@@ -284,9 +286,8 @@ function contactEnterpriseMatches(
   if (recno !== null && existing.EnterpriseRecno !== undefined) {
     return existing.EnterpriseRecno === recno;
   }
-  // Plain name comparison as fallback
-  return (existing.Enterprise ?? "").trim().toLowerCase() ===
-    enterprise.trim().toLowerCase();
+  // Cannot reliably compare: assume same employer to avoid duplicate creation.
+  return true;
 }
 
 function parseEnterpriseRecno(enterprise: string): number | null {
@@ -309,11 +310,24 @@ async function callSynchronize(input: {
   enterprise?: string;
   title?: string;
 }): Promise<number> {
+  // 360° resolves Enterprise via a Contact lookup (ExternalID or Referencenumber).
+  // A plain integer string is accepted directly as a recno.
+  // Plain name strings are NOT supported — 360° cannot resolve them and throws a
+  // LookupException. Only pass Enterprise when we have a reliable "recno:XXXX" value.
+  let enterpriseForSif: string | undefined;
+  if (input.enterprise) {
+    const recno = parseEnterpriseRecno(input.enterprise);
+    if (recno !== null) {
+      enterpriseForSif = String(recno); // pass as plain integer string — 360° accepts this
+    }
+    // Plain name → omit; better to have no enterprise than a failed creation.
+  }
+
   const payload: SifSynchronizeContactPersonInput = {
     ExternalId: input.externalId,
     FirstName: input.firstName || undefined,
     LastName: input.lastName || undefined,
-    Enterprise: input.enterprise || undefined,
+    Enterprise: enterpriseForSif,
     Title: input.title || undefined,
     Active: true,
   };
