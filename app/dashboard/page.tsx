@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 type InspectionListItem = Pick<
   import("@/types").Inspection,
-  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id"
+  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id" | "gnr" | "bnr" | "snr" | "fnr" | "estates"
 >;
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
       const { data } = await supabase
         .from("inspections")
-        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id")
+        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates")
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -63,6 +63,22 @@ export default function DashboardPage() {
         <div className="space-y-3">
           {list.map((inspection) => {
             const mt = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
+
+            // Build subtitle: matrikkel · estate addresses · case title
+            const subtitleParts: string[] = [];
+            const matrikkel = [inspection.gnr, inspection.bnr, inspection.snr, inspection.fnr]
+              .filter(Boolean).join("/");
+            if (matrikkel) subtitleParts.push(matrikkel);
+            const estates = (inspection.estates ?? []) as Array<{ address?: string }>;
+            for (const e of estates) {
+              if (e.address) subtitleParts.push(e.address);
+            }
+            if (!estates.length && inspection.property_address) {
+              subtitleParts.push(inspection.property_address);
+            }
+            if (inspection.case_title) subtitleParts.push(inspection.case_title);
+            const subtitle = subtitleParts.join(" · ");
+
             return (
               <Link
                 key={inspection.id}
@@ -72,13 +88,11 @@ export default function DashboardPage() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <p className="font-semibold text-gray-900 truncate">
-                      {inspection.case_number
-                        ? inspection.case_number
-                        : inspection.property_address}
+                      {inspection.case_number ?? inspection.property_address}
                     </p>
-                    {inspection.case_title && (
+                    {subtitle && (
                       <p className="text-sm text-gray-500 truncate mt-0.5">
-                        {inspection.case_title}
+                        {subtitle}
                       </p>
                     )}
                     <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 flex-wrap">
