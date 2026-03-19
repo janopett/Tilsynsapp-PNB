@@ -154,7 +154,9 @@ function CodeTablePicker({
         </button>
       </div>
       {error && (
-        <p className="text-xs text-red-600 mt-1">{error}</p>
+        <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700 whitespace-pre-wrap break-all">
+          {error}
+        </div>
       )}
       {open && rows.length > 0 && (
         <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden">
