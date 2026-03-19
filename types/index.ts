@@ -248,6 +248,17 @@ export interface SifEstate {
   municipality?: string;
 }
 
+export interface SifCaseStage {
+  recno?: number;
+  title?: string;
+  startDate?: string;
+  deadlineDate?: string;
+  notes?: string;
+  stageType?: { code?: string; description?: string };
+  stageStatus?: { code?: string; description?: string };
+  remainingDays?: number;
+}
+
 export interface SifCase {
   recno: number;
   caseNumber: string;
@@ -255,6 +266,7 @@ export interface SifCase {
   url?: string;
   uid?: string;
   uidOrigin?: string;
+  stages?: SifCaseStage[];
   raw?: unknown;
 }
 

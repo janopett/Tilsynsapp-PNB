@@ -63,11 +63,19 @@ export interface SifCaseEstate {
   };
 }
 
+/** Data Contract: Stage (SIF API docs 7.4.22) */
 export interface SifCaseStage {
-  StageCode?: string;
-  Description?: string;
-  Date?: string;
-  [key: string]: unknown; // allow additional fields until structure is known
+  Recno?: number;
+  Title?: string;
+  StartDate?: string;
+  DeadlineDate?: string;
+  Notes?: string;
+  CalculationDays?: number;
+  StageType?: { Code?: string; Description?: string };
+  StageStatus?: { Code?: string; Description?: string };
+  ProlongedCaseHandlingDays?: number;
+  RemainingDays?: number;
+  Milestones?: unknown[];
 }
 
 export interface SifCaseResult {
@@ -87,7 +95,7 @@ export interface SifCaseResult {
   };
   Contacts?: SifCaseContact[];
   CaseEstates?: SifCaseEstate[];
-  Stages?: Record<string, SifCaseStage> | SifCaseStage[];
+  Stages?: SifCaseStage[];
   AdditionalFields?: SifAdditionalField[];
 }
 
