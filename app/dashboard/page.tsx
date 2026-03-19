@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 type InspectionListItem = Pick<
   import("@/types").Inspection,
-  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id" | "gnr" | "bnr" | "snr" | "fnr" | "estates"
+  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id" | "gnr" | "bnr" | "snr" | "fnr" | "estates" | "participants"
 >;
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -24,7 +24,7 @@ export default function DashboardPage() {
 
       const { data } = await supabase
         .from("inspections")
-        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates")
+        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants")
         .order("created_at", { ascending: false })
         .limit(50);
 
@@ -63,21 +63,21 @@ export default function DashboardPage() {
         <div className="space-y-3">
           {list.map((inspection) => {
             const mt = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
+            const estates = (inspection.estates ?? []) as Array<{ recno?: number; address?: string }>;
+            const participants = (inspection.participants ?? []) as Array<{ recno?: number; name: string; role?: string; roleDescription?: string }>;
 
-            // Build subtitle: matrikkel · estate addresses · case title
-            const subtitleParts: string[] = [];
+            // Build heading: case_number · matrikkel – addresses – case_title
             const matrikkel = [inspection.gnr, inspection.bnr, inspection.snr, inspection.fnr]
               .filter(Boolean).join("/");
-            if (matrikkel) subtitleParts.push(matrikkel);
-            const estates = (inspection.estates ?? []) as Array<{ address?: string }>;
-            for (const e of estates) {
-              if (e.address) subtitleParts.push(e.address);
-            }
-            if (!estates.length && inspection.property_address) {
-              subtitleParts.push(inspection.property_address);
-            }
-            if (inspection.case_title) subtitleParts.push(inspection.case_title);
-            const subtitle = subtitleParts.join(" · ");
+            const afterDot: string[] = [];
+            if (matrikkel) afterDot.push(matrikkel);
+            for (const e of estates) { if (e.address) afterDot.push(e.address); }
+            if (!estates.length && inspection.property_address) afterDot.push(inspection.property_address);
+            if (inspection.case_title) afterDot.push(inspection.case_title);
+
+            const heading = inspection.case_number
+              ? `${inspection.case_number}${afterDot.length ? ` · ${afterDot.join(" – ")}` : ""}`
+              : inspection.property_address;
 
             return (
               <Link
@@ -86,21 +86,37 @@ export default function DashboardPage() {
                 className="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">
-                      {inspection.case_number ?? inspection.property_address}
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-gray-900 text-sm leading-snug">
+                      {heading}
                     </p>
-                    {subtitle && (
-                      <p className="text-sm text-gray-500 truncate mt-0.5">
-                        {subtitle}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 flex-wrap">
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 flex-wrap">
                       <span>{mt?.icon} {mt?.name ?? inspection.measure_type_id}</span>
                       <span className="text-gray-400">
                         · {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
                       </span>
                     </div>
+                    {participants.length > 0 && (
+                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+                        {participants.map((p, i) => (
+                          <span key={p.recno ?? i} className="text-xs text-gray-500">
+                            {p.name}
+                            {(p.roleDescription ?? p.role) && (
+                              <span className="text-gray-400"> · {p.roleDescription ?? p.role}</span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {estates.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-1.5">
+                        {estates.map((e, i) => (
+                          <span key={e.recno ?? i} className="text-xs text-brand-700 bg-brand-50 rounded-full px-2 py-0.5">
+                            🏠 {e.address ?? `Eiendom ${e.recno}`}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <StatusBadge status={inspection.status} />
                 </div>
