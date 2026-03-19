@@ -170,12 +170,22 @@ export async function archiveInspectionToSif(
     // Step 5: Build document contacts
     // – søker → mottaker (roleApplicantRecipient)
     // – deltakere → kopimottakere (roleCopyRecipient), excluding søker to avoid duplicates
+    //
+    // Fallback: if applicantRecno is not explicitly set but applicantName matches
+    // a participant, use that participant's recno as the applicant recno.
+    // This handles inspections created before applicant_recno was stored.
+    const resolvedApplicantRecno =
+      ctx.applicantRecno ??
+      (ctx.applicantName
+        ? (ctx.participants ?? []).find((p) => p.name === ctx.applicantName)?.recno
+        : undefined);
+
     const docContacts: Array<{ role: string; recno: number }> = [];
-    if (ctx.applicantRecno) {
-      docContacts.push({ role: settings.roleApplicantRecipient, recno: ctx.applicantRecno });
+    if (resolvedApplicantRecno) {
+      docContacts.push({ role: settings.roleApplicantRecipient, recno: resolvedApplicantRecno });
     }
     for (const p of ctx.participants ?? []) {
-      if (p.recno === ctx.applicantRecno) continue; // already added as mottaker
+      if (p.recno === resolvedApplicantRecno) continue; // already added as mottaker
       docContacts.push({ role: settings.roleCopyRecipient, recno: p.recno });
     }
 
