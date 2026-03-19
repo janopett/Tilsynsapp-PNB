@@ -115,6 +115,9 @@ export interface Inspection {
   latitude?: number | null;
   longitude?: number | null;
 
+  // Selected SIF stage (for reference — SIF API does not support StageRecno on CreateDocument)
+  sif_stage_recno?: number | null;
+
   // Classification
   measure_type_id: MeasureTypeId;
   selected_tags: PropertyTag[];
@@ -141,6 +144,7 @@ export interface InspectionCreate {
   estates?: SifEstate[];
   latitude?: number;
   longitude?: number;
+  sif_stage_recno?: number;
 }
 
 // ============================================================

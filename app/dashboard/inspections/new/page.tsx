@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { MEASURE_TYPES, PROPERTY_QUESTIONS } from "@/data/seed/measure-types";
-import type { MeasureTypeId, PropertyTag, SifContact, SifEstate } from "@/types";
+import type { MeasureTypeId, PropertyTag, SifContact, SifEstate, SifCaseStage } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
 import MapPickerModal from "@/components/ui/MapPickerModal";
@@ -40,6 +40,11 @@ export default function NewInspectionPage() {
   // Participants
   const [participants, setParticipants] = useState<SifContact[]>([]);
   const [participantDropdown, setParticipantDropdown] = useState<number | "">("");
+
+  // Stages from case
+  const [stages, setStages] = useState<SifCaseStage[]>([]);
+  const [stagesLoading, setStagesLoading] = useState(false);
+  const [selectedStageRecno, setSelectedStageRecno] = useState<number | null>(null);
 
   // Estates from case
   const [estates, setEstates] = useState<SifEstate[]>([]);
@@ -79,6 +84,8 @@ export default function NewInspectionPage() {
       if (!cn) {
         setCaseContacts([]);
         setEstates([]);
+        setStages([]);
+        setSelectedStageRecno(null);
         return;
       }
 
@@ -92,9 +99,10 @@ export default function NewInspectionPage() {
 
       setContactsLoading(true);
       setEstatesLoading(true);
+      setStagesLoading(true);
 
-      // Fetch contacts and estates in parallel
-      const [contactsRes, estatesRes] = await Promise.allSettled([
+      // Fetch contacts, estates and stages in parallel
+      const [contactsRes, estatesRes, stagesRes] = await Promise.allSettled([
         fetch(
           `/api/sif/case-contacts?caseNumber=${encodeURIComponent(cn)}`,
           { headers }
@@ -103,10 +111,15 @@ export default function NewInspectionPage() {
           `/api/sif/case-estates?caseNumber=${encodeURIComponent(cn)}`,
           { headers }
         ).then((r) => r.json()),
+        fetch(
+          `/api/sif/case-stages?caseNumber=${encodeURIComponent(cn)}`,
+          { headers }
+        ).then((r) => r.json()),
       ]);
 
       setContactsLoading(false);
       setEstatesLoading(false);
+      setStagesLoading(false);
 
       if (
         contactsRes.status === "fulfilled" &&
@@ -133,6 +146,24 @@ export default function NewInspectionPage() {
         }
       } else {
         setEstates([]);
+      }
+
+      if (
+        stagesRes.status === "fulfilled" &&
+        stagesRes.value.ok &&
+        stagesRes.value.stages?.length > 0
+      ) {
+        const fetchedStages: SifCaseStage[] = stagesRes.value.stages;
+        setStages(fetchedStages);
+        // Auto-select if only one stage
+        if (fetchedStages.length === 1 && fetchedStages[0].recno) {
+          setSelectedStageRecno(fetchedStages[0].recno);
+        } else {
+          setSelectedStageRecno(null);
+        }
+      } else {
+        setStages([]);
+        setSelectedStageRecno(null);
       }
     },
     [propertyAddress]
@@ -232,6 +263,7 @@ export default function NewInspectionPage() {
         estates: selectedEstates,
         latitude: latitude ?? undefined,
         longitude: longitude ?? undefined,
+        sif_stage_recno: selectedStageRecno ?? undefined,
       }),
     });
 
@@ -371,6 +403,33 @@ export default function NewInspectionPage() {
                       </div>
                     )}
                   </>
+                )}
+              </div>
+            )}
+
+            {/* Stage (behandlingstrinn) */}
+            {(stagesLoading || stages.length > 0) && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Behandlingstrinn
+                </label>
+                {stagesLoading ? (
+                  <p className="text-sm text-gray-400 animate-pulse">Henter behandlingstrinn…</p>
+                ) : (
+                  <select
+                    value={selectedStageRecno ?? ""}
+                    onChange={(e) =>
+                      setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)
+                    }
+                    className="input"
+                  >
+                    <option value="">— Velg behandlingstrinn —</option>
+                    {stages.map((s) => (
+                      <option key={s.recno} value={s.recno}>
+                        {s.title ?? `Trinn ${s.recno}`}
+                      </option>
+                    ))}
+                  </select>
                 )}
               </div>
             )}
