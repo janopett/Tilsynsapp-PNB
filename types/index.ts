@@ -79,6 +79,8 @@ export interface CheckpointDefinition {
   required_tags: PropertyTag[];
   severity: CheckpointSeverity;
   legal_reference?: string;
+  /** Optional explicit URL — overrides auto-generated Lovdata link */
+  legal_reference_url?: string;
 }
 
 // ============================================================

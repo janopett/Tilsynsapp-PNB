@@ -243,7 +243,7 @@ const CheckpointItem = memo(function CheckpointItem({
               <p className="text-xs text-gray-500 mt-0.5">
                 {CATEGORY_LABELS[definition.category]}
                 {definition.legal_reference && (() => {
-                  const url = buildLegalUrl(definition.legal_reference);
+                  const url = definition.legal_reference_url || buildLegalUrl(definition.legal_reference);
                   return url ? (
                     <a
                       href={url}
