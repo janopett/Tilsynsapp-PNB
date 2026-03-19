@@ -77,6 +77,23 @@ export interface SifGetCasesResult {
 }
 
 // ============================================================
+// CaseService - GetCase (singular, by Recno)
+// ============================================================
+
+export interface SifGetCaseQuery {
+  CaseRecno: number;
+  IncludeReferringCases?: boolean;
+  IncludeCaseContacts?: boolean;
+}
+
+export interface SifGetCaseResult {
+  Successful: boolean;
+  Case?: SifCaseResult;
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
 // CaseService - GetCaseContacts
 // ============================================================
 

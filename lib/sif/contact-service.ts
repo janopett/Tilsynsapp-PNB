@@ -1,8 +1,9 @@
 // ============================================================
 // SIF ContactService - fetch contacts on a specific case
 //
-// Primary:  CaseService/GetCaseContacts  (returns only case-linked contacts)
-// Fallback: ResponsiblePerson embedded in CaseService/GetCases response
+// Strategy 1: CaseService/GetCaseContacts  (returns only case-linked contacts)
+// Strategy 2: CaseService/GetCase with IncludeCaseContacts + IncludeReferringCases
+// Strategy 3: CaseService/GetCases fallback (ResponsiblePerson + ResponsibleEnterprise)
 //
 // GetCaseContacts throws IndexOutOfRangeException on some SIF instances
 // when the case has no contacts — we catch this and fall back to
@@ -14,6 +15,8 @@ import type {
   SifGetCaseContactsQuery,
   SifGetCaseContactsResult,
   SifCaseContact,
+  SifGetCaseQuery,
+  SifGetCaseResult,
   SifGetCasesQuery,
   SifGetCasesResult,
 } from "./types";
@@ -76,16 +79,58 @@ export async function getCaseContacts(
     }
   }
 
-  // ── Strategy 2: GetCases – extract Contacts[] + ResponsiblePerson ──────────
+  // ── Strategy 2: GetCase (singular) with IncludeCaseContacts flag ──────────
+  if (caseRecno) {
+    try {
+      const query: SifGetCaseQuery = {
+        CaseRecno: caseRecno,
+        IncludeReferringCases: true,
+        IncludeCaseContacts: true,
+      };
+      const result = await sifRpcCall<SifGetCaseQuery, SifGetCaseResult>(
+        "CaseService",
+        "GetCase",
+        query,
+        correlationId
+      );
+      if (result.Successful && result.Case) {
+        const c = result.Case;
+        const contacts: SifContact[] = [];
+        if (c.Contacts?.length) contacts.push(...mapCaseContacts(c.Contacts));
+        const raw = c as unknown as RawCaseFields;
+        const rp = raw.ResponsiblePerson;
+        if (rp?.Recno && !contacts.some((x) => x.recno === rp.Recno)) {
+          contacts.push({
+            recno: rp.Recno,
+            name: rp.Name ?? `Person ${rp.Recno}`,
+            role: "ResponsiblePerson",
+            roleDescription: "Saksbehandler",
+            email: rp.Email,
+          });
+        }
+        const re = raw.ResponsibleEnterprise;
+        if (re?.Recno && !contacts.some((x) => x.recno === re.Recno)) {
+          contacts.push({
+            recno: re.Recno,
+            name: re.Name ?? `Virksomhet ${re.Recno}`,
+            role: "ResponsibleEnterprise",
+            roleDescription: re.RoleDescription ?? "Ansvarlig virksomhet",
+            email: re.Email,
+            phone: re.Phone,
+          });
+        }
+        if (contacts.length > 0) return contacts;
+      }
+    } catch (err) {
+      console.warn("[SIF] GetCase(CaseRecno) failed", err);
+    }
+  }
+
+  // ── Strategy 3: GetCases – extract Contacts[] + ResponsiblePerson ──────────
   if (!caseNumber) return [];
 
   try {
-    const query: SifGetCasesQuery = {
-      CaseNumber: caseNumber,
-      MaxResults: 1,
-      IncludeReferringCases: true,
-      IncludeCaseContacts: true,
-    };
+    const query: SifGetCasesQuery = { CaseNumber: caseNumber, MaxResults: 1 };
     const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
       "CaseService",
       "GetCases",
