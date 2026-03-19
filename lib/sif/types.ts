@@ -39,6 +39,7 @@ export interface SifGetCasesQuery {
   IncludeReferringCases?: boolean;
   IncludeCaseContacts?: boolean;
   IncludeCaseEstates?: boolean;
+  IncludeStages?: boolean;
   AdditionalFields?: SifAdditionalField[];
 }
 
@@ -62,6 +63,13 @@ export interface SifCaseEstate {
   };
 }
 
+export interface SifCaseStage {
+  StageCode?: string;
+  Description?: string;
+  Date?: string;
+  [key: string]: unknown; // allow additional fields until structure is known
+}
+
 export interface SifCaseResult {
   Recno: number;
   CaseNumber: string;
@@ -79,6 +87,7 @@ export interface SifCaseResult {
   };
   Contacts?: SifCaseContact[];
   CaseEstates?: SifCaseEstate[];
+  Stages?: Record<string, SifCaseStage> | SifCaseStage[];
   AdditionalFields?: SifAdditionalField[];
 }
 
