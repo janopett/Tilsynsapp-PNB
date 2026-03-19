@@ -24,7 +24,9 @@ const MEASURE_TYPE_OPTIONS: { id: MeasureTypeId; label: string }[] = [
   { id: "tilbygg",           label: "Tilbygg" },
   { id: "paabygg",           label: "Påbygg" },
   { id: "enebolig",          label: "Enebolig" },
+  { id: "tomannsbolig",      label: "Tomannsbolig" },
   { id: "bruksendring",      label: "Bruksendring" },
+  { id: "fasadeendring",     label: "Fasadeendring" },
   { id: "terrasse_balkong",  label: "Terrasse / Balkong" },
   { id: "stoettemur",        label: "Støttemur" },
   { id: "riving",            label: "Riving" },
@@ -41,6 +43,8 @@ const PROPERTY_TAG_OPTIONS: { tag: PropertyTag; label: string }[] = [
   { tag: "krever_tilgjengelighet","label": "Krever tilgjengelighet" },
   { tag: "har_ansvarlige_foretak","label": "Har ansvarlige foretak" },
   { tag: "har_dispensasjon",      label: "Har dispensasjon" },
+  { tag: "har_radon_tiltak",      label: "Har radon-tiltak" },
+  { tag: "krever_lydkrav",        label: "Krever lydkrav mellom boenheter" },
 ];
 
 // ── Types ──────────────────────────────────────────────────────────────────────

@@ -18,5 +18,9 @@ export async function GET(req: NextRequest) {
     .order("sort_order");
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, checkpoints: data ?? [] });
+  return NextResponse.json(
+    { ok: true, checkpoints: data ?? [] },
+    // Checkpoint definitions change rarely — cache for 5 min, stale-while-revalidate 1 min
+    { headers: { "Cache-Control": "private, max-age=300, stale-while-revalidate=60" } }
+  );
 }

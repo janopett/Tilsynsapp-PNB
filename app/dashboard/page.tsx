@@ -25,14 +25,28 @@ export default function DashboardPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setLoading(false); return; }
 
-      const { data, error } = await supabase
-        .from("inspections")
-        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants")
-        .order("created_at", { ascending: false })
-        .limit(200);
+      // Fetch all in two parallel queries: active (draft+in_progress) and the rest.
+      // This lets us show per-tab counts without fetching 200 unfiltered rows.
+      const [activeRes, restRes] = await Promise.all([
+        supabase
+          .from("inspections")
+          .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants")
+          .eq("user_id", session.user.id)
+          .in("status", ["draft", "in_progress"])
+          .order("created_at", { ascending: false })
+          .limit(200),
+        supabase
+          .from("inspections")
+          .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants")
+          .eq("user_id", session.user.id)
+          .in("status", ["completed", "archived"])
+          .order("created_at", { ascending: false })
+          .limit(200),
+      ]);
 
-      if (error) console.error("[dashboard] load error:", error.message);
-      setList(data ?? []);
+      if (activeRes.error) console.error("[dashboard] load error:", activeRes.error.message);
+      if (restRes.error) console.error("[dashboard] load error:", restRes.error.message);
+      setList([...(activeRes.data ?? []), ...(restRes.data ?? [])]);
       setLoading(false);
     }
     load();

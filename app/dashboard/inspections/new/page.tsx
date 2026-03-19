@@ -199,7 +199,17 @@ export default function NewInspectionPage() {
   );
 
   useEffect(() => {
-    fetchCaseData(caseNumber);
+    // Require at least 4 characters and debounce 400 ms to avoid a PNB
+    // API call on every keystroke while the user is still typing.
+    if (caseNumber.trim().length < 4) {
+      setCaseContacts([]);
+      setEstates([]);
+      setStages([]);
+      setSelectedStageRecno(null);
+      return;
+    }
+    const timer = setTimeout(() => { fetchCaseData(caseNumber); }, 400);
+    return () => clearTimeout(timer);
   }, [caseNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function fillFromEstate(estate: SifEstate) {
