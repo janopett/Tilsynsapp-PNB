@@ -669,17 +669,16 @@ export default function InspectionPage() {
             {t.inspection.back}
           </Link>
           <h1 className="text-xl font-bold text-gray-900 truncate">
-            {inspection.property_address}
+            {inspection.case_number
+              ? <>
+                  {inspection.case_number}
+                  {inspection.case_title && (
+                    <span className="font-normal text-gray-500"> · {inspection.case_title}</span>
+                  )}
+                </>
+              : inspection.property_address}
           </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 mt-1 flex-wrap">
-            {inspection.case_number && (
-              <span>
-                {t.inspection.case} {inspection.case_number}
-                {inspection.case_title && (
-                  <span className="text-gray-400"> · {inspection.case_title}</span>
-                )}
-              </span>
-            )}
             <span>
               {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
             </span>
