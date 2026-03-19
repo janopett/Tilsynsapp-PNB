@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { findCaseInSif } from "@/lib/sif/case-service";
 import { getEstateByMatrikkel } from "@/lib/sif/estate-service";
+import type { SifCaseEstate } from "@/lib/sif/types";
 import type { SifEstate } from "@/types";
 
 interface RawArchiveCode {
@@ -30,6 +31,18 @@ function parseArchiveCodes(archiveCodes: RawArchiveCode[]): Array<{ gnr: number;
     .filter((x): x is NonNullable<typeof x> => x !== null);
 }
 
+function caseEstateToSifEstate(e: SifCaseEstate): SifEstate {
+  return {
+    recno: e.Recno,
+    address: e.Address?.StreetAddress || undefined,
+    gnr: e.EstateNumber != null ? String(e.EstateNumber) : undefined,
+    bnr: e.WorkNumber != null ? String(e.WorkNumber) : undefined,
+    snr: e.SectionNumber != null && e.SectionNumber !== 0 ? String(e.SectionNumber) : undefined,
+    fnr: e.LeaseHoldNumber != null && e.LeaseHoldNumber !== 0 ? String(e.LeaseHoldNumber) : undefined,
+    municipality: e.Municipality,
+  };
+}
+
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
@@ -47,38 +60,43 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    // Get the case to extract ArchiveCodes (matrikkel data)
     const sifCase = await findCaseInSif({ caseNumber });
-    const raw = sifCase.raw as { ArchiveCodes?: RawArchiveCode[] } | undefined;
-    const archiveCodes = raw?.ArchiveCodes ?? [];
+    const raw = sifCase.raw as {
+      CaseEstates?: SifCaseEstate[];
+      ArchiveCodes?: RawArchiveCode[];
+    } | undefined;
 
+    // Strategy 1: CaseEstates from GetCases (IncludeCaseEstates: true)
+    if (raw?.CaseEstates?.length) {
+      const estates = raw.CaseEstates.map(caseEstateToSifEstate);
+      return NextResponse.json({ ok: true, estates });
+    }
+
+    // Strategy 2: Parse ArchiveCodes + enrich with EstateService/GetEstates
+    const archiveCodes = raw?.ArchiveCodes ?? [];
     const parsed = parseArchiveCodes(archiveCodes);
 
     if (parsed.length === 0) {
       return NextResponse.json({ ok: true, estates: [] });
     }
 
-    // Enrich each parsed matrikkel entry with address from SIF (by gnr/bnr)
     const estateResults = await Promise.allSettled(
       parsed.map((m) => getEstateByMatrikkel(m.gnr, m.bnr))
     );
 
     const estates: SifEstate[] = parsed.map((m, i) => {
       const result = estateResults[i];
-      const raw =
+      const enriched =
         result.status === "fulfilled" && result.value ? result.value : null;
 
-      // Use a synthetic recno if SIF doesn't return the estate
-      const recno = raw?.Recno ?? -(m.gnr * 100000 + m.bnr);
-
       return {
-        recno,
-        address: raw?.Address?.StreetAddress || undefined,
+        recno: enriched?.Recno ?? -(m.gnr * 100000 + m.bnr),
+        address: enriched?.Address?.StreetAddress || undefined,
         gnr: String(m.gnr),
         bnr: String(m.bnr),
         snr: m.snr ? String(m.snr) : undefined,
         fnr: m.fnr ? String(m.fnr) : undefined,
-        municipality: raw?.Municipality,
+        municipality: enriched?.Municipality,
       };
     });
 
