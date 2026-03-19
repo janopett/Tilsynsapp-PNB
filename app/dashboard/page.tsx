@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useLanguage } from "@/lib/i18n";
 type InspectionListItem = Pick<
   import("@/types").Inspection,
   "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id"
@@ -13,6 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 export default function DashboardPage() {
   const [list, setList] = useState<InspectionListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t, locale } = useLanguage();
 
   useEffect(() => {
     async function load() {
@@ -33,29 +35,29 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64 text-gray-400">Laster…</div>;
+    return <div className="flex justify-center items-center h-64 text-gray-400">{t.dashboard.loading}</div>;
   }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mine tilsyn</h1>
-          <p className="text-gray-500 text-sm mt-1">{list.length} tilsyn registrert</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t.dashboard.title}</h1>
+          <p className="text-gray-500 text-sm mt-1">{t.dashboard.count(list.length)}</p>
         </div>
         <Link
           href="/dashboard/inspections/new"
           className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-5 py-3 rounded-xl text-base transition"
         >
-          + Nytt tilsyn
+          {t.dashboard.newInspection}
         </Link>
       </div>
 
       {list.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           <p className="text-5xl mb-4">📋</p>
-          <p className="text-lg font-medium">Ingen tilsyn registrert ennå</p>
-          <p className="text-sm mt-1">Klikk «Nytt tilsyn» for å komme i gang.</p>
+          <p className="text-lg font-medium">{t.dashboard.empty}</p>
+          <p className="text-sm mt-1">{t.dashboard.emptyHint}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -80,10 +82,10 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2 mt-1 text-sm text-gray-500 flex-wrap">
                       <span>{mt?.icon} {mt?.name ?? inspection.measure_type_id}</span>
                       {inspection.case_number && (
-                        <span className="text-gray-400">· Sak {inspection.case_number}</span>
+                        <span className="text-gray-400">· {t.dashboard.case} {inspection.case_number}</span>
                       )}
                       <span className="text-gray-400">
-                        · {new Date(inspection.inspection_date).toLocaleDateString("nb-NO")}
+                        · {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
                       </span>
                     </div>
                   </div>

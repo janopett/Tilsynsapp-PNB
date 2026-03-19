@@ -7,9 +7,11 @@ import type { MeasureTypeId, PropertyTag, SifContact, SifEstate } from "@/types"
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
 import MapPickerModal from "@/components/ui/MapPickerModal";
+import { useLanguage } from "@/lib/i18n";
 
 export default function NewInspectionPage() {
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
@@ -191,7 +193,7 @@ export default function NewInspectionPage() {
 
   async function handleSubmit() {
     if (!measureTypeId) {
-      setError("Velg tiltakstype.");
+      setError(t.newInspection.errorNoMeasureType);
       return;
     }
     setLoading(true);
@@ -233,7 +235,7 @@ export default function NewInspectionPage() {
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      setError(body.error ?? "Noe gikk galt.");
+      setError(body.error ?? t.newInspection.errorGeneric);
       setLoading(false);
       return;
     }
@@ -245,7 +247,7 @@ export default function NewInspectionPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Nytt tilsyn</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t.newInspection.title}</h1>
         <div className="flex items-center gap-2 mt-3">
           {[1, 2].map((s) => (
             <div
@@ -265,7 +267,7 @@ export default function NewInspectionPage() {
               >
                 {s}
               </span>
-              {s === 1 ? "Saksopplysninger" : "Tiltakstype"}
+              {s === 1 ? t.newInspection.step1 : t.newInspection.step2}
             </div>
           ))}
         </div>
@@ -278,13 +280,13 @@ export default function NewInspectionPage() {
             {/* Case number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Saksnummer
+                {t.newInspection.caseNumber}
               </label>
               <CaseSearchInput
                 value={caseNumber}
                 onChange={(val) => { setCaseNumber(val); if (!val) setCaseTitle(""); }}
                 onSelect={(c) => { setCaseNumber(c.caseNumber); setCaseTitle(c.title); }}
-                placeholder="Søk på saksnummer eller tittel…"
+                placeholder={t.newInspection.caseSearchPlaceholder}
               />
               {caseTitle && (
                 <p className="mt-1 text-xs text-gray-500 truncate" title={caseTitle}>
@@ -297,11 +299,11 @@ export default function NewInspectionPage() {
             {(estatesLoading || estates.length > 0) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Eiendommer (fra sak)
+                  {t.newInspection.estates}
                 </label>
                 {estatesLoading ? (
                   <p className="text-sm text-gray-400 animate-pulse">
-                    Henter eiendommer…
+                    {t.newInspection.loadingEstates}
                   </p>
                 ) : (
                   <>
@@ -317,7 +319,7 @@ export default function NewInspectionPage() {
                               type="button"
                               onClick={() => fillFromEstate(e)}
                               className="hover:underline text-left"
-                              title="Fyll inn adresse og matrikkelnummer herfra"
+                              title={t.newInspection.fillFromEstate}
                             >
                               {estateLabel(e)}
                             </button>
@@ -345,7 +347,7 @@ export default function NewInspectionPage() {
                           }
                           className="flex-1 input text-sm"
                         >
-                          <option value="">— Legg til eiendom</option>
+                          <option value="">{t.newInspection.addEstateOption}</option>
                           {estates
                             .filter(
                               (e) =>
@@ -362,7 +364,7 @@ export default function NewInspectionPage() {
                           disabled={!estateDropdown}
                           className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
                         >
-                          Legg til
+                          {t.newInspection.add}
                         </button>
                       </div>
                     )}
@@ -374,13 +376,13 @@ export default function NewInspectionPage() {
             {/* Eiendomsinformasjon – grouped card */}
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
               <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                Eiendomsinformasjon
+                {t.newInspection.propertyInfo}
               </p>
 
               {/* Address */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Eiendomsadresse <span className="text-red-500">*</span>
+                  {t.newInspection.propertyAddress} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -395,52 +397,20 @@ export default function NewInspectionPage() {
               {/* Matrikkel: Gnr / Bnr / Snr / Fnr */}
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Gnr
-                  </label>
-                  <input
-                    type="text"
-                    value={gnr}
-                    onChange={(e) => setGnr(e.target.value)}
-                    placeholder="123"
-                    className="input bg-white text-sm"
-                  />
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Gnr</label>
+                  <input type="text" value={gnr} onChange={(e) => setGnr(e.target.value)} placeholder="123" className="input bg-white text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Bnr
-                  </label>
-                  <input
-                    type="text"
-                    value={bnr}
-                    onChange={(e) => setBnr(e.target.value)}
-                    placeholder="45"
-                    className="input bg-white text-sm"
-                  />
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Bnr</label>
+                  <input type="text" value={bnr} onChange={(e) => setBnr(e.target.value)} placeholder="45" className="input bg-white text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Snr
-                  </label>
-                  <input
-                    type="text"
-                    value={snr}
-                    onChange={(e) => setSnr(e.target.value)}
-                    placeholder="0"
-                    className="input bg-white text-sm"
-                  />
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Snr</label>
+                  <input type="text" value={snr} onChange={(e) => setSnr(e.target.value)} placeholder="0" className="input bg-white text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
-                    Fnr
-                  </label>
-                  <input
-                    type="text"
-                    value={fnr}
-                    onChange={(e) => setFnr(e.target.value)}
-                    placeholder="0"
-                    className="input bg-white text-sm"
-                  />
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Fnr</label>
+                  <input type="text" value={fnr} onChange={(e) => setFnr(e.target.value)} placeholder="0" className="input bg-white text-sm" />
                 </div>
               </div>
             </div>
@@ -449,7 +419,7 @@ export default function NewInspectionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Dato for tilsyn <span className="text-red-500">*</span>
+                  {t.newInspection.inspectionDate} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -460,13 +430,13 @@ export default function NewInspectionPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tilsynsfører
+                  {t.newInspection.inspector}
                 </label>
                 <input
                   type="text"
                   value={inspectorName}
                   onChange={(e) => setInspectorName(e.target.value)}
-                  placeholder="Saksbehandler"
+                  placeholder={t.newInspection.inspectorPlaceholder}
                   className="input"
                 />
               </div>
@@ -475,7 +445,7 @@ export default function NewInspectionPage() {
             {/* Applicant */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Søkers navn
+                {t.newInspection.applicantName}
               </label>
               {caseContacts.length > 0 ? (
                 <select
@@ -483,11 +453,11 @@ export default function NewInspectionPage() {
                   onChange={(e) => setApplicantName(e.target.value)}
                   className="input"
                 >
-                  <option value="">— Velg fra sak eller skriv inn</option>
+                  <option value="">{t.newInspection.selectFromCaseOrType}</option>
                   {caseContacts.map((c) => (
                     <option key={c.recno} value={c.name}>
                       {c.name}
-                      {c.roleDescription ? ` (${c.roleDescription})` : ""}
+                      {c.role ? ` (${c.role})` : ""}
                     </option>
                   ))}
                 </select>
@@ -497,7 +467,7 @@ export default function NewInspectionPage() {
                   value={applicantName}
                   onChange={(e) => setApplicantName(e.target.value)}
                   placeholder={
-                    contactsLoading ? "Henter kontakter…" : "Ola Nordmann"
+                    contactsLoading ? t.newInspection.loadingContacts : "Ola Nordmann"
                   }
                   className="input"
                 />
@@ -507,7 +477,7 @@ export default function NewInspectionPage() {
             {/* Participants */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Deltakere
+                {t.newInspection.participants}
               </label>
               {participants.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-2">
@@ -517,11 +487,8 @@ export default function NewInspectionPage() {
                       className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium"
                     >
                       {p.name}
-                      {p.roleDescription && (
-                        <span className="text-gray-400">
-                          {" "}
-                          · {p.roleDescription}
-                        </span>
+                      {p.role && (
+                        <span className="text-gray-400"> · {p.role}</span>
                       )}
                       <button
                         onClick={() => removeParticipant(p.recno)}
@@ -544,7 +511,7 @@ export default function NewInspectionPage() {
                     }
                     className="flex-1 input text-sm"
                   >
-                    <option value="">— Velg deltaker fra sak</option>
+                    <option value="">{t.newInspection.selectParticipant}</option>
                     {caseContacts
                       .filter(
                         (c) => !participants.find((p) => p.recno === c.recno)
@@ -552,7 +519,7 @@ export default function NewInspectionPage() {
                       .map((c) => (
                         <option key={c.recno} value={c.recno}>
                           {c.name}
-                          {c.roleDescription ? ` (${c.roleDescription})` : ""}
+                          {c.role ? ` (${c.role})` : ""}
                         </option>
                       ))}
                   </select>
@@ -561,16 +528,16 @@ export default function NewInspectionPage() {
                     disabled={!participantDropdown}
                     className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
                   >
-                    Legg til
+                    {t.newInspection.add}
                   </button>
                 </div>
               ) : (
                 <p className="text-sm text-gray-400">
                   {contactsLoading
-                    ? "Henter kontakter fra sak…"
+                    ? t.newInspection.loadingCaseContacts
                     : caseNumber
-                    ? "Ingen kontakter funnet på saken."
-                    : "Velg saksnummer for å hente kontakter."}
+                    ? t.newInspection.noContactsFound
+                    : t.newInspection.selectCaseForContacts}
                 </p>
               )}
             </div>
@@ -578,21 +545,21 @@ export default function NewInspectionPage() {
             {/* Notes */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Generelle merknader
+                {t.newInspection.notes}
               </label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={3}
                 className="input resize-none"
-                placeholder="Eventuelle generelle kommentarer til tilsynet..."
+                placeholder={t.newInspection.notesPlaceholder}
               />
             </div>
 
             {/* Map */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Posisjon i kart
+                {t.newInspection.mapPosition}
               </label>
               <div className="flex items-center gap-3">
                 <button
@@ -602,8 +569,8 @@ export default function NewInspectionPage() {
                 >
                   🗺️{" "}
                   {latitude != null
-                    ? "Endre posisjon i kart"
-                    : "Velg posisjon i kart"}
+                    ? t.newInspection.changePosition
+                    : t.newInspection.selectPosition}
                 </button>
                 {latitude != null && longitude != null && (
                   <span className="text-xs text-gray-500">
@@ -629,7 +596,7 @@ export default function NewInspectionPage() {
           <div className="space-y-6">
             <div>
               <h2 className="text-base font-semibold text-gray-800 mb-3">
-                Velg tiltakstype
+                {t.newInspection.selectMeasureType}
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 {MEASURE_TYPES.map((mt) => (
@@ -654,11 +621,10 @@ export default function NewInspectionPage() {
 
             <div>
               <h2 className="text-base font-semibold text-gray-800 mb-1">
-                Egenskaper ved tiltaket
+                {t.newInspection.measureProperties}
               </h2>
               <p className="text-sm text-gray-500 mb-3">
-                Kryss av det som gjelder. Sjekklisten tilpasses basert på
-                valgene dine.
+                {t.newInspection.measurePropertiesHint}
               </p>
               <div className="space-y-2">
                 {PROPERTY_QUESTIONS.map((q) => (
@@ -703,7 +669,7 @@ export default function NewInspectionPage() {
               onClick={() => setStep(1)}
               className="text-gray-600 hover:text-gray-900 font-medium"
             >
-              ← Tilbake
+              {t.newInspection.back}
             </button>
           )}
 
@@ -711,7 +677,7 @@ export default function NewInspectionPage() {
             <button
               onClick={() => {
                 if (!propertyAddress.trim()) {
-                  setError("Eiendomsadresse er påkrevd.");
+                  setError(t.newInspection.errorNoAddress);
                   return;
                 }
                 setError("");
@@ -719,7 +685,7 @@ export default function NewInspectionPage() {
               }}
               className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition"
             >
-              Neste →
+              {t.newInspection.next}
             </button>
           ) : (
             <button
@@ -727,7 +693,7 @@ export default function NewInspectionPage() {
               disabled={loading || !measureTypeId}
               className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition disabled:opacity-50"
             >
-              {loading ? "Oppretter..." : "Opprett tilsyn"}
+              {loading ? t.newInspection.creating : t.newInspection.createInspection}
             </button>
           )}
         </div>
@@ -738,7 +704,7 @@ export default function NewInspectionPage() {
           initialLat={latitude}
           initialLng={longitude}
           addressHint={propertyAddress || undefined}
-          title="Velg posisjon for tilsynet"
+          title={t.newInspection.mapTitle}
           onSave={(lat, lng) => {
             setLatitude(lat);
             setLongitude(lng);
