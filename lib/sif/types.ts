@@ -44,7 +44,7 @@ export interface SifGetCasesQuery {
 
 export interface SifCaseContact {
   Recno: number;
-  Name?: string;
+  ContactName?: string;  // actual SIF field name
   Role?: string;
   RoleDescription?: string;
   Email?: string;
@@ -52,12 +52,9 @@ export interface SifCaseContact {
 }
 
 export interface SifCaseEstate {
-  Recno: number;
-  EstateNumber?: number;     // gnr
-  WorkNumber?: number;       // bnr
-  SectionNumber?: number | null;   // snr
-  LeaseHoldNumber?: number | null; // fnr
-  Municipality?: string;
+  Recno: string | number;
+  // EstateNumber is "gnr/bnr/fnr/snr" e.g. "168/200/0/1"
+  EstateNumber?: string;
   Address?: {
     StreetAddress?: string;
     ZipCode?: string;

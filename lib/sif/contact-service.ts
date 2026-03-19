@@ -140,7 +140,7 @@ export async function getCaseContacts(
 function mapCaseContacts(raw: SifCaseContact[]): SifContact[] {
   return raw.map((c) => ({
     recno: c.Recno,
-    name: c.Name ?? `Kontakt ${c.Recno}`,
+    name: c.ContactName ?? `Kontakt ${c.Recno}`,
     role: c.Role,
     roleDescription: c.RoleDescription,
     email: c.Email,
