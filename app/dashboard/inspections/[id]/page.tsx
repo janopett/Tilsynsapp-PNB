@@ -57,6 +57,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [gnr, setGnr] = useState(inspection.gnr ?? "");
   const [bnr, setBnr] = useState(inspection.bnr ?? "");
   const [applicantName, setApplicantName] = useState(inspection.applicant_name ?? "");
+  const [applicantRecno, setApplicantRecno] = useState<number | null>(inspection.applicant_recno ?? null);
   const [inspectorName, setInspectorName] = useState(inspection.inspector_name ?? "");
   const [inspectionDate, setInspectionDate] = useState(inspection.inspection_date);
   const [notes, setNotes] = useState(inspection.notes ?? "");
@@ -119,6 +120,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         gnr: gnr || null,
         bnr: bnr || null,
         applicant_name: applicantName || null,
+        applicant_recno: applicantRecno ?? null,
         inspector_name: inspectorName || null,
         inspection_date: inspectionDate,
         notes: notes || null,
@@ -219,7 +221,12 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
             {caseContacts.length > 0 ? (
               <select
                 value={applicantName}
-                onChange={(e) => setApplicantName(e.target.value)}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setApplicantName(name);
+                  const contact = caseContacts.find((c) => c.name === name);
+                  setApplicantRecno(contact ? contact.recno : null);
+                }}
                 className="input"
               >
                 <option value="">{t.inspection.selectOrType}</option>
