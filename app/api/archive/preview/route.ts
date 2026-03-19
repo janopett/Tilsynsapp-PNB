@@ -51,11 +51,11 @@ export async function POST(req: NextRequest) {
   const measureTypeName = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id)?.name;
 
   const title = buildDocumentTitle(settings.docTitleTemplate, {
-    title: inspection.case_title ?? "",
+    caseTitle: inspection.case_title ?? "",
     date: inspection.inspection_date ?? "",
-    address: inspection.property_address ?? "",
-    inspector: inspection.inspector_name ?? "",
-    applicant: inspection.applicant_name ?? "",
+    propertyAddress: inspection.property_address ?? "",
+    inspectorName: inspection.inspector_name ?? "",
+    applicantName: inspection.applicant_name ?? "",
     measureType: measureTypeName ?? "",
   });
 
