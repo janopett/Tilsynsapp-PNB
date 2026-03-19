@@ -66,15 +66,23 @@ export async function POST(req: NextRequest) {
 
   const applicantRecno = inspection.applicant_recno ?? undefined;
 
+  // Fallback: derive applicant recno from participants by name if not explicitly stored.
+  // Handles inspections created before applicant_recno was persisted.
+  const resolvedApplicantRecno =
+    applicantRecno ??
+    (inspection.applicant_name
+      ? participants.find((p) => p.name === inspection.applicant_name)?.recno
+      : undefined);
+
   const docContacts: Array<{ Role: string; ExternalId: string | undefined }> = [];
-  if (applicantRecno) {
+  if (resolvedApplicantRecno) {
     docContacts.push({
       Role: settings.roleApplicantRecipient,
-      ExternalId: `recno:${applicantRecno}`,
+      ExternalId: `recno:${resolvedApplicantRecno}`,
     });
   }
   for (const p of participants) {
-    if (p.recno === applicantRecno) continue;
+    if (p.recno === resolvedApplicantRecno) continue;
     docContacts.push({
       Role: settings.roleCopyRecipient,
       ExternalId: `recno:${p.recno}`,
@@ -107,6 +115,7 @@ export async function POST(req: NextRequest) {
       inspectionId,
       applicantName: inspection.applicant_name,
       applicantRecno,
+      resolvedApplicantRecno,
       participants,
       roleApplicantRecipient: settings.roleApplicantRecipient,
       roleCopyRecipient: settings.roleCopyRecipient,
