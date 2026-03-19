@@ -204,9 +204,10 @@ export async function synchronizeContactPerson(input: {
       if (input.title && existing.Title !== input.title) {
         await callSynchronize({
           externalId: input.externalId,
-          // Re-send the stored name so PNB doesn't misinterpret this as a new person.
-          firstName: existing.FirstName,
-          lastName: existing.LastName,
+          // Prefer the stored names; fall back to our input (confirmed to match case-insensitively).
+          // Ensures PNB identifies this as an update, not a new person.
+          firstName: existing.FirstName ?? input.firstName,
+          lastName: existing.LastName ?? input.lastName,
           enterprise: input.enterprise,
           title: input.title,
         });
@@ -234,11 +235,17 @@ async function lookupContactPersonByExternalId(
     const result = await sifRpcCall<SifGetContactPersonsQuery, SifGetContactPersonsResult>(
       "ContactService",
       "GetContactPersons",
-      { ExternalId: externalId, MaxRows: 1 }
+      { ExternalId: externalId, MaxRows: 1 },
+      undefined,
+      true // GetContactPersons requires {"parameter": ...} wrapper per SIF API schema
     );
     return result.Successful && result.ContactPersons?.length ? result.ContactPersons[0] : null;
-  } catch {
-    return null; // Non-fatal: fall through to SynchronizeContactPerson
+  } catch (err) {
+    console.warn("[SIF] GetContactPersons lookup failed (non-fatal)", {
+      externalId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null; // Fall through to SynchronizeContactPerson
   }
 }
 
@@ -251,9 +258,10 @@ function contactNamesMatch(
   const normalize = (s?: string) => (s ?? "").trim().toLowerCase();
   const inputFull = [firstName, lastName].filter(Boolean).map(normalize).join(" ");
   if (!inputFull) return true; // no name supplied → can't distinguish → treat as match
+  // Use Name (full name) if present, otherwise combine FirstName + LastName
   const storedFull =
-    existing.FullName
-      ? normalize(existing.FullName)
+    existing.Name
+      ? normalize(existing.Name)
       : [existing.FirstName, existing.LastName].filter(Boolean).map(normalize).join(" ");
   return storedFull === inputFull;
 }

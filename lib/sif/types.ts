@@ -317,8 +317,8 @@ export interface SifGetEnterpriseResult {
 export interface SifGetContactPersonsQuery {
   /** Look up by the external key we stored when synchronizing */
   ExternalId?: string;
-  FirstName?: string;
-  LastName?: string;
+  /** Full or partial name filter */
+  Name?: string;
   Recno?: number;
   MaxRows?: number;
   Active?: boolean;
@@ -326,10 +326,12 @@ export interface SifGetContactPersonsQuery {
 
 export interface SifContactPersonResult {
   Recno: number;
+  /** Full display name as stored in 360° (e.g. "Ola Nordmann") */
+  Name?: string;
+  /** Separate first name — may be present depending on SIF version */
   FirstName?: string;
+  /** Separate last name — may be present depending on SIF version */
   LastName?: string;
-  /** Full display name as stored in 360° */
-  FullName?: string;
   Title?: string;
   /** Plain enterprise name as stored in 360° */
   Enterprise?: string;
