@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 type InspectionListItem = Pick<
   import("@/types").Inspection,
-  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id" | "gnr" | "bnr" | "snr" | "fnr" | "estates" | "participants" | "external_participants"
->;
+  "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id" | "gnr" | "bnr" | "snr" | "fnr" | "estates" | "participants"
+> & { external_participants?: import("@/types").ExternalParticipant[] };
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { createClient } from "@/lib/supabase/client";
@@ -22,12 +22,13 @@ export default function DashboardPage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setLoading(false); return; }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("inspections")
-        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants, external_participants")
+        .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants")
         .order("created_at", { ascending: false })
         .limit(50);
 
+      if (error) console.error("[dashboard] load error:", error.message);
       setList(data ?? []);
       setLoading(false);
     }
