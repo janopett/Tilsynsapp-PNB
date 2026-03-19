@@ -121,6 +121,7 @@ export interface Inspection {
   // Inspection classification
   tilsynsomrade?: string | null;
   tilsynstype?: string | null;
+  bakgrunn?: string[] | null;
 
   // Classification
   measure_type_id: MeasureTypeId;
@@ -151,6 +152,7 @@ export interface InspectionCreate {
   sif_stage_recno?: number;
   tilsynsomrade?: string;
   tilsynstype?: string;
+  bakgrunn?: string[];
 }
 
 // ============================================================
