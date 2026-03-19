@@ -47,6 +47,8 @@ function rawToSifEstate(e: RawEstate): SifEstate {
   return {
     recno: e.Recno,
     address: e.Address?.StreetAddress || undefined,
+    zipCode: e.Address?.ZipCode || undefined,
+    zipPlace: e.Address?.ZipPlace || undefined,
     gnr: e.EstateNumber != null ? String(e.EstateNumber) : undefined,
     bnr: e.WorkNumber != null ? String(e.WorkNumber) : undefined,
     snr: e.SectionNumber != null && e.SectionNumber !== 0 ? String(e.SectionNumber) : undefined,
