@@ -54,12 +54,13 @@ export async function GET(req: NextRequest) {
       }
       raw = results;
     } else if (service === "cases") {
-      // Raw GetCases with include-flags — shows Contacts and ReferringCases
+      // Raw GetCases with all include-flags — shows Contacts, ReferringCases, and Stages
       raw = await sifRpcCall("CaseService", "GetCases", {
         CaseNumber: caseNumber,
         MaxResults: 1,
         IncludeReferringCases: true,
         IncludeCaseContacts: true,
+        IncludeStages: true,
       });
     } else {
       return NextResponse.json({ error: "service must be 'estates', 'contacts', or 'cases'" }, { status: 400 });
