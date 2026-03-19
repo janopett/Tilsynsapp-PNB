@@ -43,7 +43,11 @@ export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
     );
   }
 
-  const query: SifGetCasesQuery = { MaxResults: 5 };
+  const query: SifGetCasesQuery = {
+    MaxResults: 5,
+    IncludeReferringCases: true,
+    IncludeCaseContacts: true,
+  };
 
   if (caseNumber) {
     query.CaseNumber = caseNumber;
