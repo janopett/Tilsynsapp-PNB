@@ -28,7 +28,9 @@ export interface CreateInspectionDocumentInput {
   /** Document contacts */
   contacts?: Array<{
     role: string;
-    externalId: string;
+    /** 360° internal contact recno — used as ExternalId when no externalId is given */
+    recno?: number;
+    externalId?: string;
     externalSystem?: string;
   }>;
   /** Uploaded file references from FileService.Upload */
@@ -88,8 +90,11 @@ export async function createInspectionDocumentInSif(
       ? {
           Contacts: contacts.map((c) => ({
             Role: c.role,
-            ExternalId: c.externalId,
-            ExternalSystem: c.externalSystem,
+            // Prefer explicit externalId; fall back to recno as string (360° internal)
+            ...(c.externalId || c.recno
+              ? { ExternalId: c.externalId ?? String(c.recno) }
+              : {}),
+            ...(c.externalSystem ? { ExternalSystem: c.externalSystem } : {}),
           })),
         }
       : {}),

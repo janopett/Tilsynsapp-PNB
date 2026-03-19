@@ -28,6 +28,8 @@ export interface SifContactRoleMapping {
   municipalitySenderRole: string;
   /** Contact role for the applicant (mottaker) */
   applicantRecipientRole: string;
+  /** Contact role for copy recipients, e.g. participants (kopimottaker) */
+  copyRecipientRole: string;
 }
 
 export interface SifDefaultsMapping {
@@ -63,6 +65,7 @@ export const sifMapping: SifMappingConfig = {
     // TODO: Replace with correct role codes from 360° code table
     municipalitySenderRole: "AV",   // Avsender
     applicantRecipientRole: "EM",   // Ekstern mottaker
+    copyRecipientRole: "KM",        // Kopimottaker
   },
   defaults: {
     // TODO: Set to 0 or the correct recno of the service user / default responsible

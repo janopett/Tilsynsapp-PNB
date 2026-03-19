@@ -100,6 +100,7 @@ export interface Inspection {
   snr?: string;               // Seksjonsnummer
   fnr?: string;               // Festenummer
   applicant_name?: string;    // Søkers navn
+  applicant_recno?: number | null; // Søkers recno i 360° (settes når søker velges fra kontaktlisten)
   inspector_name?: string;    // Tilsynsmannens navn
   inspection_date: string;    // Dato for tilsyn (ISO date string)
   notes?: string;             // Generelle merknader
@@ -130,6 +131,7 @@ export interface InspectionCreate {
   snr?: string;
   fnr?: string;
   applicant_name?: string;
+  applicant_recno?: number;
   inspector_name?: string;
   inspection_date: string;
   notes?: string;

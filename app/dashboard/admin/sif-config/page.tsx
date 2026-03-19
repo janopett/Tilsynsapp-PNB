@@ -54,6 +54,7 @@ interface SifSettingsForm {
   // Contact roles
   roleMunicipalitySender: string;
   roleApplicantRecipient: string;
+  roleCopyRecipient: string;
   // Defaults
   responsiblePersonRecno: number;
   docAccessCode: string;
@@ -87,6 +88,7 @@ const DEFAULT_FORM: SifSettingsForm = {
   docAttachmentRelationType: "V",
   roleMunicipalitySender: "AV",
   roleApplicantRecipient: "EM",
+  roleCopyRecipient: "KM",
   responsiblePersonRecno: 0,
   docAccessCode: "",
 };
@@ -695,6 +697,17 @@ export default function SifConfigPage() {
                   label="roller"
                   value={form.roleApplicantRecipient}
                   onChange={(v) => set("roleApplicantRecipient", v)}
+                />
+              </Field>
+              <Field
+                label="Kopimottaker (deltakere)"
+                hint="Rollen som settes på deltakere (kopimottakere) ved arkivering. Standard: KM"
+              >
+                <CodeTablePicker
+                  tableName="Contact role"
+                  label="roller"
+                  value={form.roleCopyRecipient}
+                  onChange={(v) => set("roleCopyRecipient", v)}
                 />
               </Field>
             </Section>
