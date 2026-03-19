@@ -32,6 +32,8 @@ export interface SifSettings {
   roleApplicantRecipient: string;
   // Defaults
   responsiblePersonRecno: number;
+  // Access code (tilgangskode). Empty = use 360° default (no explicit code).
+  docAccessCode: string;
 }
 
 /** Row shape returned by Supabase for sif_settings */
@@ -55,6 +57,7 @@ interface SifSettingsRow {
   role_municipality_sender: string;
   role_applicant_recipient: string;
   responsible_person_recno: number;
+  doc_access_code: string;
 }
 
 function rowToSettings(row: SifSettingsRow): SifSettings {
@@ -77,6 +80,7 @@ function rowToSettings(row: SifSettingsRow): SifSettings {
     roleMunicipalitySender: row.role_municipality_sender,
     roleApplicantRecipient: row.role_applicant_recipient,
     responsiblePersonRecno: row.responsible_person_recno,
+    docAccessCode: row.doc_access_code ?? "",
   };
 }
 
@@ -144,6 +148,7 @@ export async function loadSifSettingsWithEnvFallback(): Promise<SifSettings> {
       sifMapping.contactRoles.applicantRecipientRole,
     responsiblePersonRecno:
       db?.responsiblePersonRecno ?? sifMapping.defaults.responsiblePersonRecno,
+    docAccessCode: db?.docAccessCode ?? "",
   };
 }
 

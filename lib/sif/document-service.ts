@@ -40,6 +40,8 @@ export interface CreateInspectionDocumentInput {
   }>;
   additionalFields?: Array<{ name: string; value: string }>;
   documentDate?: string;         // ISO date
+  /** Explicit access code (tilgangskode). When set, 360° skips access-code inheritance from file sub-items. */
+  accessCode?: string;
   correlationId?: string;
 }
 
@@ -61,6 +63,7 @@ export async function createInspectionDocumentInSif(
     files,
     additionalFields,
     documentDate,
+    accessCode,
     correlationId,
   } = input;
 
@@ -79,6 +82,7 @@ export async function createInspectionDocumentInSif(
     Status: status,
     Files: sifFiles,
     DocumentDate: documentDate ?? new Date().toISOString().slice(0, 10),
+    ...(accessCode ? { AccessCode: accessCode } : {}),
     ...(responsiblePersonRecno ? { ResponsiblePersonRecno: responsiblePersonRecno } : {}),
     ...(contacts?.length
       ? {
