@@ -29,6 +29,8 @@ import ArchivePanel from "@/components/archive/ArchivePanel";
 import StatusBadge from "@/components/ui/StatusBadge";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
+import EnterpriseSearchInput from "@/components/sif/EnterpriseSearchInput";
+import type { SifEnterpriseResult } from "@/lib/sif/types";
 import { useLanguage } from "@/lib/i18n";
 
 // Dummy contacts shown when case contacts can't be loaded from PNB
@@ -105,21 +107,32 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [externalParticipants, setExternalParticipants] = useState<ExternalParticipant[]>(
     inspection.external_participants ?? []
   );
-  const [extDraft, setExtDraft] = useState<{ name: string; role: string; company: string }>({ name: "", role: "", company: "" });
+  const [extDraft, setExtDraft] = useState<{
+    firstName: string;
+    lastName: string;
+    role: string;
+    company: string;
+    companyRecno?: number;
+  }>({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
   const [showExtForm, setShowExtForm] = useState(false);
 
   function addExternalParticipant() {
-    if (!extDraft.name.trim()) return;
+    if (!extDraft.firstName.trim() && !extDraft.lastName.trim()) return;
+    const firstName = extDraft.firstName.trim();
+    const lastName = extDraft.lastName.trim();
     setExternalParticipants((prev) => [
       ...prev,
       {
         id: crypto.randomUUID(),
-        name: extDraft.name.trim(),
+        name: [firstName, lastName].filter(Boolean).join(" "),
+        firstName,
+        lastName,
         role: extDraft.role.trim() || undefined,
         company: extDraft.company.trim() || undefined,
+        companyRecno: extDraft.companyRecno,
       },
     ]);
-    setExtDraft({ name: "", role: "", company: "" });
+    setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
     setShowExtForm(false);
   }
 
@@ -386,14 +399,23 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
             )}
             {showExtForm ? (
               <div className="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
-                <input
-                  type="text"
-                  placeholder="Navn *"
-                  value={extDraft.name}
-                  onChange={(e) => setExtDraft((d) => ({ ...d, name: e.target.value }))}
-                  className="input w-full text-sm"
-                  autoFocus
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Fornavn *"
+                    value={extDraft.firstName}
+                    onChange={(e) => setExtDraft((d) => ({ ...d, firstName: e.target.value }))}
+                    className="input flex-1 text-sm"
+                    autoFocus
+                  />
+                  <input
+                    type="text"
+                    placeholder="Etternavn *"
+                    value={extDraft.lastName}
+                    onChange={(e) => setExtDraft((d) => ({ ...d, lastName: e.target.value }))}
+                    className="input flex-1 text-sm"
+                  />
+                </div>
                 <input
                   type="text"
                   placeholder="Rolle (f.eks. Brannvernleder)"
@@ -401,23 +423,23 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                   onChange={(e) => setExtDraft((d) => ({ ...d, role: e.target.value }))}
                   className="input w-full text-sm"
                 />
-                <input
-                  type="text"
-                  placeholder="Foretak"
+                <EnterpriseSearchInput
                   value={extDraft.company}
-                  onChange={(e) => setExtDraft((d) => ({ ...d, company: e.target.value }))}
+                  onChange={(name) => setExtDraft((d) => ({ ...d, company: name, companyRecno: undefined }))}
+                  onSelect={(e: SifEnterpriseResult) => setExtDraft((d) => ({ ...d, company: e.Name, companyRecno: e.Recno }))}
+                  placeholder="Foretak (søk i Plan & Build)"
                   className="input w-full text-sm"
                 />
                 <div className="flex gap-2">
                   <button
                     onClick={addExternalParticipant}
-                    disabled={!extDraft.name.trim()}
+                    disabled={!extDraft.firstName.trim() && !extDraft.lastName.trim()}
                     className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
                   >
                     Legg til
                   </button>
                   <button
-                    onClick={() => { setShowExtForm(false); setExtDraft({ name: "", role: "", company: "" }); }}
+                    onClick={() => { setShowExtForm(false); setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined }); }}
                     className="px-3 py-2 text-gray-500 text-sm hover:text-gray-700"
                   >
                     Avbryt

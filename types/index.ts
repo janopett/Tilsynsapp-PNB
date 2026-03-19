@@ -249,10 +249,14 @@ export interface InspectionSummary {
 export interface ExternalParticipant {
   /** Client-side UUID for React key / list management */
   id: string;
+  /** Full display name — computed from firstName + lastName */
   name: string;
+  firstName?: string;
+  lastName?: string;
   role?: string;
+  /** Company name (free text or resolved from PNB) */
   company?: string;
-  /** PNB recno if the company was found/created in 360° */
+  /** PNB recno if the company was found in 360° via GetEnterprise */
   companyRecno?: number;
 }
 
