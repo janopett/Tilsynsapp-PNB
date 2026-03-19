@@ -37,18 +37,21 @@ export async function GET(req: NextRequest) {
         caseRecno = sifCase.recno;
       } catch { /* ignore */ }
 
-      try {
-        raw = await sifRpcCall("CaseService", "GetCaseContacts",
-          caseRecno ? { CaseRecno: caseRecno } : { CaseNumber: caseNumber }
-        );
-      } catch (e1) {
-        // If CaseRecno failed, try CaseNumber as fallback
-        if (caseRecno) {
-          raw = await sifRpcCall("CaseService", "GetCaseContacts", { CaseNumber: caseNumber });
-        } else {
-          throw e1;
+      // Try CaseRecno first, then CaseNumber, collect both results for comparison
+      const results: Record<string, unknown> = {};
+      if (caseRecno) {
+        try {
+          results.byRecno = await sifRpcCall("CaseService", "GetCaseContacts", { CaseRecno: caseRecno });
+        } catch (e) {
+          results.byRecnoError = String(e);
         }
       }
+      try {
+        results.byNumber = await sifRpcCall("CaseService", "GetCaseContacts", { CaseNumber: caseNumber });
+      } catch (e) {
+        results.byNumberError = String(e);
+      }
+      raw = results;
     } else {
       return NextResponse.json({ error: "service must be 'estates' or 'contacts'" }, { status: 400 });
     }

@@ -40,25 +40,40 @@ export async function getCaseContacts(
   if (!caseRecno && !caseNumber) return [];
 
   // ── Strategy 1: CaseService/GetCaseContacts ────────────────────────────────
-  // Prefer CaseRecno — some SIF instances throw IndexOutOfRangeException
-  // when using CaseNumber but work correctly with CaseRecno.
-  try {
-    const query: SifGetCaseContactsQuery = {};
-    if (caseRecno) query.CaseRecno = caseRecno;
-    if (caseNumber && !caseRecno) query.CaseNumber = caseNumber;
-
+  // Try CaseRecno first (some SIF instances throw IndexOutOfRangeException
+  // with CaseNumber). If that returns empty, retry with CaseNumber — some
+  // instances don't support CaseRecno for this endpoint.
+  const tryGetCaseContacts = async (query: SifGetCaseContactsQuery) => {
     const result = await sifRpcCall<SifGetCaseContactsQuery, SifGetCaseContactsResult>(
       "CaseService",
       "GetCaseContacts",
       query,
       correlationId
     );
-
     if (result.Successful && result.Contacts && result.Contacts.length > 0) {
       return mapCaseContacts(result.Contacts);
     }
-  } catch (err) {
-    console.warn("[SIF] CaseService/GetCaseContacts failed, trying fallback", err);
+    return null;
+  };
+
+  // 1a) Try with CaseRecno
+  if (caseRecno) {
+    try {
+      const contacts = await tryGetCaseContacts({ CaseRecno: caseRecno });
+      if (contacts) return contacts;
+    } catch (err) {
+      console.warn("[SIF] GetCaseContacts(CaseRecno) failed", err);
+    }
+  }
+
+  // 1b) Try with CaseNumber (covers instances that don't support CaseRecno)
+  if (caseNumber) {
+    try {
+      const contacts = await tryGetCaseContacts({ CaseNumber: caseNumber });
+      if (contacts) return contacts;
+    } catch (err) {
+      console.warn("[SIF] GetCaseContacts(CaseNumber) failed", err);
+    }
   }
 
   // ── Strategy 2: GetCases – extract Contacts[] + ResponsiblePerson ──────────
