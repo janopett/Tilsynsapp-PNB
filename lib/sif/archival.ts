@@ -177,6 +177,7 @@ export async function archiveInspectionToSif(
       files: docFiles,
       additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
       documentDate: ctx.inspectionDate,
+      accessCode: settings.docAccessCode || undefined,
       correlationId,
     });
 

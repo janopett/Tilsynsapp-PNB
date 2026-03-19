@@ -56,6 +56,7 @@ interface SifSettingsForm {
   roleApplicantRecipient: string;
   // Defaults
   responsiblePersonRecno: number;
+  docAccessCode: string;
   // Meta (from server)
   hasAuthkey?: boolean;
   hasOauthClientSecret?: boolean;
@@ -87,6 +88,7 @@ const DEFAULT_FORM: SifSettingsForm = {
   roleMunicipalitySender: "AV",
   roleApplicantRecipient: "EM",
   responsiblePersonRecno: 0,
+  docAccessCode: "",
 };
 
 type Tab = "connection" | "mapping" | "test";
@@ -709,6 +711,18 @@ export default function SifConfigPage() {
                   onChange={(e) =>
                     set("responsiblePersonRecno", Number(e.target.value))
                   }
+                  className="input"
+                />
+              </Field>
+              <Field
+                label="Tilgangskode (AccessCode)"
+                hint="Sett eksplisitt tilgangskode på arkiverte dokumenter. Anbefales hvis arkivering feiler med «PrepareDocumentInheritAccessCodeFromFileSubItems» ved vedlegg/bilder. Tom = 360° bruker standardverdi."
+              >
+                <input
+                  type="text"
+                  value={form.docAccessCode}
+                  onChange={(e) => set("docAccessCode", e.target.value)}
+                  placeholder="F.eks. U (unntatt offentlighet) – la stå tom for standard"
                   className="input"
                 />
               </Field>
