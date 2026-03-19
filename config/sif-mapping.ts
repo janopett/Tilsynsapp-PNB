@@ -62,10 +62,9 @@ export const sifMapping: SifMappingConfig = {
     attachmentRelationType: "V",
   },
   contactRoles: {
-    // TODO: Replace with correct role codes from 360° code table
-    municipalitySenderRole: "AV",   // Avsender
-    applicantRecipientRole: "EM",   // Ekstern mottaker
-    copyRecipientRole: "KM",        // Kopimottaker
+    municipalitySenderRole: "AV",        // Avsender
+    applicantRecipientRole: "Mottaker",  // Mottaker
+    copyRecipientRole: "Kopi til",       // Kopi til
   },
   defaults: {
     // TODO: Set to 0 or the correct recno of the service user / default responsible
