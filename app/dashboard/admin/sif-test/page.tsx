@@ -52,6 +52,12 @@ function CopyableJson({ data, ok }: { data: unknown; ok: boolean }) {
   );
 }
 
+interface SyncContactResult {
+  ok: boolean;
+  recno?: number;
+  error?: string;
+}
+
 export default function SifTestPage() {
   const [versionResult, setVersionResult] = useState<VersionResult | null>(null);
   const [versionLoading, setVersionLoading] = useState(false);
@@ -64,6 +70,39 @@ export default function SifTestPage() {
   const [estatesResult, setEstatesResult] = useState<RawDebugResult | null>(null);
   const [contactsResult, setContactsResult] = useState<RawDebugResult | null>(null);
   const [debugLoading, setDebugLoading] = useState(false);
+
+  // SynchronizeContactPerson test
+  const [syncFirstName, setSyncFirstName] = useState("");
+  const [syncLastName, setSyncLastName] = useState("");
+  const [syncRole, setSyncRole] = useState("");
+  const [syncEnterprise, setSyncEnterprise] = useState("");
+  const [syncExternalId, setSyncExternalId] = useState("");
+  const [syncResult, setSyncResult] = useState<SyncContactResult | null>(null);
+  const [syncLoading, setSyncLoading] = useState(false);
+
+  async function syncContact(e: React.FormEvent) {
+    e.preventDefault();
+    if (!syncFirstName.trim() && !syncLastName.trim()) return;
+    setSyncLoading(true);
+    setSyncResult(null);
+    // Auto-generate ExternalId if empty
+    const externalId = syncExternalId.trim() || crypto.randomUUID();
+    if (!syncExternalId.trim()) setSyncExternalId(externalId);
+    const res = await authFetch("/api/sif/sync-contact-person", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firstName: syncFirstName.trim() || undefined,
+        lastName: syncLastName.trim() || undefined,
+        title: syncRole.trim() || undefined,
+        enterprise: syncEnterprise.trim() || undefined,
+        externalId,
+      }),
+    });
+    const data = await res.json();
+    setSyncResult(data);
+    setSyncLoading(false);
+  }
 
   async function testConnection() {
     setVersionLoading(true);
@@ -183,6 +222,103 @@ export default function SifTestPage() {
             ) : (
               <div className="rounded-xl p-4 text-sm bg-red-50 border border-red-200 text-red-800">
                 <span className="font-semibold">Feil:</span> {caseLookupResult.error}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* SynchronizeContactPerson test */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+        <h2 className="text-base font-semibold mb-1">Test: SynchronizeContactPerson</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Oppretter eller oppdaterer en kontaktperson i Plan &amp; Build via{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">ContactService/SynchronizeContactPerson</code>.
+          Returnerer <code className="text-xs bg-gray-100 rounded px-1 py-0.5">Recno</code> som brukes
+          som kopimottaker ved arkivering. Rollen legges i <em>Title</em>-feltet.
+        </p>
+        <form onSubmit={syncContact} className="space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Fornavn</label>
+              <input
+                type="text"
+                value={syncFirstName}
+                onChange={(e) => setSyncFirstName(e.target.value)}
+                placeholder="Ola"
+                className="input text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Etternavn</label>
+              <input
+                type="text"
+                value={syncLastName}
+                onChange={(e) => setSyncLastName(e.target.value)}
+                placeholder="Nordmann"
+                className="input text-sm"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Rolle / tittel <span className="text-gray-400 font-normal">(lagres i Title-feltet)</span>
+            </label>
+            <input
+              type="text"
+              value={syncRole}
+              onChange={(e) => setSyncRole(e.target.value)}
+              placeholder="Brannvernleder"
+              className="input text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Foretak <span className="text-gray-400 font-normal">(bruk &quot;recno:1234&quot; eller foretaksnavn)</span>
+            </label>
+            <input
+              type="text"
+              value={syncEnterprise}
+              onChange={(e) => setSyncEnterprise(e.target.value)}
+              placeholder='recno:1234 eller "Brannvesen Trondheim"'
+              className="input text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              ExternalId <span className="text-gray-400 font-normal">(valgfri – genereres automatisk om tom)</span>
+            </label>
+            <input
+              type="text"
+              value={syncExternalId}
+              onChange={(e) => setSyncExternalId(e.target.value)}
+              placeholder="UUID – gjenbruk samme verdi for å teste upsert"
+              className="input text-sm font-mono"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={syncLoading || (!syncFirstName.trim() && !syncLastName.trim())}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {syncLoading ? "Synkroniserer…" : "Synkroniser kontaktperson"}
+          </button>
+        </form>
+
+        {syncResult && (
+          <div className="mt-4">
+            {syncResult.ok ? (
+              <div className="rounded-xl p-4 text-sm bg-green-50 border border-green-200 text-green-800">
+                <span className="font-semibold">Kontaktperson synkronisert!</span>{" "}
+                Recno:{" "}
+                <code className="font-mono font-bold">{syncResult.recno}</code>
+                <p className="mt-1 text-green-600 text-xs">
+                  Bruk <code className="font-mono">recno:{syncResult.recno}</code> i ExternalId-feltet til CreateDocument for å legge til som kopimottaker.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl p-4 text-sm bg-red-50 border border-red-200 text-red-800">
+                <span className="font-semibold">Feil:</span> {syncResult.error}
               </div>
             )}
           </div>

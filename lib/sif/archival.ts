@@ -5,6 +5,7 @@
 
 import { v4 as uuidv4 } from "uuid";
 import { findCaseInSif } from "./case-service";
+import { synchronizeContactPerson } from "./contact-service";
 import { uploadFilesToSif } from "./file-service";
 import { createInspectionDocumentInSif, dispatchDocumentsInSif } from "./document-service";
 import { loadSifSettingsWithEnvFallback } from "./settings";
@@ -48,10 +49,18 @@ export interface ArchivalContext {
   participants?: Array<{ recno: number; name: string }>;
   /**
    * Eksterne deltakere (not part of PNB case).
-   * If companyRecno is set they will be created as contact persons in 360° and added as kopimottakere.
-   * Otherwise they are noted in AdditionalFields for reference.
+   * Each participant is synced into 360° via SynchronizeContactPerson and added as kopimottaker.
+   * Falls back to AdditionalFields note if sync fails.
    */
-  externalParticipants?: Array<{ id: string; name: string; role?: string; company?: string; companyRecno?: number }>;
+  externalParticipants?: Array<{
+    id: string;
+    name: string;
+    firstName?: string;
+    lastName?: string;
+    role?: string;
+    company?: string;
+    companyRecno?: number;
+  }>;
   additionalFields?: Array<{ name: string; value: string }>;
 }
 
@@ -198,20 +207,40 @@ export async function archiveInspectionToSif(
       if (p.recno === resolvedApplicantRecno) continue; // already added as mottaker
       docContacts.push({ role: settings.roleCopyRecipient, recno: p.recno });
     }
-    // External participants with a companyRecno can be added as copy recipients.
-    // Those without recno are noted in AdditionalFields instead (see below).
-    for (const ep of ctx.externalParticipants ?? []) {
-      if (ep.companyRecno) {
-        docContacts.push({ role: settings.roleCopyRecipient, recno: ep.companyRecno });
+    // External participants: sync each into 360° via SynchronizeContactPerson to get a personal Recno.
+    // Enterprise: "recno:XXXX" if companyRecno is known, otherwise plain company name string.
+    // Title field carries the person's role (e.g. "Brannvernleder").
+    // On failure, falls back to noting in AdditionalFields.
+    const extParticipants = ctx.externalParticipants ?? [];
+    const extSyncResults = await Promise.allSettled(
+      extParticipants.map((ep) =>
+        synchronizeContactPerson({
+          externalId: ep.id,
+          firstName: ep.firstName,
+          lastName: ep.lastName,
+          enterprise: ep.companyRecno ? `recno:${ep.companyRecno}` : ep.company,
+          title: ep.role,
+        })
+      )
+    );
+
+    const extNoteFields: Array<{ name: string; value: string }> = [];
+    for (let i = 0; i < extParticipants.length; i++) {
+      const r = extSyncResults[i];
+      const ep = extParticipants[i];
+      if (r.status === "fulfilled") {
+        docContacts.push({ role: settings.roleCopyRecipient, recno: r.value });
+      } else {
+        console.warn("[SIF] SynchronizeContactPerson failed, noting in AdditionalFields", {
+          name: ep.name,
+          error: r.reason instanceof Error ? r.reason.message : String(r.reason),
+        });
+        extNoteFields.push({
+          name: "EksternDeltaker",
+          value: [ep.name, ep.role, ep.company].filter(Boolean).join(" – "),
+        });
       }
     }
-
-    // Build note for external participants without recno
-    const extWithoutRecno = (ctx.externalParticipants ?? []).filter((ep) => !ep.companyRecno);
-    const extNoteFields: Array<{ name: string; value: string }> = extWithoutRecno.map((ep) => ({
-      name: "EksternDeltaker",
-      value: [ep.name, ep.role, ep.company].filter(Boolean).join(" – "),
-    }));
 
     const allAdditionalFields = [...(ctx.additionalFields ?? []), ...extNoteFields];
 
