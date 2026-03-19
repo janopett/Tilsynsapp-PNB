@@ -20,6 +20,7 @@ const CreateInspectionSchema = z.object({
   estates: z.array(z.record(z.unknown())).default([]),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  sif_stage_recno: z.number().optional(),
 });
 
 export async function POST(req: NextRequest) {
