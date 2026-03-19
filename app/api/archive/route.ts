@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/server";
 import { archiveInspectionToSif } from "@/lib/sif/archival";
-import { generateInspectionPdf, buildPdfFileName, generateInspectionJson, buildJsonFileName } from "@/lib/pdf/generate";
+import { generateInspectionPdf, buildPdfFileName, generateInspectionJson, buildJsonFileName, type AttachmentForPdf } from "@/lib/pdf/generate";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import type { InspectionWithAnswers, ArchiveInspectionResponse } from "@/types";
 
@@ -46,13 +46,7 @@ export async function POST(req: NextRequest) {
     attachments: attachRes.data ?? [],
   };
 
-  // Generate PDF and JSON export
-  const pdfBuffer = generateInspectionPdf(inspection);
-  const pdfFileName = buildPdfFileName(inspection);
-  const jsonBuffer = generateInspectionJson(inspection);
-  const jsonFileName = buildJsonFileName(inspection);
-
-  // Download attachment files from Supabase Storage (parallel)
+  // Download attachment files from Supabase Storage before PDF generation
   const attachmentFiles = (
     await Promise.all(
       inspection.attachments.map(async (att) => {
@@ -62,10 +56,11 @@ export async function POST(req: NextRequest) {
             .download(att.file_path);
           if (!fileData) return null;
           return {
+            checkpointDefinitionId: att.checkpoint_definition_id ?? null,
             fileName: att.file_name,
             fileData: Buffer.from(await fileData.arrayBuffer()),
             mimeType: att.file_type,
-          };
+          } satisfies AttachmentForPdf;
         } catch (err) {
           console.warn(`Could not download attachment ${att.file_name}:`, err);
           return null;
@@ -73,6 +68,12 @@ export async function POST(req: NextRequest) {
       })
     )
   ).filter((f): f is NonNullable<typeof f> => f !== null);
+
+  // Generate PDF (async — embeds images inline, merges PDF attachments)
+  const pdfBuffer = await generateInspectionPdf(inspection, attachmentFiles);
+  const pdfFileName = buildPdfFileName(inspection);
+  const jsonBuffer = generateInspectionJson(inspection);
+  const jsonFileName = buildJsonFileName(inspection);
 
   // Persist initial "pending" archival record
   const { data: archival } = await serviceClient
