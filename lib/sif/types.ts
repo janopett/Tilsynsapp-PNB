@@ -38,6 +38,7 @@ export interface SifGetCasesQuery {
   MaxResults?: number;
   IncludeReferringCases?: boolean;
   IncludeCaseContacts?: boolean;
+  IncludeCaseEstates?: boolean;
   AdditionalFields?: SifAdditionalField[];
 }
 
@@ -48,6 +49,20 @@ export interface SifCaseContact {
   RoleDescription?: string;
   Email?: string;
   Phone?: string;
+}
+
+export interface SifCaseEstate {
+  Recno: number;
+  EstateNumber?: number;     // gnr
+  WorkNumber?: number;       // bnr
+  SectionNumber?: number | null;   // snr
+  LeaseHoldNumber?: number | null; // fnr
+  Municipality?: string;
+  Address?: {
+    StreetAddress?: string;
+    ZipCode?: string;
+    ZipPlace?: string;
+  };
 }
 
 export interface SifCaseResult {
@@ -66,6 +81,7 @@ export interface SifCaseResult {
     Name?: string;
   };
   Contacts?: SifCaseContact[];
+  CaseEstates?: SifCaseEstate[];
   AdditionalFields?: SifAdditionalField[];
 }
 

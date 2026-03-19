@@ -47,6 +47,7 @@ export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
     MaxResults: 5,
     IncludeReferringCases: true,
     IncludeCaseContacts: true,
+    IncludeCaseEstates: true,
   };
 
   if (caseNumber) {
