@@ -166,13 +166,15 @@ export interface SifFileInput {
 
 export interface SifDocumentContact {
   Role: string;                 // code or recno
-  /** Internal 360° contact recno — use this for contacts fetched from SIF */
-  Recno?: number;
-  /** Display name of the contact. Passed to 360° so it renders even if recno lookup is incomplete. */
-  ContactName?: string;
-  ExternalId?: string;          // External system ID (personnummer, org.nr, etc.)
-  ExternalSystem?: string;
+  /**
+   * Identifies the contact. Use "recno:XXXX" when you only have the 360° recno.
+   * Can also be org.nr / personnummer. Prefer this over ReferenceNumber (works across domains).
+   */
+  ExternalId?: string;
+  /** Alternative identifier — org.nr or personnummer. Falls back to "recno:XXXX" format. */
+  ReferenceNumber?: string;
   IsUnofficial?: boolean;
+  DispatchChannel?: string;     // e.g. "recno:1" for e-mail
 }
 
 export interface SifUnregisteredContact {

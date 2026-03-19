@@ -28,12 +28,10 @@ export interface CreateInspectionDocumentInput {
   /** Document contacts */
   contacts?: Array<{
     role: string;
-    /** 360° internal contact recno — used as ExternalId when no externalId is given */
+    /** 360° internal recno — will be sent as ExternalId "recno:XXXX" per SIF API spec */
     recno?: number;
-    /** Display name sent to 360° so it renders even if recno lookup is incomplete */
-    name?: string;
-    externalId?: string;
-    externalSystem?: string;
+    /** Org.nr or personnummer. If absent, recno is used as ExternalId in "recno:XXXX" format. */
+    referenceNumber?: string;
   }>;
   /** Uploaded file references from FileService.Upload */
   files: Array<{
@@ -92,11 +90,9 @@ export async function createInspectionDocumentInSif(
       ? {
           Contacts: contacts.map((c) => ({
             Role: c.role,
-            // Use internal 360° Recno when available (ExternalId is for external system IDs)
-            ...(c.recno ? { Recno: c.recno } : {}),
-            ...(c.name ? { ContactName: c.name } : {}),
-            ...(c.externalId ? { ExternalId: c.externalId } : {}),
-            ...(c.externalSystem ? { ExternalSystem: c.externalSystem } : {}),
+            // SIF API identifies contacts via ExternalId or ReferenceNumber.
+            // When only recno is known, use "recno:XXXX" format per SIF spec.
+            ExternalId: c.referenceNumber ?? (c.recno ? `recno:${c.recno}` : undefined),
           })),
         }
       : {}),

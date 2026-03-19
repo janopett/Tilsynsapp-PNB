@@ -170,20 +170,13 @@ export async function archiveInspectionToSif(
     // Step 5: Build document contacts
     // – søker → mottaker (roleApplicantRecipient)
     // – deltakere → kopimottakere (roleCopyRecipient), excluding søker to avoid duplicates
-    const docContacts: Array<{ role: string; recno?: number; name?: string }> = [];
+    const docContacts: Array<{ role: string; recno: number }> = [];
     if (ctx.applicantRecno) {
-      // Find name from participants list if available
-      const applicantName =
-        ctx.participants?.find((p) => p.recno === ctx.applicantRecno)?.name ?? ctx.applicantName;
-      docContacts.push({
-        role: settings.roleApplicantRecipient,
-        recno: ctx.applicantRecno,
-        ...(applicantName ? { name: applicantName } : {}),
-      });
+      docContacts.push({ role: settings.roleApplicantRecipient, recno: ctx.applicantRecno });
     }
     for (const p of ctx.participants ?? []) {
       if (p.recno === ctx.applicantRecno) continue; // already added as mottaker
-      docContacts.push({ role: settings.roleCopyRecipient, recno: p.recno, name: p.name });
+      docContacts.push({ role: settings.roleCopyRecipient, recno: p.recno });
     }
 
     // Step 6: Create document
