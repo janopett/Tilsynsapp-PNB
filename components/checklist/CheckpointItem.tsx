@@ -117,6 +117,7 @@ const CheckpointItem = memo(function CheckpointItem({
   const [attachments, setAttachments] = useState<LocalAttachment[]>(initialAttachments);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const cfg = STATUS_CONFIG[currentStatus];
 
@@ -342,7 +343,26 @@ const CheckpointItem = memo(function CheckpointItem({
             </span>
           )}
 
-          {/* File upload */}
+          {/* Camera capture (mobilkamera) */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={uploading}
+            className="text-xs text-gray-500 hover:text-brand-600 flex items-center gap-1 transition disabled:opacity-50"
+            title="Ta bilde med kamera"
+          >
+            📷 Ta bilde
+          </button>
+
+          {/* File upload (filer / bilder fra galleri) */}
           <input
             ref={fileInputRef}
             type="file"
@@ -355,8 +375,9 @@ const CheckpointItem = memo(function CheckpointItem({
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
             className="text-xs text-gray-500 hover:text-brand-600 flex items-center gap-1 transition disabled:opacity-50"
+            title="Last opp fil eller velg bilde fra galleri"
           >
-            {uploading ? "⏳ Laster opp…" : "📎 Legg til bilde / fil"}
+            {uploading ? "⏳ Laster opp…" : "📎 Legg ved fil"}
           </button>
         </div>
 
