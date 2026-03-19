@@ -311,6 +311,42 @@ export interface SifGetEnterpriseResult {
 }
 
 // ============================================================
+// ContactService - GetContactPersons
+// ============================================================
+
+export interface SifGetContactPersonsQuery {
+  /** Look up by the external key we stored when synchronizing */
+  ExternalId?: string;
+  FirstName?: string;
+  LastName?: string;
+  Recno?: number;
+  MaxRows?: number;
+  Active?: boolean;
+}
+
+export interface SifContactPersonResult {
+  Recno: number;
+  FirstName?: string;
+  LastName?: string;
+  /** Full display name as stored in 360° */
+  FullName?: string;
+  Title?: string;
+  /** Plain enterprise name as stored in 360° */
+  Enterprise?: string;
+  /** Recno of the linked enterprise in 360° */
+  EnterpriseRecno?: number;
+  ExternalId?: string;
+  Active?: boolean;
+}
+
+export interface SifGetContactPersonsResult {
+  Successful: boolean;
+  ContactPersons?: SifContactPersonResult[];
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
 // ContactService - SynchronizeContactPerson
 // ============================================================
 

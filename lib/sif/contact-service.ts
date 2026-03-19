@@ -19,6 +19,9 @@ import type {
   SifGetEnterpriseQuery,
   SifGetEnterpriseResult,
   SifEnterpriseResult,
+  SifGetContactPersonsQuery,
+  SifGetContactPersonsResult,
+  SifContactPersonResult,
   SifSynchronizeContactPersonInput,
   SifSynchronizeContactPersonResult,
 } from "./types";
@@ -166,20 +169,19 @@ export async function searchEnterprises(query: string): Promise<SifEnterpriseRes
 
 /**
  * Create or update a contact person in PNB via ContactService/SynchronizeContactPerson.
- * SIF upserts on ExternalId: creates the person if new, updates if already present.
  *
- * Enterprise should be:
- *   - "recno:XXXX" when we have the PNB enterprise recno (from GetEnterprises search)
- *   - Plain company name string as fallback
+ * Logic (in order):
+ * 1. Look up the contact in PNB by ExternalId (GetContactPersons).
+ * 2. If found AND name matches (case-insensitive) AND same enterprise
+ *    → use existing Recno; update Title via SynchronizeContactPerson if it changed.
+ *    No new contact is created — this covers "only role differs" scenario.
+ * 3. If found AND name matches AND enterprise DIFFERS
+ *    → the person changed employer; create a new contact linked to the new enterprise
+ *    using an enterprise-scoped ExternalId so the old record is left untouched.
+ * 4. Not found (or name mismatch) → call SynchronizeContactPerson normally.
  *
- * Returns the PNB Recno of the created/updated contact person.
- * This Recno can then be used as a copy recipient (kopimottaker) on CreateDocument.
- *
- * Two-phase sync to prevent duplicate contact creation when only Title changes:
- *   Phase 1 — find/create by ExternalId + name (no Title) → stable Recno
- *   Phase 2 — update Title on the existing contact using ExternalId only (non-fatal)
- * Sending Title together with name fields causes PNB to create a new contact person
- * when the same ExternalId already exists with a different Title stored in 360°.
+ * Enterprise should be "recno:XXXX" when the PNB recno is known, plain name otherwise.
+ * Returns the PNB Recno to use as a copy recipient (kopimottaker) on CreateDocument.
  */
 export async function synchronizeContactPerson(input: {
   externalId: string;
@@ -189,52 +191,133 @@ export async function synchronizeContactPerson(input: {
   /** Maps to the Title field in 360° — use the person's role (e.g. "Brannvernleder") */
   title?: string;
 }): Promise<number> {
-  // Phase 1: find or create contact by ExternalId + name WITHOUT Title.
-  // Omitting Title here ensures PNB matches the existing record by ExternalId
-  // rather than treating a changed title as a new person and creating a duplicate.
-  const phase1Payload: SifSynchronizeContactPersonInput = {
+  // Pre-check: look up existing contact by ExternalId.
+  // Gracefully skipped if GetContactPersons is unavailable on this SIF instance.
+  const existing = await lookupContactPersonByExternalId(input.externalId);
+
+  if (existing) {
+    const namesMatch = contactNamesMatch(existing, input.firstName, input.lastName);
+    const sameEnterprise = contactEnterpriseMatches(existing, input.enterprise);
+
+    if (namesMatch && sameEnterprise) {
+      // Same person, same employer: update Title if it differs, then return existing Recno.
+      if (input.title && existing.Title !== input.title) {
+        await callSynchronize({
+          externalId: input.externalId,
+          // Re-send the stored name so PNB doesn't misinterpret this as a new person.
+          firstName: existing.FirstName,
+          lastName: existing.LastName,
+          enterprise: input.enterprise,
+          title: input.title,
+        });
+      }
+      return existing.Recno;
+    }
+
+    if (namesMatch && !sameEnterprise) {
+      // Same person, changed employer → create a new contact for the new employer.
+      // Use an enterprise-scoped ExternalId to keep old and new employer records separate.
+      const scopedId = `${input.externalId}:e:${deriveEnterpriseKey(input.enterprise)}`;
+      return callSynchronize({ ...input, externalId: scopedId });
+    }
+  }
+
+  // Not found (or name mismatch): create / update via SynchronizeContactPerson.
+  return callSynchronize(input);
+}
+
+/** Lookup a contact person in PNB by ExternalId. Returns null on any failure. */
+async function lookupContactPersonByExternalId(
+  externalId: string
+): Promise<SifContactPersonResult | null> {
+  try {
+    const result = await sifRpcCall<SifGetContactPersonsQuery, SifGetContactPersonsResult>(
+      "ContactService",
+      "GetContactPersons",
+      { ExternalId: externalId, MaxRows: 1 }
+    );
+    return result.Successful && result.ContactPersons?.length ? result.ContactPersons[0] : null;
+  } catch {
+    return null; // Non-fatal: fall through to SynchronizeContactPerson
+  }
+}
+
+/** True if the stored contact's name matches firstName + lastName (case-insensitive). */
+function contactNamesMatch(
+  existing: SifContactPersonResult,
+  firstName?: string,
+  lastName?: string
+): boolean {
+  const normalize = (s?: string) => (s ?? "").trim().toLowerCase();
+  const inputFull = [firstName, lastName].filter(Boolean).map(normalize).join(" ");
+  if (!inputFull) return true; // no name supplied → can't distinguish → treat as match
+  const storedFull =
+    existing.FullName
+      ? normalize(existing.FullName)
+      : [existing.FirstName, existing.LastName].filter(Boolean).map(normalize).join(" ");
+  return storedFull === inputFull;
+}
+
+/**
+ * True if the stored contact is linked to the same enterprise as `enterprise`.
+ * Compares by recno when the enterprise string is in "recno:XXXX" format,
+ * otherwise falls back to case-insensitive name comparison.
+ * If no enterprise is supplied, always returns true (no employer restriction).
+ */
+function contactEnterpriseMatches(
+  existing: SifContactPersonResult,
+  enterprise?: string
+): boolean {
+  if (!enterprise) return true;
+  const recno = parseEnterpriseRecno(enterprise);
+  if (recno !== null && existing.EnterpriseRecno !== undefined) {
+    return existing.EnterpriseRecno === recno;
+  }
+  // Plain name comparison as fallback
+  return (existing.Enterprise ?? "").trim().toLowerCase() ===
+    enterprise.trim().toLowerCase();
+}
+
+function parseEnterpriseRecno(enterprise: string): number | null {
+  const m = enterprise.match(/^recno:(\d+)$/i);
+  return m ? parseInt(m[1], 10) : null;
+}
+
+function deriveEnterpriseKey(enterprise?: string): string {
+  if (!enterprise) return "none";
+  const recno = parseEnterpriseRecno(enterprise);
+  if (recno !== null) return String(recno);
+  return enterprise.trim().toLowerCase().replace(/\s+/g, "-");
+}
+
+/** Raw SynchronizeContactPerson call — no pre-checks. */
+async function callSynchronize(input: {
+  externalId: string;
+  firstName?: string;
+  lastName?: string;
+  enterprise?: string;
+  title?: string;
+}): Promise<number> {
+  const payload: SifSynchronizeContactPersonInput = {
     ExternalId: input.externalId,
     FirstName: input.firstName || undefined,
     LastName: input.lastName || undefined,
     Enterprise: input.enterprise || undefined,
+    Title: input.title || undefined,
     Active: true,
   };
-
   const result = await sifRpcCall<SifSynchronizeContactPersonInput, SifSynchronizeContactPersonResult>(
     "ContactService",
     "SynchronizeContactPerson",
-    phase1Payload,
+    payload,
     undefined,
     true // write operation: wrap in {"parameter": ...}
   );
-
   if (!result.Successful || result.Recno === undefined) {
     throw new Error(
       result.ErrorMessage ?? result.ErrorDetails ?? "SynchronizeContactPerson returnerte ingen Recno"
     );
   }
-
-  // Phase 2: update Title on the now-known contact using ExternalId only (no name fields).
-  // This updates the existing record without risking a duplicate creation.
-  // Non-fatal: a failed title update does not affect the returned Recno.
-  if (input.title) {
-    try {
-      await sifRpcCall<SifSynchronizeContactPersonInput, SifSynchronizeContactPersonResult>(
-        "ContactService",
-        "SynchronizeContactPerson",
-        { ExternalId: input.externalId, Title: input.title, Active: true },
-        undefined,
-        true
-      );
-    } catch (err) {
-      console.warn("[SIF] Could not update Title on contact person (non-fatal)", {
-        externalId: input.externalId,
-        title: input.title,
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }
-
   return result.Recno;
 }
 
