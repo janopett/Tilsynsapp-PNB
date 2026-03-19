@@ -118,6 +118,10 @@ export interface Inspection {
   // Selected SIF stage (for reference — SIF API does not support StageRecno on CreateDocument)
   sif_stage_recno?: number | null;
 
+  // Inspection classification
+  tilsynsomrade?: string | null;
+  tilsynstype?: string | null;
+
   // Classification
   measure_type_id: MeasureTypeId;
   selected_tags: PropertyTag[];
@@ -145,6 +149,8 @@ export interface InspectionCreate {
   latitude?: number;
   longitude?: number;
   sif_stage_recno?: number;
+  tilsynsomrade?: string;
+  tilsynstype?: string;
 }
 
 // ============================================================

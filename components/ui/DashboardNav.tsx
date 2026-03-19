@@ -84,6 +84,13 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                     >
                       {t.nav.archivalLog}
                     </Link>
+                    <Link
+                      href="/dashboard/admin/tilsyn-config"
+                      onClick={() => setAdminOpen(false)}
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                    >
+                      Tilsynskonfigurering
+                    </Link>
                     <div className="border-t border-gray-100 my-1" />
                     <Link
                       href="/dashboard/admin/users"
