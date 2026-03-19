@@ -166,7 +166,9 @@ export interface SifFileInput {
 
 export interface SifDocumentContact {
   Role: string;                 // code or recno
-  ExternalId?: string;
+  /** Internal 360° contact recno — use this for contacts fetched from SIF */
+  Recno?: number;
+  ExternalId?: string;          // External system ID (personnummer, org.nr, etc.)
   ExternalSystem?: string;
   IsUnofficial?: boolean;
 }
