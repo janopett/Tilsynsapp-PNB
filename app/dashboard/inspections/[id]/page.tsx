@@ -991,7 +991,7 @@ export default function InspectionPage() {
 
       {/* Archive tab */}
       {activeTab === "archive" && (
-        <ArchivePanel inspection={inspection} onArchived={fetchInspection} />
+        <ArchivePanel inspection={inspection} onArchived={fetchInspection} onMarkCompleted={fetchInspection} />
       )}
 
       {/* Edit modal */}

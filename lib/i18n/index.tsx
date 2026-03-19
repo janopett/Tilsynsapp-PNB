@@ -30,6 +30,12 @@ export interface Translations {
     empty: string;
     emptyHint: string;
     case: string;
+    tabs: {
+      all: string;
+      active: string;
+      archived: string;
+      completed: string;
+    };
   };
   newInspection: {
     title: string;
@@ -133,7 +139,7 @@ const nb: Translations = {
   status: {
     draft: "Utkast",
     in_progress: "Pågår",
-    completed: "Fullført",
+    completed: "Avsluttet",
     archived: "Arkivert",
   },
   dashboard: {
@@ -144,6 +150,12 @@ const nb: Translations = {
     empty: "Ingen tilsyn registrert ennå",
     emptyHint: "Klikk «Nytt tilsyn» for å komme i gang.",
     case: "Sak",
+    tabs: {
+      all: "Alle",
+      active: "Pågår",
+      archived: "Arkivert",
+      completed: "Avsluttet",
+    },
   },
   newInspection: {
     title: "Nytt tilsyn",
@@ -248,7 +260,7 @@ const en: Translations = {
   status: {
     draft: "Draft",
     in_progress: "In progress",
-    completed: "Completed",
+    completed: "Closed",
     archived: "Archived",
   },
   dashboard: {
@@ -259,6 +271,12 @@ const en: Translations = {
     empty: "No inspections registered yet",
     emptyHint: 'Click «New inspection» to get started.',
     case: "Case",
+    tabs: {
+      all: "All",
+      active: "Ongoing",
+      archived: "Archived",
+      completed: "Closed",
+    },
   },
   newInspection: {
     title: "New inspection",

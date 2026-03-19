@@ -11,9 +11,12 @@ import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { createClient } from "@/lib/supabase/client";
 
+type DashTab = "all" | "active" | "archived" | "completed";
+
 export default function DashboardPage() {
   const [list, setList] = useState<InspectionListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<DashTab>("active");
   const { t, locale } = useLanguage();
 
   useEffect(() => {
@@ -26,7 +29,7 @@ export default function DashboardPage() {
         .from("inspections")
         .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants")
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(200);
 
       if (error) console.error("[dashboard] load error:", error.message);
       setList(data ?? []);
@@ -39,9 +42,29 @@ export default function DashboardPage() {
     return <div className="flex justify-center items-center h-64 text-gray-400">{t.dashboard.loading}</div>;
   }
 
+  const counts = {
+    all: list.length,
+    active: list.filter((i) => i.status === "draft" || i.status === "in_progress").length,
+    archived: list.filter((i) => i.status === "archived").length,
+    completed: list.filter((i) => i.status === "completed").length,
+  };
+
+  const filtered = tab === "all"
+    ? list
+    : tab === "active"
+    ? list.filter((i) => i.status === "draft" || i.status === "in_progress")
+    : list.filter((i) => i.status === tab);
+
+  const tabs: { key: DashTab; label: string }[] = [
+    { key: "active", label: t.dashboard.tabs.active },
+    { key: "archived", label: t.dashboard.tabs.archived },
+    { key: "completed", label: t.dashboard.tabs.completed },
+    { key: "all", label: t.dashboard.tabs.all },
+  ];
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t.dashboard.title}</h1>
           <p className="text-gray-500 text-sm mt-1">{t.dashboard.count(list.length)}</p>
@@ -54,7 +77,37 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {list.length === 0 ? (
+      {/* Tabs */}
+      <div className="flex gap-2 mb-5 border-b border-gray-200 pb-1">
+        {tabs.map(({ key, label }) => {
+          const count = counts[key];
+          const isActive = tab === key;
+          return (
+            <button
+              key={key}
+              onClick={() => setTab(key)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-lg text-sm font-medium transition border-b-2 -mb-[1px] ${
+                isActive
+                  ? "border-brand-600 text-brand-700 bg-white"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              {label}
+              <span
+                className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 rounded-full px-1.5 text-xs font-semibold ${
+                  isActive
+                    ? "bg-brand-100 text-brand-700"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {filtered.length === 0 ? (
         <div className="text-center py-20 text-gray-400">
           <p className="text-5xl mb-4">📋</p>
           <p className="text-lg font-medium">{t.dashboard.empty}</p>
@@ -62,7 +115,7 @@ export default function DashboardPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {list.map((inspection) => {
+          {filtered.map((inspection) => {
             const mt = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
             const estates = (inspection.estates ?? []) as Array<{ recno?: number; address?: string }>;
             const participants = (inspection.participants ?? []) as Array<{ recno?: number; name: string; role?: string; roleDescription?: string }>;
