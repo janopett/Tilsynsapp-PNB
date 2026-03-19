@@ -16,6 +16,7 @@ import {
   SifUploadError,
   SifCreateDocumentError,
 } from "./errors";
+import type { SifCaseResult } from "./types";
 import type { ArchiveInspectionRequest, ArchiveInspectionResponse, InspectionArchival } from "@/types";
 
 export interface ArchivalContext {
@@ -171,13 +172,18 @@ export async function archiveInspectionToSif(
     // – søker → mottaker (roleApplicantRecipient)
     // – deltakere → kopimottakere (roleCopyRecipient), excluding søker to avoid duplicates
     //
-    // Fallback: if applicantRecno is not explicitly set but applicantName matches
-    // a participant, use that participant's recno as the applicant recno.
-    // This handles inspections created before applicant_recno was stored.
+    // Resolution order for applicant recno:
+    //   1. Explicitly stored applicant_recno on the inspection (best)
+    //   2. Name-match against inspection participants (fallback for old inspections)
+    //   3. Name-match against SIF case contacts fetched with IncludeCaseContacts (last resort)
+    const caseContacts = ((sifCase.raw as SifCaseResult | undefined)?.Contacts ?? []);
     const resolvedApplicantRecno =
       ctx.applicantRecno ??
       (ctx.applicantName
         ? (ctx.participants ?? []).find((p) => p.name === ctx.applicantName)?.recno
+        : undefined) ??
+      (ctx.applicantName
+        ? caseContacts.find((c) => c.ContactName === ctx.applicantName)?.Recno
         : undefined);
 
     const docContacts: Array<{ role: string; recno: number }> = [];
