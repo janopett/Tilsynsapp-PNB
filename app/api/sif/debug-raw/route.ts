@@ -9,6 +9,7 @@ import { findCaseInSif } from "@/lib/sif/case-service";
  *
  * GET /api/sif/debug-raw?caseNumber=ULOV-25/00008&service=estates
  * GET /api/sif/debug-raw?caseNumber=ULOV-25/00008&service=contacts
+ * GET /api/sif/debug-raw?caseNumber=ULOV-25/00008&service=cases
  */
 export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
@@ -52,8 +53,14 @@ export async function GET(req: NextRequest) {
         results.byNumberError = String(e);
       }
       raw = results;
+    } else if (service === "cases") {
+      // Raw GetCases — shows all fields including ResponsibleEnterprise, etc.
+      raw = await sifRpcCall("CaseService", "GetCases", {
+        CaseNumber: caseNumber,
+        MaxResults: 1,
+      });
     } else {
-      return NextResponse.json({ error: "service must be 'estates' or 'contacts'" }, { status: 400 });
+      return NextResponse.json({ error: "service must be 'estates', 'contacts', or 'cases'" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true, raw });
