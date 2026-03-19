@@ -16,7 +16,9 @@ export type MeasureTypeId =
   | "tilbygg"
   | "paabygg"
   | "enebolig"
+  | "tomannsbolig"
   | "bruksendring"
+  | "fasadeendring"
   | "terrasse_balkong"
   | "stoettemur"
   | "riving";
@@ -42,7 +44,9 @@ export type PropertyTag =
   | "har_va_overvann"
   | "krever_tilgjengelighet"
   | "har_ansvarlige_foretak"
-  | "har_dispensasjon";
+  | "har_dispensasjon"
+  | "har_radon_tiltak"
+  | "krever_lydkrav";
 
 export interface PropertyQuestion {
   tag: PropertyTag;

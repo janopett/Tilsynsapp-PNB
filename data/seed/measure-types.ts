@@ -26,10 +26,22 @@ export const MEASURE_TYPES: MeasureType[] = [
     icon: "🏡",
   },
   {
+    id: "tomannsbolig",
+    name: "Tomannsbolig",
+    description: "Tomannsbolig, rekkehus eller annen bolig med to boenheter",
+    icon: "🏘️",
+  },
+  {
     id: "bruksendring",
     name: "Bruksendring",
     description: "Endring av bruk av eksisterende bygning",
     icon: "🔄",
+  },
+  {
+    id: "fasadeendring",
+    name: "Fasadeendring",
+    description: "Endring av fasade, vinduer, dører eller annen ytre utforming",
+    icon: "🪟",
   },
   {
     id: "terrasse_balkong",
@@ -101,5 +113,15 @@ export const PROPERTY_QUESTIONS: PropertyQuestion[] = [
     tag: "har_dispensasjon",
     label: "Er det dispensasjon i saken?",
     description: "Dispensasjon fra plan eller byggesaksbestemmelser",
+  },
+  {
+    tag: "har_radon_tiltak",
+    label: "Krever tiltaket radon-tiltak?",
+    description: "Radonsperre og/eller ventilasjonstiltak etter TEK17 § 13-5",
+  },
+  {
+    tag: "krever_lydkrav",
+    label: "Stilles det lydkrav mellom boenheter?",
+    description: "Lydkrav etter TEK17 kap. 13 – gjelder tomannsbolig, rekkehus og bruksendring til bolig",
   },
 ];
