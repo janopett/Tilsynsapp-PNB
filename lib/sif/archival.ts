@@ -46,6 +46,12 @@ export interface ArchivalContext {
   applicantRecno?: number;
   /** Deltakere on the inspection. Set as kopimottakere (roleCopyRecipient), deduplicating søker. */
   participants?: Array<{ recno: number; name: string }>;
+  /**
+   * Eksterne deltakere (not part of PNB case).
+   * If companyRecno is set they will be created as contact persons in 360° and added as kopimottakere.
+   * Otherwise they are noted in AdditionalFields for reference.
+   */
+  externalParticipants?: Array<{ id: string; name: string; role?: string; company?: string; companyRecno?: number }>;
   additionalFields?: Array<{ name: string; value: string }>;
 }
 
@@ -166,8 +172,6 @@ export async function archiveInspectionToSif(
       };
     });
 
-    const allAdditionalFields = ctx.additionalFields ?? [];
-
     // Step 5: Build document contacts
     // – søker → mottaker (roleApplicantRecipient)
     // – deltakere → kopimottakere (roleCopyRecipient), excluding søker to avoid duplicates
@@ -194,6 +198,22 @@ export async function archiveInspectionToSif(
       if (p.recno === resolvedApplicantRecno) continue; // already added as mottaker
       docContacts.push({ role: settings.roleCopyRecipient, recno: p.recno });
     }
+    // External participants with a companyRecno can be added as copy recipients.
+    // Those without recno are noted in AdditionalFields instead (see below).
+    for (const ep of ctx.externalParticipants ?? []) {
+      if (ep.companyRecno) {
+        docContacts.push({ role: settings.roleCopyRecipient, recno: ep.companyRecno });
+      }
+    }
+
+    // Build note for external participants without recno
+    const extWithoutRecno = (ctx.externalParticipants ?? []).filter((ep) => !ep.companyRecno);
+    const extNoteFields: Array<{ name: string; value: string }> = extWithoutRecno.map((ep) => ({
+      name: "EksternDeltaker",
+      value: [ep.name, ep.role, ep.company].filter(Boolean).join(" – "),
+    }));
+
+    const allAdditionalFields = [...(ctx.additionalFields ?? []), ...extNoteFields];
 
     // Step 6: Create document
     const sifDocument = await createInspectionDocumentInSif({

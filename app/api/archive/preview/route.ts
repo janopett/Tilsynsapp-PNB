@@ -88,6 +88,18 @@ export async function POST(req: NextRequest) {
       ExternalId: `recno:${p.recno}`,
     });
   }
+  // External participants with companyRecno → copy recipients
+  const externalParticipants = (inspection.external_participants ?? []) as Array<{
+    id: string; name: string; role?: string; company?: string; companyRecno?: number;
+  }>;
+  for (const ep of externalParticipants) {
+    if (ep.companyRecno) {
+      docContacts.push({ Role: settings.roleCopyRecipient, ExternalId: `recno:${ep.companyRecno}` });
+    }
+  }
+  const extNoteFields = externalParticipants
+    .filter((ep) => !ep.companyRecno)
+    .map((ep) => ({ Name: "EksternDeltaker", Value: [ep.name, ep.role, ep.company].filter(Boolean).join(" – ") }));
 
   const payload = {
     Title: title,
@@ -104,8 +116,8 @@ export async function POST(req: NextRequest) {
     Files: [
       { Title: "(PDF-rapport)", Format: "pdf", RelationType: settings.docMainFileRelationType },
     ],
-    ...(additionalFields?.length
-      ? { AdditionalFields: additionalFields.map((f) => ({ Name: f.name, Value: f.value })) }
+    ...([...(additionalFields?.map((f) => ({ Name: f.name, Value: f.value })) ?? []), ...extNoteFields].length
+      ? { AdditionalFields: [...(additionalFields?.map((f) => ({ Name: f.name, Value: f.value })) ?? []), ...extNoteFields] }
       : {}),
   };
 

@@ -108,6 +108,9 @@ export interface Inspection {
   // Participants (kontakter som deltar på tilsynet)
   participants: SifContact[];
 
+  // External participants (ikke del av byggesaken, f.eks. Brannvernleder)
+  external_participants?: ExternalParticipant[];
+
   // Estates (eiendommer knyttet til tilsynet)
   estates: SifEstate[];
 
@@ -146,6 +149,7 @@ export interface InspectionCreate {
   measure_type_id: MeasureTypeId;
   selected_tags: PropertyTag[];
   participants?: SifContact[];
+  external_participants?: ExternalParticipant[];
   estates?: SifEstate[];
   latitude?: number;
   longitude?: number;
@@ -236,6 +240,20 @@ export interface InspectionSummary {
   deviations: number;
   not_checked: number;
   deviation_items: CheckpointWithAnswer[];
+}
+
+// ============================================================
+// External participants (people not in PNB case, e.g. Brannvernleder)
+// ============================================================
+
+export interface ExternalParticipant {
+  /** Client-side UUID for React key / list management */
+  id: string;
+  name: string;
+  role?: string;
+  company?: string;
+  /** PNB recno if the company was found/created in 360° */
+  companyRecno?: number;
 }
 
 // ============================================================
