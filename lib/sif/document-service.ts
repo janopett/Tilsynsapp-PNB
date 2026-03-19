@@ -90,10 +90,9 @@ export async function createInspectionDocumentInSif(
       ? {
           Contacts: contacts.map((c) => ({
             Role: c.role,
-            // Prefer explicit externalId; fall back to recno as string (360° internal)
-            ...(c.externalId || c.recno
-              ? { ExternalId: c.externalId ?? String(c.recno) }
-              : {}),
+            // Use internal 360° Recno when available (ExternalId is for external system IDs)
+            ...(c.recno ? { Recno: c.recno } : {}),
+            ...(c.externalId ? { ExternalId: c.externalId } : {}),
             ...(c.externalSystem ? { ExternalSystem: c.externalSystem } : {}),
           })),
         }
