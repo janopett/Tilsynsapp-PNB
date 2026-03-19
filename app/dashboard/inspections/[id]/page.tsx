@@ -25,6 +25,7 @@ import ArchivePanel from "@/components/archive/ArchivePanel";
 import StatusBadge from "@/components/ui/StatusBadge";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
+import { useLanguage } from "@/lib/i18n";
 
 // Dummy contacts shown when case contacts can't be loaded from PNB
 const DUMMY_CONTACTS: SifContact[] = [
@@ -46,6 +47,7 @@ interface EditModalProps {
 }
 
 function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProps) {
+  const { t } = useLanguage();
   const [propertyAddress, setPropertyAddress] = useState(inspection.property_address);
   const [caseNumber, setCaseNumber] = useState(inspection.case_number ?? "");
   const [caseTitle, setCaseTitle] = useState(inspection.case_title ?? "");
@@ -98,7 +100,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 
   async function handleSave() {
     if (!propertyAddress.trim()) {
-      setError("Eiendomsadresse er påkrevd.");
+      setError(t.inspection.errorNoAddress);
       return;
     }
     setSaving(true);
@@ -137,7 +139,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
     <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white rounded-2xl w-full max-w-xl shadow-xl my-4">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">Rediger tilsyn</h2>
+          <h2 className="font-semibold text-gray-900">{t.inspection.editTitle}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-xl leading-none"
@@ -149,12 +151,12 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Case number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Saksnummer</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.caseNumber}</label>
             <CaseSearchInput
               value={caseNumber}
               onChange={(val) => { setCaseNumber(val); if (!val) setCaseTitle(""); }}
               onSelect={(c) => { setCaseNumber(c.caseNumber); setCaseTitle(c.title); }}
-              placeholder="Søk på saksnummer…"
+              placeholder={t.inspection.caseSearchPlaceholder}
             />
             {caseTitle && (
               <p className="mt-1 text-xs text-gray-500 truncate" title={caseTitle}>{caseTitle}</p>
@@ -164,7 +166,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Property address */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Eiendomsadresse <span className="text-red-500">*</span>
+              {t.inspection.propertyAddress} <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -177,7 +179,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Date + Inspector */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Dato</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.date}</label>
               <input
                 type="date"
                 value={inspectionDate}
@@ -186,7 +188,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tilsynsfører</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.inspector}</label>
               <input
                 type="text"
                 value={inspectorName}
@@ -200,39 +202,27 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Gnr</label>
-              <input
-                type="text"
-                value={gnr}
-                onChange={(e) => setGnr(e.target.value)}
-                placeholder="123"
-                className="input"
-              />
+              <input type="text" value={gnr} onChange={(e) => setGnr(e.target.value)} placeholder="123" className="input" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Bnr</label>
-              <input
-                type="text"
-                value={bnr}
-                onChange={(e) => setBnr(e.target.value)}
-                placeholder="45"
-                className="input"
-              />
+              <input type="text" value={bnr} onChange={(e) => setBnr(e.target.value)} placeholder="45" className="input" />
             </div>
           </div>
 
           {/* Applicant */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Søkers navn</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.applicantName}</label>
             {caseContacts.length > 0 ? (
               <select
                 value={applicantName}
                 onChange={(e) => setApplicantName(e.target.value)}
                 className="input"
               >
-                <option value="">— Velg eller skriv inn</option>
+                <option value="">{t.inspection.selectOrType}</option>
                 {caseContacts.map((c) => (
                   <option key={c.recno} value={c.name}>
-                    {c.name}{c.roleDescription ? ` (${c.roleDescription})` : ""}
+                    {c.name}{c.role ? ` (${c.role})` : ""}
                   </option>
                 ))}
               </select>
@@ -249,7 +239,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 
           {/* Participants */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Deltakere</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.participants}</label>
             {participants.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
                 {participants.map((p) => (
@@ -258,8 +248,8 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                     className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium"
                   >
                     {p.name}
-                    {p.roleDescription && (
-                      <span className="text-gray-400"> · {p.roleDescription}</span>
+                    {p.role && (
+                      <span className="text-gray-400"> · {p.role}</span>
                     )}
                     <button
                       onClick={() => removeParticipant(p.recno)}
@@ -280,12 +270,12 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                   }
                   className="flex-1 input text-sm"
                 >
-                  <option value="">— Velg deltaker</option>
+                  <option value="">{t.inspection.selectParticipant}</option>
                   {caseContacts
                     .filter((c) => !participants.find((p) => p.recno === c.recno))
                     .map((c) => (
                       <option key={c.recno} value={c.recno}>
-                        {c.name}{c.roleDescription ? ` (${c.roleDescription})` : ""}
+                        {c.name}{c.role ? ` (${c.role})` : ""}
                       </option>
                     ))}
                 </select>
@@ -294,18 +284,18 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                   disabled={!participantDropdown}
                   className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
                 >
-                  Legg til
+                  {t.inspection.add}
                 </button>
               </div>
             ) : caseContacts.length === 0 ? (
-              <p className="text-xs text-gray-400">Koble til saksnummer for å hente deltakere.</p>
+              <p className="text-xs text-gray-400">{t.inspection.linkCaseForParticipants}</p>
             ) : null}
           </div>
 
           {/* Estates */}
           {selectedEstates.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Eiendommer</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.estates}</label>
               <div className="flex flex-wrap gap-2">
                 {selectedEstates.map((e) => (
                   <span
@@ -327,7 +317,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Generelle merknader</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.notes}</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -338,14 +328,14 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 
           {/* Map */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Posisjon i kart</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.mapPosition}</label>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowMap(true)}
                 type="button"
                 className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition text-gray-700"
               >
-                🗺️ {latitude != null ? "Endre posisjon" : "Velg posisjon i kart"}
+                🗺️ {latitude != null ? t.inspection.changePosition : t.inspection.selectPosition}
               </button>
               {latitude != null && longitude != null && (
                 <span className="text-xs text-gray-500">
@@ -371,14 +361,14 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
             onClick={onClose}
             className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition"
           >
-            Avbryt
+            {t.inspection.cancel}
           </button>
           <button
             onClick={handleSave}
             disabled={saving}
             className="px-4 py-2 text-sm bg-brand-600 text-white rounded-xl disabled:opacity-50 hover:bg-brand-700 transition"
           >
-            {saving ? "Lagrer…" : "Lagre endringer"}
+            {saving ? t.inspection.saving : t.inspection.saveChanges}
           </button>
         </div>
       </div>
@@ -387,7 +377,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         <MapPickerModal
           initialLat={latitude}
           initialLng={longitude}
-          title="Velg posisjon for tilsynet"
+          title={t.inspection.mapTitle}
           onSave={(lat, lng) => {
             setLatitude(lat);
             setLongitude(lng);
@@ -405,6 +395,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 export default function InspectionPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const { t, locale } = useLanguage();
 
   const [inspection, setInspection] = useState<InspectionWithAnswers | null>(null);
   const [loading, setLoading] = useState(true);
@@ -532,7 +523,7 @@ export default function InspectionPage() {
   if (loading || !inspection) {
     return (
       <div className="flex justify-center items-center h-64 text-gray-400">
-        Laster tilsyn…
+        {t.inspection.loading}
       </div>
     );
   }
@@ -563,7 +554,7 @@ export default function InspectionPage() {
             href="/dashboard"
             className="text-sm text-brand-600 hover:text-brand-800 mb-1 inline-block"
           >
-            ← Tilbake
+            {t.inspection.back}
           </Link>
           <h1 className="text-xl font-bold text-gray-900 truncate">
             {inspection.property_address}
@@ -571,14 +562,14 @@ export default function InspectionPage() {
           <div className="flex items-center gap-2 text-sm text-gray-500 mt-1 flex-wrap">
             {inspection.case_number && (
               <span>
-                Sak: {inspection.case_number}
+                {t.inspection.case} {inspection.case_number}
                 {inspection.case_title && (
                   <span className="text-gray-400"> · {inspection.case_title}</span>
                 )}
               </span>
             )}
             <span>
-              {new Date(inspection.inspection_date).toLocaleDateString("nb-NO")}
+              {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
             </span>
             <StatusBadge status={inspection.status} />
           </div>
@@ -591,8 +582,8 @@ export default function InspectionPage() {
                   className="inline-flex items-center bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs"
                 >
                   {p.name}
-                  {p.roleDescription && (
-                    <span className="text-gray-400 ml-1">· {p.roleDescription}</span>
+                  {p.role && (
+                    <span className="text-gray-400 ml-1">· {p.role}</span>
                   )}
                 </span>
               ))}
@@ -607,7 +598,7 @@ export default function InspectionPage() {
                   className="inline-flex items-center bg-brand-50 text-brand-700 rounded-full px-2 py-0.5 text-xs"
                 >
                   🏠{" "}
-                  {e.address ?? (e.gnr && e.bnr ? `Gnr/Bnr ${e.gnr}/${e.bnr}` : `Eiendom ${e.recno}`)}
+                  {e.address ?? (e.gnr && e.bnr ? `Gnr/Bnr ${e.gnr}/${e.bnr}` : `${t.inspection.estates} ${e.recno}`)}
                 </span>
               ))}
             </div>
@@ -624,13 +615,13 @@ export default function InspectionPage() {
             onClick={() => setShowEdit(true)}
             className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-xl transition"
           >
-            Rediger
+            {t.inspection.edit}
           </button>
           <Link
             href={`/dashboard/inspections/${id}/report`}
             className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-xl transition"
           >
-            Rapport
+            {t.inspection.report}
           </Link>
         </div>
       </div>
@@ -638,10 +629,10 @@ export default function InspectionPage() {
       {/* Summary bar */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {[
-          { label: "Totalt", value: summary.total, color: "bg-gray-100 text-gray-700" },
-          { label: "OK", value: summary.ok, color: "bg-green-50 text-green-700" },
-          { label: "Avvik", value: summary.deviations, color: "bg-red-50 text-red-700" },
-          { label: "Ikke sjekket", value: summary.not_checked, color: "bg-yellow-50 text-yellow-700" },
+          { label: t.inspection.total, value: summary.total, color: "bg-gray-100 text-gray-700" },
+          { label: t.inspection.ok, value: summary.ok, color: "bg-green-50 text-green-700" },
+          { label: t.inspection.deviations, value: summary.deviations, color: "bg-red-50 text-red-700" },
+          { label: t.inspection.notChecked, value: summary.not_checked, color: "bg-yellow-50 text-yellow-700" },
         ].map((s) => (
           <div key={s.label} className={`${s.color} rounded-xl p-3 text-center`}>
             <p className="text-2xl font-bold">{s.value}</p>
@@ -662,9 +653,9 @@ export default function InspectionPage() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {tab === "checklist" && "Sjekkliste"}
-            {tab === "summary" && `Avvik (${summary.deviations})`}
-            {tab === "archive" && "Arkiver"}
+            {tab === "checklist" && t.inspection.tabChecklist}
+            {tab === "summary" && t.inspection.tabDeviations(summary.deviations)}
+            {tab === "archive" && t.inspection.tabArchive}
           </button>
         ))}
       </div>
@@ -681,7 +672,7 @@ export default function InspectionPage() {
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
-              Alle ({merged.length})
+              {t.inspection.all} ({merged.length})
             </button>
             {usedCategories.map((cat) => {
               const items = grouped.get(cat)!;
@@ -697,7 +688,7 @@ export default function InspectionPage() {
                   }`}
                 >
                   {CATEGORY_LABELS[cat]} ({items.length}
-                  {devs > 0 ? ` · ${devs} avvik` : ""})
+                  {devs > 0 ? ` · ${t.inspection.deviationsCount(devs)}` : ""})
                 </button>
               );
             })}
@@ -723,7 +714,7 @@ export default function InspectionPage() {
           {summary.deviations === 0 ? (
             <div className="text-center py-16 text-gray-400">
               <p className="text-5xl mb-3">✅</p>
-              <p className="text-lg font-medium text-gray-600">Ingen avvik registrert</p>
+              <p className="text-lg font-medium text-gray-600">{t.inspection.noDeviations}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -742,7 +733,7 @@ export default function InspectionPage() {
                       </p>
                     </div>
                     <span className="text-xs bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded-full flex-shrink-0">
-                      Avvik
+                      {t.inspection.deviation}
                     </span>
                   </div>
                   {item.answer?.comment && (

@@ -96,40 +96,15 @@ export async function getCaseContacts(
     if (!result.Successful || !result.Cases?.length) return [];
 
     const c = result.Cases[0];
-    const contacts: SifContact[] = [];
 
-    // a) Explicit contacts array
+    // Only return explicit case contacts (external parties listed under Contacts).
+    // ResponsiblePerson and ResponsibleEnterprise are internal SIF users and
+    // should not appear in the applicant/participant dropdowns.
     if (c.Contacts?.length) {
-      contacts.push(...mapCaseContacts(c.Contacts));
+      return mapCaseContacts(c.Contacts);
     }
 
-    // b) ResponsiblePerson as a synthetic contact (if not already included)
-    const raw = c as unknown as RawCaseFields;
-    const rp = raw.ResponsiblePerson;
-    if (rp?.Recno && !contacts.some((x) => x.recno === rp.Recno)) {
-      contacts.push({
-        recno: rp.Recno,
-        name: rp.Name ?? `Person ${rp.Recno}`,
-        role: "ResponsiblePerson",
-        roleDescription: "Saksbehandler",
-        email: rp.Email,
-      });
-    }
-
-    // c) ResponsibleEnterprise — company on the case (e.g. tiltakshaver / subject)
-    const re = raw.ResponsibleEnterprise;
-    if (re?.Recno && !contacts.some((x) => x.recno === re.Recno)) {
-      contacts.push({
-        recno: re.Recno,
-        name: re.Name ?? `Virksomhet ${re.Recno}`,
-        role: "ResponsibleEnterprise",
-        roleDescription: re.RoleDescription ?? "Ansvarlig virksomhet",
-        email: re.Email,
-        phone: re.Phone,
-      });
-    }
-
-    return contacts;
+    return [];
   } catch (err) {
     console.warn("[SIF] GetCases contacts fallback failed", err);
   }
@@ -146,20 +121,4 @@ function mapCaseContacts(raw: SifCaseContact[]): SifContact[] {
     email: c.Email,
     phone: c.Phone,
   }));
-}
-
-interface RawCaseFields {
-  ResponsiblePerson?: {
-    Recno: number;
-    Name?: string;
-    Email?: string;
-    UserId?: string;
-  };
-  ResponsibleEnterprise?: {
-    Recno: number;
-    Name?: string;
-    Email?: string;
-    Phone?: string;
-    RoleDescription?: string;
-  };
 }
