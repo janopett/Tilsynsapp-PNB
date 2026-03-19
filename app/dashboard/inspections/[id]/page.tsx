@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import type {
+  Attachment,
   InspectionWithAnswers,
   CheckpointWithAnswer,
   CheckpointStatus,
@@ -12,6 +13,8 @@ import type {
   SifContact,
   SifEstate,
 } from "@/types";
+
+const EMPTY_ATTACHMENTS: Attachment[] = [];
 import {
   filterCheckpoints,
   mergeCheckpointsWithAnswers,
@@ -545,6 +548,19 @@ export default function InspectionPage() {
   const participants: SifContact[] = inspection.participants ?? [];
   const estates: SifEstate[] = inspection.estates ?? [];
 
+  // Group attachments by checkpoint_definition_id for efficient lookup
+  const attachmentsByCheckpoint = useMemo(() => {
+    const map = new Map<string, Attachment[]>();
+    for (const att of inspection.attachments ?? []) {
+      if (att.checkpoint_definition_id) {
+        const list = map.get(att.checkpoint_definition_id) ?? [];
+        list.push(att);
+        map.set(att.checkpoint_definition_id, list);
+      }
+    }
+    return map;
+  }, [inspection.attachments]);
+
   return (
     <div>
       {/* Header */}
@@ -701,6 +717,11 @@ export default function InspectionPage() {
                 item={item}
                 isSaving={savingId === item.definition.id}
                 contacts={caseContacts}
+                inspectionId={id}
+                addressHint={inspection.property_address}
+                initialAttachments={
+                  attachmentsByCheckpoint.get(item.definition.id) ?? EMPTY_ATTACHMENTS
+                }
                 onUpdate={updateAnswer}
               />
             ))}
