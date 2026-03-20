@@ -337,9 +337,11 @@ async function lookupContactPersonByName(
 
     if (enterpriseRecno !== undefined) {
       // Enterprise is known — only accept a match at this specific enterprise.
-      const withEnterprise = nameMatches.filter(
-        (c) => c.EnterpriseRecno === enterpriseRecno
-      );
+      // EnterpriseRecno may come as a flat field or nested under EnterpriseEntity.
+      const withEnterprise = nameMatches.filter((c) => {
+        const recno = c.EnterpriseRecno ?? c.EnterpriseEntity?.Recno;
+        return recno === enterpriseRecno;
+      });
       if (withEnterprise.length >= 1) return withEnterprise[0];
 
       // The person exists in PNB but is linked to a different employer.
@@ -349,7 +351,7 @@ async function lookupContactPersonByName(
         enterpriseRecno,
         candidates: nameMatches.map((c) => ({
           recno: c.Recno,
-          enterpriseRecno: c.EnterpriseRecno,
+          enterpriseRecno: c.EnterpriseRecno ?? c.EnterpriseEntity?.Recno,
         })),
       });
       return null;
