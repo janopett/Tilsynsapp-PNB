@@ -45,7 +45,7 @@ export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
   }
 
   const query: SifGetCasesQuery = {
-    MaxResults: 5,
+    MaxReturnedCases: 5,
     IncludeReferringCases: true,
     IncludeCaseContacts: true,
     IncludeCaseEstates: true,
@@ -110,10 +110,10 @@ export async function searchCasesInSif(query: string, maxResults = 10): Promise<
 
   const [byNumber, byTitle] = await Promise.allSettled([
     sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
-      "CaseService", "GetCases", { CaseNumber: `%${q}%`, MaxResults: maxResults }
+      "CaseService", "GetCases", { CaseNumber: `%${q}%`, MaxReturnedCases: maxResults }
     ),
     sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
-      "CaseService", "GetCases", { Title: `%${q}%`, MaxResults: maxResults }
+      "CaseService", "GetCases", { Title: `%${q}%`, MaxReturnedCases: maxResults }
     ),
   ]);
 

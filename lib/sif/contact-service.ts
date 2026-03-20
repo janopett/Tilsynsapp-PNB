@@ -125,7 +125,7 @@ export async function getCaseContacts(
   try {
     const query: SifGetCasesQuery = {
       CaseNumber: caseNumber,
-      MaxResults: 1,
+      MaxReturnedCases: 1,
       IncludeReferringCases: true,
       IncludeCaseContacts: true,
     };
