@@ -112,16 +112,6 @@ export async function createInspectionDocumentInSif(
           })),
         }
       : {}),
-    ...(stageRecno
-      ? {
-          AdditionalListFields: [
-            {
-              Name: stageName ?? String(stageRecno),
-              Value: { Recno: stageRecno },
-            },
-          ],
-        }
-      : {}),
   };
 
   console.info("[SIF] DocumentService/CreateDocument", {
