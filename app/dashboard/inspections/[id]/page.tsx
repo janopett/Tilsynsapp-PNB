@@ -12,6 +12,7 @@ import type {
   CheckpointCategory,
   SifContact,
   SifEstate,
+  SifCaseStage,
   ExternalParticipant,
 } from "@/types";
 
@@ -118,6 +119,38 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   }>({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
   const [showExtForm, setShowExtForm] = useState(false);
 
+  // Stages from case
+  const [stages, setStages] = useState<SifCaseStage[]>([]);
+  const [stagesLoading, setStagesLoading] = useState(false);
+  const [selectedStageRecno, setSelectedStageRecno] = useState<number | null>(
+    inspection.sif_stage_recno ?? null
+  );
+
+  useEffect(() => {
+    if (!caseNumber || caseNumber.trim().length < 4) {
+      setStages([]);
+      return;
+    }
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      setStagesLoading(true);
+      fetch(`/api/sif/case-stages?caseNumber=${encodeURIComponent(caseNumber)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.ok && data.stages?.length > 0) {
+            setStages(data.stages);
+          } else {
+            setStages([]);
+          }
+        })
+        .catch(() => setStages([]))
+        .finally(() => setStagesLoading(false));
+    });
+  }, [caseNumber]);
+
   function addExternalParticipant() {
     if ((!extDraft.firstName.trim() && !extDraft.lastName.trim()) || !extDraft.companyRecno) return;
     const firstName = extDraft.firstName.trim();
@@ -199,6 +232,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         tilsynsomrade: tilsynsomrade || null,
         tilsynstype: tilsynstype || null,
         bakgrunn: selectedBakgrunn,
+        sif_stage_recno: selectedStageRecno ?? null,
       })
       .eq("id", inspection.id);
 
@@ -238,6 +272,31 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               <p className="mt-1 text-xs text-gray-500 truncate" title={caseTitle}>{caseTitle}</p>
             )}
           </div>
+
+          {/* Stage (behandlingstrinn) */}
+          {(stagesLoading || stages.length > 0) && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Behandlingstrinn
+              </label>
+              {stagesLoading ? (
+                <p className="text-sm text-gray-400 animate-pulse">Henter behandlingstrinn…</p>
+              ) : (
+                <select
+                  value={selectedStageRecno ?? ""}
+                  onChange={(e) => setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)}
+                  className="input"
+                >
+                  <option value="">— Velg behandlingstrinn —</option>
+                  {stages.map((s) => (
+                    <option key={s.recno} value={s.recno}>
+                      {s.title ?? `Trinn ${s.recno}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
 
           {/* Property address */}
           <div>
