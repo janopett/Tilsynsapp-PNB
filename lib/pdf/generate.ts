@@ -271,20 +271,21 @@ export async function generateInspectionPdf(
             else data.cell.styles.textColor = GREY_TEXT;
           }
         },
-        didDrawTable: (data) => {
-          // Left accent bar for deviations
-          if (isDeviation) {
-            doc.setFillColor(...RED_TEXT);
-            doc.rect(L, data.table.body[0].cells[0].y, 2, data.table.finalY - data.table.body[0].cells[0].y, "F");
-          }
-          // Bottom separator line between checkpoints
-          doc.setDrawColor(...GREY_LINE);
-          doc.setLineWidth(0.3);
-          doc.line(L, data.table.finalY, pageWidth - L, data.table.finalY);
-        },
       });
 
-      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 4;
+      const tableEnd = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+
+      // Left accent bar for deviations
+      if (isDeviation) {
+        doc.setFillColor(...RED_TEXT);
+        doc.rect(L, y, 2, tableEnd - y, "F");
+      }
+      // Bottom separator line between checkpoints
+      doc.setDrawColor(...GREY_LINE);
+      doc.setLineWidth(0.3);
+      doc.line(L, tableEnd, pageWidth - L, tableEnd);
+
+      y = tableEnd + 4;
 
       // Embed inline images
       for (const img of checkpointImages) {
