@@ -263,31 +263,11 @@ export async function synchronizeContactPerson(input: {
   );
 
   if (existing) {
-    // Update Title if it differs from the role we have locally.
-    const existingTitle = existing.Title?.trim() || undefined;
-    const inputTitle = input.title?.trim() || undefined;
-    if (inputTitle && inputTitle !== existingTitle) {
-      console.info("[SIF] Contact found — updating Title via UpdateContactPerson", {
-        recno: existing.Recno,
-        existingTitle,
-        inputTitle,
-      });
-      await callUpdateContactPerson({
-        recno: existing.Recno,
-        firstName: existing.FirstName ?? input.firstName,
-        lastName: existing.LastName ?? input.lastName,
-        enterprise:
-          (existing.EnterpriseRecno ?? existing.EnterpriseEntity?.Recno) !== undefined
-            ? `recno:${existing.EnterpriseRecno ?? existing.EnterpriseEntity?.Recno}`
-            : input.enterprise,
-        title: inputTitle,
-      });
-    } else {
-      console.info("[SIF] Contact found — title unchanged, reusing existing recno", {
-        recno: existing.Recno,
-        name: existing.Name,
-      });
-    }
+    console.info("[SIF] Contact found by name — reusing existing recno", {
+      recno: existing.Recno,
+      name: existing.Name,
+      enterpriseRecno: existing.EnterpriseRecno ?? existing.EnterpriseEntity?.Recno,
+    });
     return existing.Recno;
   }
 
