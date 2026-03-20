@@ -119,7 +119,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [showExtForm, setShowExtForm] = useState(false);
 
   function addExternalParticipant() {
-    if (!extDraft.firstName.trim() && !extDraft.lastName.trim()) return;
+    if ((!extDraft.firstName.trim() && !extDraft.lastName.trim()) || !extDraft.companyRecno) return;
     const firstName = extDraft.firstName.trim();
     const lastName = extDraft.lastName.trim();
     setExternalParticipants((prev) => [
@@ -130,7 +130,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         firstName,
         lastName,
         role: extDraft.role.trim() || undefined,
-        company: extDraft.company.trim() || undefined,
+        company: extDraft.company.trim(),
         companyRecno: extDraft.companyRecno,
       },
     ]);
@@ -429,13 +429,13 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                   value={extDraft.company}
                   onChange={(name) => setExtDraft((d) => ({ ...d, company: name, companyRecno: undefined }))}
                   onSelect={(e: SifEnterpriseResult) => setExtDraft((d) => ({ ...d, company: e.Name, companyRecno: e.Recno }))}
-                  placeholder="Foretak (søk i Plan & Build)"
+                  placeholder="Foretak * (søk i Plan & Build)"
                   className="input w-full text-sm"
                 />
                 <div className="flex gap-2">
                   <button
                     onClick={addExternalParticipant}
-                    disabled={!extDraft.firstName.trim() && !extDraft.lastName.trim()}
+                    disabled={(!extDraft.firstName.trim() && !extDraft.lastName.trim()) || !extDraft.companyRecno}
                     className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
                   >
                     Legg til

@@ -258,7 +258,7 @@ export default function NewInspectionPage() {
   }
 
   function addExternalParticipant() {
-    if (!extDraft.firstName.trim() && !extDraft.lastName.trim()) return;
+    if ((!extDraft.firstName.trim() && !extDraft.lastName.trim()) || !extDraft.companyRecno) return;
     const firstName = extDraft.firstName.trim();
     const lastName = extDraft.lastName.trim();
     setExternalParticipants((prev) => [...prev, {
@@ -267,7 +267,7 @@ export default function NewInspectionPage() {
       firstName,
       lastName,
       role: extDraft.role.trim() || undefined,
-      company: extDraft.company.trim() || undefined,
+      company: extDraft.company.trim(),
       companyRecno: extDraft.companyRecno,
     }]);
     setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
@@ -738,7 +738,7 @@ export default function NewInspectionPage() {
                     onSelect={(enterprise: SifEnterpriseResult) =>
                       setExtDraft((d) => ({ ...d, company: enterprise.Name, companyRecno: enterprise.Recno }))
                     }
-                    placeholder="Søk på foretak i Plan & Build (valgfri)"
+                    placeholder="Foretak * (søk i Plan & Build)"
                     className="input text-sm"
                   />
                   <div className="flex gap-2 justify-end">
@@ -752,7 +752,7 @@ export default function NewInspectionPage() {
                     <button
                       type="button"
                       onClick={addExternalParticipant}
-                      disabled={!extDraft.firstName.trim() && !extDraft.lastName.trim()}
+                      disabled={(!extDraft.firstName.trim() && !extDraft.lastName.trim()) || !extDraft.companyRecno}
                       className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-sm disabled:opacity-40 hover:bg-brand-700 transition"
                     >
                       Legg til

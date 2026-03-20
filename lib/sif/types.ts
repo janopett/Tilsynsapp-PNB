@@ -228,6 +228,8 @@ export interface SifCreateDocumentInput {
   UnregisteredContacts?: SifUnregisteredContact[];
   Files?: SifFileInput[];
   AdditionalFields?: SifAdditionalField[];
+  /** List/lookup fields — e.g. linking document to a case stage. Value is typically { Recno: number }. */
+  AdditionalListFields?: Array<{ Name: string; Value: unknown }>;
   Keywords?: string[];
   Notes?: string;
   AccessCode?: string;

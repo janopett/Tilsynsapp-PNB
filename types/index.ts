@@ -124,7 +124,7 @@ export interface Inspection {
   latitude?: number | null;
   longitude?: number | null;
 
-  // Selected SIF stage (for reference — SIF API does not support StageRecno on CreateDocument)
+  // Selected SIF stage. Sent as AdditionalListFields on CreateDocument to link the document to the correct stage.
   sif_stage_recno?: number | null;
 
   // Inspection classification

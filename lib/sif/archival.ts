@@ -62,6 +62,8 @@ export interface ArchivalContext {
     companyRecno?: number;
   }>;
   additionalFields?: Array<{ name: string; value: string }>;
+  /** Recno of the selected SIF stage. Will be sent via AdditionalListFields on CreateDocument. */
+  sifStageRecno?: number;
 }
 
 /**
@@ -244,6 +246,13 @@ export async function archiveInspectionToSif(
 
     const allAdditionalFields = [...(ctx.additionalFields ?? []), ...extNoteFields];
 
+    // Resolve stage title from case stages (already fetched with IncludeStages: true)
+    let stageName: string | undefined;
+    if (ctx.sifStageRecno) {
+      const caseStages = ((sifCase.raw as SifCaseResult | undefined)?.Stages ?? []);
+      stageName = caseStages.find((s) => s.Recno === ctx.sifStageRecno)?.Title;
+    }
+
     // Step 6: Create document
     const sifDocument = await createInspectionDocumentInSif({
       caseNumber: sifCase.caseNumber,
@@ -258,6 +267,8 @@ export async function archiveInspectionToSif(
       files: docFiles,
       contacts: docContacts.length > 0 ? docContacts : undefined,
       additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
+      stageRecno: ctx.sifStageRecno,
+      stageName,
       documentDate: ctx.inspectionDate,
       accessCode: settings.docAccessCode || undefined,
       correlationId,

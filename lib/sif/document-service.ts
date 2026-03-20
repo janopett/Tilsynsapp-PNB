@@ -43,6 +43,10 @@ export interface CreateInspectionDocumentInput {
     relationType?: string;       // e.g. "H" for main document
   }>;
   additionalFields?: Array<{ name: string; value: string }>;
+  /** Recno of the case stage to link the document to. Sent as AdditionalListFields if provided. */
+  stageRecno?: number;
+  /** Title of the stage — used as the Name in AdditionalListFields. */
+  stageName?: string;
   documentDate?: string;         // ISO date
   /** Explicit access code (tilgangskode). When set, 360° skips access-code inheritance from file sub-items. */
   accessCode?: string;
@@ -66,6 +70,8 @@ export async function createInspectionDocumentInSif(
     contacts,
     files,
     additionalFields,
+    stageRecno,
+    stageName,
     documentDate,
     accessCode,
     correlationId,
@@ -104,6 +110,16 @@ export async function createInspectionDocumentInSif(
             Name: f.name,
             Value: f.value,
           })),
+        }
+      : {}),
+    ...(stageRecno
+      ? {
+          AdditionalListFields: [
+            {
+              Name: stageName ?? String(stageRecno),
+              Value: { Recno: stageRecno },
+            },
+          ],
         }
       : {}),
   };
