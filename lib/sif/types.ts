@@ -357,8 +357,10 @@ export interface SifContactPersonResult {
   Title?: string;
   /** Plain enterprise name as stored in 360° */
   Enterprise?: string;
-  /** Recno of the linked enterprise in 360° */
+  /** Recno of the linked enterprise in 360° (flat field — some SIF versions) */
   EnterpriseRecno?: number;
+  /** Nested enterprise object returned by this PNB installation */
+  EnterpriseEntity?: { Recno: number; ExternalId?: string; Referencenumber?: string };
   ExternalId?: string;
   Active?: boolean;
 }
