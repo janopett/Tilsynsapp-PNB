@@ -24,6 +24,16 @@ const STATUS_LABELS: Record<string, string> = {
   not_checked: "Ikke kontrollert",
 };
 
+// Brand colours
+const BRAND_DARK: [number, number, number] = [15, 40, 100];
+const BRAND_MID: [number, number, number] = [30, 58, 138];
+const BRAND_LIGHT: [number, number, number] = [219, 229, 255];
+const GREY_LINE: [number, number, number] = [210, 215, 225];
+const RED_BG: [number, number, number] = [254, 235, 235];
+const GREEN_TEXT: [number, number, number] = [22, 163, 74];
+const RED_TEXT: [number, number, number] = [185, 28, 28];
+const GREY_TEXT: [number, number, number] = [100, 110, 130];
+
 export interface AttachmentForPdf {
   checkpointDefinitionId?: string | null;
   fileName: string;
@@ -31,15 +41,16 @@ export interface AttachmentForPdf {
   fileData: Buffer;
 }
 
-const MAX_IMAGE_WIDTH = 170; // mm
-const MAX_IMAGE_HEIGHT = 90; // mm
-const PAGE_MARGIN_BOTTOM = 20; // mm
+const MAX_IMAGE_WIDTH = 165;
+const MAX_IMAGE_HEIGHT = 90;
+const PAGE_MARGIN_BOTTOM = 22;
+const L = 14; // left margin
 
 function ensurePageSpace(doc: jsPDF, y: number, needed: number): number {
   const pageHeight = doc.internal.pageSize.getHeight();
   if (y + needed > pageHeight - PAGE_MARGIN_BOTTOM) {
     doc.addPage();
-    return 20;
+    return 22;
   }
   return y;
 }
@@ -57,8 +68,9 @@ export async function generateInspectionPdf(
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const measureType = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
   const pageWidth = doc.internal.pageSize.getWidth();
+  const contentWidth = pageWidth - L * 2;
 
-  // ── Build attachment lookups by checkpointDefinitionId ───────
+  // ── Build attachment lookups ─────────────────────────────────
   const imagesByCheckpoint = new Map<string, AttachmentForPdf[]>();
   const pdfsByCheckpoint = new Map<string, AttachmentForPdf[]>();
   const freeImages: AttachmentForPdf[] = [];
@@ -88,39 +100,53 @@ export async function generateInspectionPdf(
   }
 
   // ── Header ──────────────────────────────────────────────────
-  doc.setFillColor(30, 58, 138);
-  doc.rect(0, 0, pageWidth, 30, "F");
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(18);
-  doc.setFont("helvetica", "bold");
-  doc.text("TILSYNSRAPPORT", 14, 14);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Byggesaksbehandling – Plan & Bygg`, 14, 22);
+  // Full-width dark bar
+  doc.setFillColor(...BRAND_DARK);
+  doc.rect(0, 0, pageWidth, 28, "F");
+  // Accent stripe at bottom of header
+  doc.setFillColor(...BRAND_MID);
+  doc.rect(0, 28, pageWidth, 2, "F");
 
-  // ── Case Metadata ────────────────────────────────────────────
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(20);
+  doc.setFont("helvetica", "bold");
+  doc.text("TILSYNSRAPPORT", L, 13);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(180, 200, 255);
+  doc.text("Plan & Bygg · Byggesaksbehandling", L, 21);
+
+  // Date top-right
+  doc.setTextColor(180, 200, 255);
+  doc.setFontSize(8);
+  doc.text(inspection.inspection_date ?? "", pageWidth - L, 21, { align: "right" });
+
+  // ── Case Metadata card ───────────────────────────────────────
   doc.setTextColor(0, 0, 0);
   let y = 38;
 
-  doc.setFontSize(12);
+  // Section label
+  doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
-  doc.text("Saksopplysninger", 14, y);
-  y += 6;
+  doc.setTextColor(...GREY_TEXT);
+  doc.text("SAKSOPPLYSNINGER", L, y);
+  y += 3;
 
   const metaRows: [string, string][] = [
     ["Eiendom", inspection.property_address ?? ""],
-    ["Saksnummer", inspection.case_number ?? "-"],
-    ["Gnr/Bnr", [inspection.gnr, inspection.bnr].filter(Boolean).join("/") || "-"],
-    ["Søker", inspection.applicant_name ?? "-"],
-    ["Tilsynsmann", inspection.inspector_name ?? "-"],
-    ["Dato for tilsyn", inspection.inspection_date ?? ""],
+    ["Saksnummer", inspection.case_number ?? "–"],
+    ["Gnr/Bnr", [inspection.gnr, inspection.bnr].filter(Boolean).join("/") || "–"],
+    ["Søker", inspection.applicant_name ?? "–"],
+    ["Tilsynsmann", inspection.inspector_name ?? "–"],
+    ["Dato", inspection.inspection_date ?? ""],
     ["Tiltakstype", measureType?.name ?? inspection.measure_type_id],
   ];
 
   if (inspection.tilsynsomrade) metaRows.push(["Tilsynsområde", inspection.tilsynsomrade]);
   if (inspection.tilsynstype) metaRows.push(["Tilsynstype", inspection.tilsynstype]);
-  if (inspection.bakgrunn?.length) {
-    metaRows.push(["Bakgrunn", inspection.bakgrunn.join(", ")]);
+  if (inspection.bakgrunn?.length) metaRows.push(["Bakgrunn", inspection.bakgrunn.join(", ")]);
+  if (inspection.latitude && inspection.longitude) {
+    metaRows.push(["Koordinater", `${inspection.latitude.toFixed(6)}, ${inspection.longitude.toFixed(6)}`]);
   }
 
   autoTable(doc, {
@@ -128,24 +154,45 @@ export async function generateInspectionPdf(
     head: [],
     body: metaRows,
     theme: "plain",
-    styles: { fontSize: 10, cellPadding: 2 },
+    styles: { fontSize: 9.5, cellPadding: { top: 2.2, bottom: 2.2, left: 3, right: 3 }, overflow: "linebreak" },
     columnStyles: {
-      0: { fontStyle: "bold", cellWidth: 45 },
-      1: { cellWidth: 130 },
+      0: { fontStyle: "bold", cellWidth: 38, textColor: [60, 70, 90] },
+      1: { cellWidth: contentWidth - 38 },
     },
-    margin: { left: 14 },
+    margin: { left: L },
+    didDrawCell: (data) => {
+      // Bottom border on each meta row
+      if (data.row.index < metaRows.length - 1) {
+        doc.setDrawColor(...GREY_LINE);
+        doc.setLineWidth(0.2);
+        doc.line(
+          data.cell.x,
+          data.cell.y + data.cell.height,
+          data.cell.x + data.cell.width,
+          data.cell.y + data.cell.height
+        );
+      }
+    },
   });
 
-  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 6;
+  y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 5;
 
   if (inspection.notes) {
-    doc.setFontSize(10);
+    doc.setFillColor(245, 247, 252);
+    const noteLines = doc.splitTextToSize(`${inspection.notes}`, contentWidth - 10);
+    const noteH = noteLines.length * 5 + 6;
+    doc.roundedRect(L, y, contentWidth, noteH, 2, 2, "F");
+    doc.setFontSize(8);
     doc.setFont("helvetica", "italic");
-    doc.text(`Merknader: ${inspection.notes}`, 14, y, { maxWidth: pageWidth - 28 });
-    y += 12;
+    doc.setTextColor(...GREY_TEXT);
+    doc.text("Merknader:", L + 3, y + 4.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0, 0, 0);
+    doc.text(noteLines, L + 3, y + 9);
+    y += noteH + 6;
   }
 
-  // ── Build checklist ──────────────────────────────────────────
+  // ── Checklist ────────────────────────────────────────────────
   const relevantCheckpoints = filterCheckpoints(
     inspection.measure_type_id,
     inspection.selected_tags
@@ -153,26 +200,33 @@ export async function generateInspectionPdf(
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const grouped = groupByCategory(merged);
 
-  // Track ordered PDF attachments to merge at the end
   const pdfAttachmentsToMerge: Buffer[] = [];
 
   for (const category of CATEGORY_ORDER) {
     const items = grouped.get(category);
     if (!items?.length) continue;
 
-    y = ensurePageSpace(doc, y, 14);
-    doc.setFontSize(11);
+    y = ensurePageSpace(doc, y, 18);
+
+    // Category header bar
+    doc.setFillColor(...BRAND_LIGHT);
+    doc.roundedRect(L, y, contentWidth, 8, 1.5, 1.5, "F");
+    doc.setFillColor(...BRAND_MID);
+    doc.roundedRect(L, y, 3, 8, 1, 1, "F");
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 58, 138);
-    doc.text(CATEGORY_LABELS[category], 14, y);
+    doc.setTextColor(...BRAND_MID);
+    doc.text(CATEGORY_LABELS[category].toUpperCase(), L + 6, y + 5.5);
     doc.setTextColor(0, 0, 0);
-    y += 4;
+    y += 11;
 
     for (const item of items) {
       const checkpointImages = imagesByCheckpoint.get(item.definition.id) ?? [];
       const checkpointPdfs = pdfsByCheckpoint.get(item.definition.id) ?? [];
+      const isDeviation = item.answer?.status === "deviation";
+      const status = item.answer?.status ?? "not_checked";
 
-      y = ensurePageSpace(doc, y, 16);
+      y = ensurePageSpace(doc, y, 18);
 
       const coordText =
         item.answer?.latitude && item.answer?.longitude
@@ -181,7 +235,7 @@ export async function generateInspectionPdf(
 
       const rowData: [string, string][] = [
         ["Sjekkpunkt", item.definition.title],
-        ["Status", STATUS_LABELS[item.answer?.status ?? "not_checked"]],
+        ["Status", STATUS_LABELS[status]],
       ];
       if (item.answer?.comment) rowData.push(["Kommentar", item.answer.comment]);
       if (item.answer?.responsible_contact_name) {
@@ -192,33 +246,46 @@ export async function generateInspectionPdf(
         rowData.push(["Vedlegg (PDF)", checkpointPdfs.map((p) => p.fileName).join(", ")]);
       }
 
-      const isDeviation = item.answer?.status === "deviation";
-      const bgColor: [number, number, number] = isDeviation
-        ? [254, 242, 242]
-        : [248, 250, 252];
+      const cellBg: [number, number, number] = isDeviation ? RED_BG : [252, 253, 255];
 
       autoTable(doc, {
         startY: y,
         head: [],
         body: rowData,
         theme: "plain",
-        styles: { fontSize: 9, cellPadding: 1.5, overflow: "linebreak" },
-        columnStyles: {
-          0: { fontStyle: "bold", cellWidth: 38, fillColor: bgColor },
-          1: { cellWidth: 144, fillColor: bgColor },
+        styles: {
+          fontSize: 9,
+          cellPadding: { top: 2.5, bottom: 2.5, left: 3.5, right: 3.5 },
+          overflow: "linebreak",
+          fillColor: cellBg,
         },
-        margin: { left: 14, right: 14 },
+        columnStyles: {
+          0: { fontStyle: "bold", cellWidth: 36, textColor: [60, 70, 90], fillColor: cellBg },
+          1: { cellWidth: contentWidth - 36, fillColor: cellBg },
+        },
+        margin: { left: L, right: L },
         didParseCell: (data) => {
-          // Colour the status value
           if (data.column.index === 1 && data.row.index === 1) {
-            const status = item.answer?.status ?? "not_checked";
-            if (status === "deviation") data.cell.styles.textColor = [220, 38, 38];
-            else if (status === "ok") data.cell.styles.textColor = [22, 163, 74];
+            if (status === "deviation") data.cell.styles.textColor = RED_TEXT;
+            else if (status === "ok") data.cell.styles.textColor = GREEN_TEXT;
+            else data.cell.styles.textColor = GREY_TEXT;
           }
         },
       });
 
-      y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 2;
+      const tableEnd = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+
+      // Left accent bar for deviations
+      if (isDeviation) {
+        doc.setFillColor(...RED_TEXT);
+        doc.rect(L, y, 2, tableEnd - y, "F");
+      }
+      // Bottom separator line between checkpoints
+      doc.setDrawColor(...GREY_LINE);
+      doc.setLineWidth(0.3);
+      doc.line(L, tableEnd, pageWidth - L, tableEnd);
+
+      y = tableEnd + 4;
 
       // Embed inline images
       for (const img of checkpointImages) {
@@ -228,39 +295,36 @@ export async function generateInspectionPdf(
           const dataUri = `data:${img.mimeType};base64,${b64}`;
           const props = doc.getImageProperties(dataUri);
           const aspectRatio = props.width / props.height;
-          // Convert pixels → mm (assuming 96 dpi: 1 px = 0.264583 mm)
           let imgW = Math.min(MAX_IMAGE_WIDTH, props.width * 0.264583);
           let imgH = imgW / aspectRatio;
-          if (imgH > MAX_IMAGE_HEIGHT) {
-            imgH = MAX_IMAGE_HEIGHT;
-            imgW = imgH * aspectRatio;
-          }
+          if (imgH > MAX_IMAGE_HEIGHT) { imgH = MAX_IMAGE_HEIGHT; imgW = imgH * aspectRatio; }
           y = ensurePageSpace(doc, y, imgH + 4);
-          doc.addImage(dataUri, format, 14, y, imgW, imgH);
-          y += imgH + 3;
+          doc.addImage(dataUri, format, L, y, imgW, imgH);
+          y += imgH + 4;
         } catch (err) {
           console.warn(`Could not embed image ${img.fileName}:`, err);
         }
       }
 
-      // Queue PDF attachments for merging
       for (const pdfAtt of checkpointPdfs) {
         pdfAttachmentsToMerge.push(pdfAtt.fileData);
       }
-
-      y += 3;
     }
+
+    y += 2;
   }
 
-  // Free images (not linked to any checkpoint)
+  // ── Free images ──────────────────────────────────────────────
   if (freeImages.length > 0) {
-    y = ensurePageSpace(doc, y, 14);
-    doc.setFontSize(10);
+    y = ensurePageSpace(doc, y, 18);
+    doc.setFillColor(...BRAND_LIGHT);
+    doc.roundedRect(L, y, contentWidth, 8, 1.5, 1.5, "F");
+    doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(30, 58, 138);
-    doc.text("Øvrige bilder", 14, y);
+    doc.setTextColor(...BRAND_MID);
+    doc.text("ØVRIGE BILDER", L + 6, y + 5.5);
     doc.setTextColor(0, 0, 0);
-    y += 6;
+    y += 11;
 
     for (const img of freeImages) {
       try {
@@ -271,47 +335,56 @@ export async function generateInspectionPdf(
         const aspectRatio = props.width / props.height;
         let imgW = Math.min(MAX_IMAGE_WIDTH, props.width * 0.264583);
         let imgH = imgW / aspectRatio;
-        if (imgH > MAX_IMAGE_HEIGHT) {
-          imgH = MAX_IMAGE_HEIGHT;
-          imgW = imgH * aspectRatio;
-        }
+        if (imgH > MAX_IMAGE_HEIGHT) { imgH = MAX_IMAGE_HEIGHT; imgW = imgH * aspectRatio; }
         y = ensurePageSpace(doc, y, imgH + 4);
-        doc.addImage(dataUri, format, 14, y, imgW, imgH);
-        y += imgH + 3;
+        doc.addImage(dataUri, format, L, y, imgW, imgH);
+        y += imgH + 4;
       } catch (err) {
         console.warn(`Could not embed image ${img.fileName}:`, err);
       }
     }
   }
 
-  // ── Summary ──────────────────────────────────────────────────
+  // ── Deviation summary ────────────────────────────────────────
   const deviations = merged.filter((i) => i.answer?.status === "deviation");
 
   if (deviations.length > 0) {
-    if (y > 240) { doc.addPage(); y = 20; }
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(220, 38, 38);
-    doc.text("Avvik funnet under tilsyn", 14, y);
-    doc.setTextColor(0, 0, 0);
+    y = ensurePageSpace(doc, y, 24);
     y += 4;
+
+    doc.setFillColor(...RED_BG);
+    doc.roundedRect(L, y, contentWidth, 8, 1.5, 1.5, "F");
+    doc.setFillColor(...RED_TEXT);
+    doc.roundedRect(L, y, 3, 8, 1, 1, "F");
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...RED_TEXT);
+    doc.text("AVVIK FUNNET UNDER TILSYN", L + 6, y + 5.5);
+    doc.setTextColor(0, 0, 0);
+    y += 11;
 
     autoTable(doc, {
       startY: y,
       head: [["Sjekkpunkt", "Avviksbeskrivelse", "Ansvarlig"]],
       body: deviations.map((i) => [
-        `${i.definition.title} (${CATEGORY_LABELS[i.definition.category]})`,
+        `${i.definition.title}\n(${CATEGORY_LABELS[i.definition.category]})`,
         i.answer?.comment ?? "(ingen kommentar)",
         i.answer?.responsible_contact_name ?? "",
       ]),
-      styles: { fontSize: 9, cellPadding: 2, overflow: "linebreak" },
-      headStyles: { fillColor: [254, 226, 226], textColor: [185, 28, 28] },
-      columnStyles: {
-        0: { cellWidth: 80 },
-        1: { cellWidth: 74 },
-        2: { cellWidth: 32 },
+      styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak" },
+      headStyles: {
+        fillColor: [240, 60, 60],
+        textColor: [255, 255, 255],
+        fontStyle: "bold",
+        fontSize: 8.5,
       },
-      margin: { left: 14 },
+      alternateRowStyles: { fillColor: [255, 248, 248] },
+      columnStyles: {
+        0: { cellWidth: 72 },
+        1: { cellWidth: 86 },
+        2: { cellWidth: contentWidth - 158 },
+      },
+      margin: { left: L },
     });
   }
 
@@ -319,31 +392,28 @@ export async function generateInspectionPdf(
   const pageCount = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150);
+    const ph = doc.internal.pageSize.getHeight();
+    doc.setFillColor(245, 247, 252);
+    doc.rect(0, ph - 12, pageWidth, 12, "F");
+    doc.setFontSize(7.5);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...GREY_TEXT);
     doc.text(
-      `Side ${i} av ${pageCount}  |  Tilsynsapp-PNB  |  Generert ${new Date().toLocaleDateString("nb-NO")}`,
+      `Side ${i} av ${pageCount}  ·  Tilsynsapp-PNB  ·  Generert ${new Date().toLocaleDateString("nb-NO")}`,
       pageWidth / 2,
-      doc.internal.pageSize.getHeight() - 8,
+      ph - 4.5,
       { align: "center" }
     );
   }
 
   const mainPdfBuffer = Buffer.from(doc.output("arraybuffer"));
 
-  // ── Merge PDF attachments using pdf-lib ──────────────────────
-  const allPdfsToMerge = [
-    ...pdfAttachmentsToMerge,
-    ...freePdfs.map((p) => p.fileData),
-  ];
-
-  if (allPdfsToMerge.length === 0) {
-    return mainPdfBuffer;
-  }
+  // ── Merge PDF attachments ────────────────────────────────────
+  const allPdfsToMerge = [...pdfAttachmentsToMerge, ...freePdfs.map((p) => p.fileData)];
+  if (allPdfsToMerge.length === 0) return mainPdfBuffer;
 
   try {
     const mainDoc = await PDFDocument.load(mainPdfBuffer);
-
     for (const pdfBuf of allPdfsToMerge) {
       try {
         const srcDoc = await PDFDocument.load(pdfBuf);
@@ -354,7 +424,6 @@ export async function generateInspectionPdf(
         console.warn("Could not merge PDF attachment page:", err);
       }
     }
-
     return Buffer.from(await mainDoc.save());
   } catch (err) {
     console.warn("PDF merge failed, returning main PDF only:", err);

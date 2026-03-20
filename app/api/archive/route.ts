@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/server";
 import { archiveInspectionToSif } from "@/lib/sif/archival";
 import { generateInspectionPdf, buildPdfFileName, generateInspectionJson, buildJsonFileName, type AttachmentForPdf } from "@/lib/pdf/generate";
+import { fetchStaticMapImage } from "@/lib/pdf/map-image";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import type { InspectionWithAnswers, ArchiveInspectionResponse } from "@/types";
 
@@ -69,6 +70,20 @@ export async function POST(req: NextRequest) {
     )
   ).filter((f): f is NonNullable<typeof f> => f !== null);
 
+  // Generate map image if inspection has main coordinates
+  const extraAttachments: Array<{ fileName: string; fileData: Buffer; mimeType: string }> = [];
+  if (inspection.latitude && inspection.longitude) {
+    const mapBuf = await fetchStaticMapImage(inspection.latitude, inspection.longitude);
+    if (mapBuf) {
+      const date = inspection.inspection_date ?? new Date().toISOString().slice(0, 10);
+      extraAttachments.push({
+        fileName: `Kart_${date}.png`,
+        fileData: mapBuf,
+        mimeType: "image/png",
+      });
+    }
+  }
+
   // Generate PDF (async — embeds images inline, merges PDF attachments)
   const pdfBuffer = await generateInspectionPdf(inspection, attachmentFiles);
   const pdfFileName = buildPdfFileName(inspection);
@@ -121,7 +136,7 @@ export async function POST(req: NextRequest) {
     pdfFileName,
     jsonBuffer,
     jsonFileName,
-    attachments: attachmentFiles,
+    attachments: [...attachmentFiles, ...extraAttachments],
     additionalFields,
     sifStageRecno: inspection.sif_stage_recno ?? undefined,
   });
