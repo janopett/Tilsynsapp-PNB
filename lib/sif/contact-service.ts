@@ -24,6 +24,8 @@ import type {
   SifContactPersonResult,
   SifSynchronizeContactPersonInput,
   SifSynchronizeContactPersonResult,
+  SifUpdateContactPersonInput,
+  SifUpdateContactPersonResult,
 } from "./types";
 import type { SifContact } from "@/types";
 
@@ -224,14 +226,13 @@ export async function synchronizeContactPerson(input: {
     if (sameEnterprise) {
       // Same person, same employer: update Title if it differs, return existing Recno.
       if (input.title && existing.Title !== input.title) {
-        await callSynchronize({
-          externalId: input.externalId,
-          // Prefer stored names so PNB recognises this as an update, not a new record.
+        // Use UpdateContactPersons (by Recno) instead of SynchronizeContactPerson so
+        // 360° updates the existing record rather than creating a new one.
+        await callUpdateContactPerson({
+          recno: existing.Recno,
           firstName: existing.FirstName ?? input.firstName,
           lastName: existing.LastName ?? input.lastName,
-          // Always use the stored recno for the enterprise — the caller may have passed a
-          // plain name string that resolves to undefined, which would cause 360° to create
-          // a new contact instead of updating the existing one.
+          externalId: input.externalId,
           enterprise:
             existing.EnterpriseRecno !== undefined
               ? `recno:${existing.EnterpriseRecno}`
@@ -418,6 +419,45 @@ async function callSynchronize(input: {
     );
   }
   return result.Recno;
+}
+
+/** Update an existing contact person by Recno via ContactService/UpdateContactPersons. */
+async function callUpdateContactPerson(input: {
+  recno: number;
+  firstName?: string;
+  lastName?: string;
+  externalId?: string;
+  enterprise?: string;
+  title?: string;
+}): Promise<void> {
+  let enterpriseForSif: string | undefined;
+  if (input.enterprise) {
+    const recno = parseEnterpriseRecno(input.enterprise);
+    if (recno !== null) enterpriseForSif = `recno:${recno}`;
+  }
+
+  const payload: SifUpdateContactPersonInput = {
+    Recno: input.recno,
+    FirstName: input.firstName || undefined,
+    LastName: input.lastName || undefined,
+    ExternalId: input.externalId || undefined,
+    Enterprise: enterpriseForSif,
+    Title: input.title || undefined,
+    Active: true,
+  };
+  console.info("[SIF] UpdateContactPerson", { recno: input.recno, title: input.title });
+  const result = await sifRpcCall<SifUpdateContactPersonInput, SifUpdateContactPersonResult>(
+    "ContactService",
+    "UpdateContactPerson",
+    payload,
+    undefined,
+    true // write operation
+  );
+  if (!result.Successful) {
+    throw new Error(
+      result.ErrorMessage ?? result.ErrorDetails ?? "UpdateContactPerson returnerte Successful=false"
+    );
+  }
 }
 
 function mapCaseContacts(raw: SifCaseContact[]): SifContact[] {

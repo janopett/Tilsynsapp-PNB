@@ -311,6 +311,26 @@ export interface SifGetEnterpriseResult {
 }
 
 // ============================================================
+// ContactService - UpdateContactPersons
+// ============================================================
+
+export interface SifUpdateContactPersonInput {
+  Recno: number;
+  FirstName?: string;
+  LastName?: string;
+  ExternalId?: string;
+  Enterprise?: string;
+  Title?: string;
+  Active?: boolean;
+}
+
+export interface SifUpdateContactPersonResult {
+  Successful: boolean;
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
 // ContactService - GetContactPersons
 // ============================================================
 
