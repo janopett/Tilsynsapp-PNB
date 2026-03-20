@@ -7,6 +7,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FF001",
     title: "Søknad og tillatelse foreligger",
+    en_title: "Application and permit available",
     category: "formelle_forhold",
     description: "Kontroller at gyldig byggetillatelse foreligger og er tydelig tilgjengelig på byggeplass.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "bruksendring", "terrasse_balkong", "stoettemur", "riving"],
@@ -17,6 +18,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FF002",
     title: "Tiltaket er i samsvar med tillatelsen",
+    en_title: "Measure complies with the permit",
     category: "formelle_forhold",
     description: "Sammenlign faktisk utførelse med godkjente tegninger og vilkår i tillatelsen.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "bruksendring", "terrasse_balkong", "stoettemur", "riving"],
@@ -27,6 +29,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FF003",
     title: "Dispensasjon er innvilget og vilkår overholdt",
+    en_title: "Dispensation granted and conditions met",
     category: "formelle_forhold",
     description: "Kontroller at dispensasjonsvedtaket foreligger og at eventuelle vilkår er oppfylt.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "bruksendring", "terrasse_balkong", "stoettemur", "riving"],
@@ -37,6 +40,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FF004",
     title: "Ansvarlige foretak er i samsvar med søknaden",
+    en_title: "Responsible contractors match the application",
     category: "formelle_forhold",
     description: "Kontroller at foretak som utfører arbeidet er identisk med dem som er angitt i ansvarsretten.",
     applies_to: ["tilbygg", "paabygg", "enebolig", "bruksendring"],
@@ -47,6 +51,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FF005",
     title: "Kontrollerklæringer foreligger",
+    en_title: "Control declarations available",
     category: "formelle_forhold",
     description: "Kontroller at nødvendige kontrollerklæringer er innhentet og oversendt kommunen.",
     applies_to: ["tilbygg", "paabygg", "enebolig", "bruksendring"],
@@ -61,6 +66,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "PL001",
     title: "Avstand til nabogrense overholdt",
+    en_title: "Distance to property boundary complied with",
     category: "plassering",
     description: "Mål og kontroller at tiltakets avstand til nabogrense er i samsvar med godkjent situasjonsplan.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "terrasse_balkong", "stoettemur"],
@@ -71,6 +77,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "PL002",
     title: "Plassering stemmer med situasjonsplan",
+    en_title: "Placement matches the site plan",
     category: "plassering",
     description: "Kontroller at tiltakets plassering på tomten samsvarer med godkjent situasjonsplan og kotehøyder.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "stoettemur"],
@@ -81,6 +88,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "PL003",
     title: "Høyde på støttemur er innenfor tillatt grense",
+    en_title: "Retaining wall height within permitted limit",
     category: "plassering",
     description: "Mål høyde på støttemur og kontroller mot tillatelsen.",
     applies_to: ["stoettemur"],
@@ -95,6 +103,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "US001",
     title: "BRA/BYA er innenfor tillatt utnyttelse",
+    en_title: "GFA/site coverage within permitted utilisation",
     category: "utnyttelse_stoerrelse",
     description: "Beregn og kontroller bruksareal og bebygd areal mot tillatt utnyttelse i reguleringsplan/kommuneplan.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "terrasse_balkong"],
@@ -105,6 +114,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "US002",
     title: "Høyde er innenfor tillatt grense",
+    en_title: "Height within permitted limit",
     category: "utnyttelse_stoerrelse",
     description: "Mål gesimshøyde og mønehøyde og kontroller mot tillatt høyde i reguleringsplan.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig"],
@@ -119,6 +129,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "KO001",
     title: "Grunnarbeid utført etter godkjent prosjektering",
+    en_title: "Foundation work carried out per approved design",
     category: "konstruksjon",
     description: "Kontroller at grunnarbeider er i samsvar med geoteknisk rapport og godkjente tegninger.",
     applies_to: ["enebolig", "tilbygg", "garasje_carport", "stoettemur"],
@@ -129,6 +140,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "KO002",
     title: "Bærende konstruksjoner er i samsvar med prosjektering",
+    en_title: "Load-bearing structures comply with design",
     category: "konstruksjon",
     description: "Kontroller bærende vegger, søyler, bjelker og dekker mot prosjekteringstegninger.",
     applies_to: ["enebolig", "tilbygg", "paabygg"],
@@ -139,6 +151,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "KO003",
     title: "Terrasse/balkong er tilfredsstillende festet",
+    en_title: "Terrace/balcony adequately secured",
     category: "konstruksjon",
     description: "Kontroller forankring og festedetaljer for terrasse eller balkong. Sjekk kapasitet for laster.",
     applies_to: ["terrasse_balkong"],
@@ -153,6 +166,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "BR001",
     title: "Brannskille er korrekt utført",
+    en_title: "Fire separation correctly constructed",
     category: "brann",
     description: "Kontroller at brannskillekonstruksjoner (vegger/etasjeskiller) har riktig brannklasse og er tett.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "bruksendring"],
@@ -163,6 +177,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "BR002",
     title: "Rømningsveier er tilgjengelige og korrekte",
+    en_title: "Escape routes accessible and correct",
     category: "brann",
     description: "Kontroller at rømningsveier, utgangsdører og nødbelysning oppfyller kravene.",
     applies_to: ["enebolig", "bruksendring", "tilbygg", "paabygg"],
@@ -173,6 +188,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "BR003",
     title: "Brannteknisk prosjektering er fulgt",
+    en_title: "Fire safety design followed",
     category: "brann",
     description: "Kontroller at det branntekniske prosjektet er lagt til grunn for utførelsen.",
     applies_to: ["enebolig", "bruksendring", "tilbygg", "paabygg"],
@@ -187,6 +203,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FU001",
     title: "Våtrom er korrekt utført (membran, sluk m.m.)",
+    en_title: "Wet room correctly constructed (membrane, drain, etc.)",
     category: "fukt_overvann",
     description: "Kontroller at membran er korrekt utlagt, at sluk er korrekt montert og at fall mot sluk er tilstrekkelig.",
     applies_to: ["enebolig", "tilbygg", "paabygg", "bruksendring"],
@@ -197,6 +214,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FU002",
     title: "Drenering og fuktsperre er utført",
+    en_title: "Drainage and damp-proofing completed",
     category: "fukt_overvann",
     description: "Kontroller drenering rundt grunnmur og at fuktsperre er lagt korrekt.",
     applies_to: ["enebolig", "tilbygg", "garasje_carport"],
@@ -207,6 +225,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FU003",
     title: "Overvannshåndtering er ivaretatt",
+    en_title: "Stormwater management in place",
     category: "fukt_overvann",
     description: "Kontroller at overvann fra tiltaket håndteres i samsvar med godkjent plan og lokale krav.",
     applies_to: ["enebolig", "tilbygg", "paabygg", "garasje_carport", "stoettemur"],
@@ -217,6 +236,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "FU004",
     title: "VA-tilkobling er korrekt utført",
+    en_title: "Water and drain connection correctly installed",
     category: "fukt_overvann",
     description: "Kontroller at tilkobling til vann og avløp er fagmessig utført og i samsvar med VA-norm.",
     applies_to: ["enebolig", "tilbygg", "bruksendring"],
@@ -231,6 +251,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "TE001",
     title: "Terrengendring er i samsvar med godkjent plan",
+    en_title: "Terrain change complies with approved plan",
     category: "terreng",
     description: "Kontroller at faktisk terrengendring samsvarer med godkjent situasjonsplan og kotekart.",
     applies_to: ["enebolig", "tilbygg", "garasje_carport", "stoettemur"],
@@ -241,6 +262,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "TE002",
     title: "Naboeiendom og vei er ikke skadet",
+    en_title: "Adjacent property and road undamaged",
     category: "terreng",
     description: "Kontroller at terrengarbeider ikke har forårsaket skade eller ulempe for naboer eller vei.",
     applies_to: ["enebolig", "tilbygg", "stoettemur"],
@@ -255,6 +277,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "TK001",
     title: "Elektriske installasjoner er dokumentert",
+    en_title: "Electrical installations documented",
     category: "teknisk",
     description: "Kontroller at elektriske installasjoner er fagmessig utført og at samsvarserklæring foreligger.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "bruksendring", "terrasse_balkong"],
@@ -265,6 +288,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "TK002",
     title: "Ventilasjon er tilfredsstillende",
+    en_title: "Ventilation satisfactory",
     category: "teknisk",
     description: "Kontroller at ventilasjonsanlegget er dimensjonert og utført i samsvar med TEK17.",
     applies_to: ["enebolig", "tilbygg", "paabygg", "bruksendring"],
@@ -275,6 +299,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "TK003",
     title: "Energikrav er oppfylt",
+    en_title: "Energy requirements met",
     category: "teknisk",
     description: "Kontroller at energirapporten er i samsvar med godkjent energiramme og at tiltak er gjennomført.",
     applies_to: ["enebolig", "tilbygg", "paabygg", "bruksendring"],
@@ -289,6 +314,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "BF001",
     title: "Universell utforming er ivaretatt",
+    en_title: "Universal design requirements met",
     category: "bruk_funksjon",
     description: "Kontroller tilgjengelighet – rampe, trinnfri adkomst, snuheis, HC-toalett m.m.",
     applies_to: ["enebolig", "tilbygg", "bruksendring"],
@@ -299,6 +325,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "BF002",
     title: "Bruksendring er fagmessig gjennomført",
+    en_title: "Change of use professionally completed",
     category: "bruk_funksjon",
     description: "Kontroller at bygget er tilpasset ny bruk, inkl. krav til brannsikkerhet, ventilasjon og sanitær.",
     applies_to: ["bruksendring"],
@@ -309,6 +336,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "BF003",
     title: "Rekkverk og sikkerhet er korrekt utført",
+    en_title: "Railings and safety correctly constructed",
     category: "bruk_funksjon",
     description: "Kontroller høyde og utforming av rekkverk på terrasse/balkong. Min. 1,0 m for høyder > 1,0 m.",
     applies_to: ["terrasse_balkong", "tilbygg", "paabygg", "enebolig"],
@@ -323,6 +351,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "DOK001",
     title: "Ferdigattest/midlertidig brukstillatelse er søkt",
+    en_title: "Certificate of completion / temporary use permit applied for",
     category: "dokumentasjon_ferdigattest",
     description: "Kontroller at ferdigattest eller midlertidig brukstillatelse er søkt om eller mottatt.",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "bruksendring", "terrasse_balkong", "stoettemur"],
@@ -333,6 +362,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "DOK002",
     title: "Sluttkontrollerklæring foreligger",
+    en_title: "Final inspection declaration available",
     category: "dokumentasjon_ferdigattest",
     description: "Kontroller at ansvarlig kontrollerende har oversendt sluttkontrollerklæring til kommunen.",
     applies_to: ["tilbygg", "paabygg", "enebolig", "bruksendring"],
@@ -343,6 +373,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "DOK003",
     title: "Tegninger/dokumentasjon er à jour",
+    en_title: "Drawings and documentation up to date",
     category: "dokumentasjon_ferdigattest",
     description: "Kontroller at byggetegninger er oppdatert med eventuelle avvik og endringer under byggetiden (as-built).",
     applies_to: ["garasje_carport", "tilbygg", "paabygg", "enebolig", "bruksendring"],
@@ -353,6 +384,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "DOK004",
     title: "Riving er ferdigstilt og dokumentert",
+    en_title: "Demolition completed and documented",
     category: "dokumentasjon_ferdigattest",
     description: "Kontroller at rivingsarbeidet er fullført, avfall sortert og dokumentasjon oversendt.",
     applies_to: ["riving"],
@@ -363,6 +395,7 @@ export const CHECKPOINT_DEFINITIONS: CheckpointDefinition[] = [
   {
     id: "DOK005",
     title: "Farlig avfall fra riving er håndtert korrekt",
+    en_title: "Hazardous waste from demolition handled correctly",
     category: "dokumentasjon_ferdigattest",
     description: "Kontroller at kartlegging av farlig avfall er utført og at avfall er levert godkjent mottak.",
     applies_to: ["riving"],

@@ -76,6 +76,7 @@ export function groupByCategory(
   return groups;
 }
 
+/** Norwegian category labels (canonical — also used in PDF/JSON exports). */
 export const CATEGORY_LABELS: Record<CheckpointCategory, string> = {
   formelle_forhold: "Formelle forhold",
   plassering: "Plassering",
@@ -88,6 +89,28 @@ export const CATEGORY_LABELS: Record<CheckpointCategory, string> = {
   bruk_funksjon: "Bruk / Funksjon",
   dokumentasjon_ferdigattest: "Dokumentasjon / Ferdigattest",
 };
+
+/** English category labels. */
+export const CATEGORY_LABELS_EN: Record<CheckpointCategory, string> = {
+  formelle_forhold: "Formal requirements",
+  plassering: "Placement",
+  utnyttelse_stoerrelse: "Utilisation / Size",
+  konstruksjon: "Construction",
+  brann: "Fire safety",
+  fukt_overvann: "Moisture / Stormwater",
+  terreng: "Terrain",
+  teknisk: "Technical",
+  bruk_funksjon: "Use / Function",
+  dokumentasjon_ferdigattest: "Documentation / Completion",
+};
+
+/** Return the localised category label for a given locale. */
+export function getCategoryLabel(
+  category: CheckpointCategory,
+  locale: "nb" | "en" = "nb"
+): string {
+  return (locale === "en" ? CATEGORY_LABELS_EN : CATEGORY_LABELS)[category];
+}
 
 export const CATEGORY_ORDER: CheckpointCategory[] = [
   "formelle_forhold",

@@ -2,10 +2,11 @@
 
 import { memo, useEffect, useRef, useState } from "react";
 import type { Attachment, CheckpointWithAnswer, CheckpointStatus, SifContact } from "@/types";
-import { CATEGORY_LABELS } from "@/lib/checklist/filter-engine";
+import { getCategoryLabel } from "@/lib/checklist/filter-engine";
 import { buildLegalUrl } from "@/lib/legal-reference";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import { createClient } from "@/lib/supabase/client";
+import { useLanguage } from "@/lib/i18n";
 
 const STORAGE_BUCKET = "inspection-attachments";
 
@@ -101,7 +102,9 @@ const CheckpointItem = memo(function CheckpointItem({
   initialAttachments,
   onUpdate,
 }: Props) {
+  const { locale } = useLanguage();
   const { definition, answer } = item;
+  const displayTitle = locale === "en" && definition.en_title ? definition.en_title : definition.title;
   const currentStatus: CheckpointStatus = answer?.status ?? "not_checked";
   const [comment, setComment] = useState(answer?.comment ?? "");
   const [expanded, setExpanded] = useState(currentStatus === "deviation");
@@ -238,10 +241,10 @@ const CheckpointItem = memo(function CheckpointItem({
             </span>
             <div className="min-w-0">
               <p className="font-semibold text-gray-900 text-sm leading-tight">
-                {definition.title}
+                {displayTitle}
               </p>
               <p className="text-xs text-gray-500 mt-0.5">
-                {CATEGORY_LABELS[definition.category]}
+                {getCategoryLabel(definition.category, locale)}
                 {definition.legal_reference && (() => {
                   const url = definition.legal_reference_url || buildLegalUrl(definition.legal_reference);
                   return url ? (

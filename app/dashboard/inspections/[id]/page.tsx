@@ -21,7 +21,7 @@ import {
   filterCheckpoints,
   mergeCheckpointsWithAnswers,
   groupByCategory,
-  CATEGORY_LABELS,
+  getCategoryLabel,
   CATEGORY_ORDER,
   calculateSummary,
 } from "@/lib/checklist/filter-engine";
@@ -56,13 +56,13 @@ interface EditModalProps {
 }
 
 function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProps) {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [propertyAddress, setPropertyAddress] = useState(inspection.property_address);
 
   // Configurable lists
-  const [tilsynsomradeItems, setTilsynsomradeItems] = useState<string[]>([]);
-  const [tilsynstypeItems, setTilsynstypeItems] = useState<string[]>([]);
-  const [bakgrunnItems, setBakgrunnItems] = useState<string[]>([]);
+  const [tilsynsomradeItems, setTilsynsomradeItems] = useState<{ label: string; en_label: string | null }[]>([]);
+  const [tilsynstypeItems, setTilsynstypeItems] = useState<{ label: string; en_label: string | null }[]>([]);
+  const [bakgrunnItems, setBakgrunnItems] = useState<{ label: string; en_label: string | null }[]>([]);
   const [tilsynsomrade, setTilsynsomrade] = useState(inspection.tilsynsomrade ?? "");
   const [tilsynstype, setTilsynstype] = useState(inspection.tilsynstype ?? "");
   const [selectedBakgrunn, setSelectedBakgrunn] = useState<string[]>(inspection.bakgrunn ?? []);
@@ -77,9 +77,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         fetch("/api/inspection-config?category=tilsynstype", { headers }).then((r) => r.json()),
         fetch("/api/inspection-config?category=bakgrunn", { headers }).then((r) => r.json()),
       ]).then(([a, b, c]) => {
-        setTilsynsomradeItems((a.items ?? []).map((i: { label: string }) => i.label));
-        setTilsynstypeItems((b.items ?? []).map((i: { label: string }) => i.label));
-        setBakgrunnItems((c.items ?? []).map((i: { label: string }) => i.label));
+        setTilsynsomradeItems(a.items ?? []);
+        setTilsynstypeItems(b.items ?? []);
+        setBakgrunnItems(c.items ?? []);
       });
     });
   }, []);
@@ -277,17 +277,17 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {(stagesLoading || stages.length > 0) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Behandlingstrinn
+                {t.inspection.behandlingstrinn}
               </label>
               {stagesLoading ? (
-                <p className="text-sm text-gray-400 animate-pulse">Henter behandlingstrinn…</p>
+                <p className="text-sm text-gray-400 animate-pulse">{t.inspection.loadingTreatmentSteps}</p>
               ) : (
                 <select
                   value={selectedStageRecno ?? ""}
                   onChange={(e) => setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)}
                   className="input"
                 >
-                  <option value="">— Velg behandlingstrinn —</option>
+                  <option value="">{t.inspection.selectTreatmentStep}</option>
                   {stages.map((s) => (
                     <option key={s.recno} value={s.recno}>
                       {s.title ?? `Trinn ${s.recno}`}
@@ -512,7 +512,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 onClick={() => setShowExtForm(true)}
                 className="text-xs text-brand-600 hover:text-brand-800 font-medium"
               >
-                + Legg til ekstern deltaker
+                {t.inspection.addExternalParticipant}
               </button>
             )}
           </div>
@@ -543,28 +543,32 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Tilsynsområde + Tilsynstype */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tilsynsområde</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.tilsynsomrade}</label>
               <select
                 value={tilsynsomrade}
                 onChange={(e) => setTilsynsomrade(e.target.value)}
                 className="input"
               >
                 <option value="">— Velg —</option>
-                {tilsynsomradeItems.map((label) => (
-                  <option key={label} value={label}>{label}</option>
+                {tilsynsomradeItems.map((item) => (
+                  <option key={item.label} value={item.label}>
+                    {locale === "en" && item.en_label ? item.en_label : item.label}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tilsynstype</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.tilsynstype}</label>
               <select
                 value={tilsynstype}
                 onChange={(e) => setTilsynstype(e.target.value)}
                 className="input"
               >
                 <option value="">— Velg —</option>
-                {tilsynstypeItems.map((label) => (
-                  <option key={label} value={label}>{label}</option>
+                {tilsynstypeItems.map((item) => (
+                  <option key={item.label} value={item.label}>
+                    {locale === "en" && item.en_label ? item.en_label : item.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -574,27 +578,29 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {bakgrunnItems.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Bakgrunn for tilsynet
+                {t.inspection.bakgrunn}
               </label>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 {bakgrunnItems.map((item) => (
                   <label
-                    key={item}
+                    key={item.label}
                     className="flex items-center gap-2 cursor-pointer select-none"
                   >
                     <input
                       type="checkbox"
-                      checked={selectedBakgrunn.includes(item)}
+                      checked={selectedBakgrunn.includes(item.label)}
                       onChange={() =>
                         setSelectedBakgrunn((prev) =>
-                          prev.includes(item)
-                            ? prev.filter((v) => v !== item)
-                            : [...prev, item]
+                          prev.includes(item.label)
+                            ? prev.filter((v) => v !== item.label)
+                            : [...prev, item.label]
                         )
                       }
                       className="w-4 h-4 accent-brand-600 flex-shrink-0"
                     />
-                    <span className="text-sm text-gray-700">{item}</span>
+                    <span className="text-sm text-gray-700">
+                      {locale === "en" && item.en_label ? item.en_label : item.label}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -1026,7 +1032,7 @@ export default function InspectionPage() {
                       : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                   }`}
                 >
-                  {CATEGORY_LABELS[cat]} ({items.length}
+                  {getCategoryLabel(cat, locale)} ({items.length}
                   {devs > 0 ? ` · ${t.inspection.deviationsCount(devs)}` : ""})
                 </button>
               );
@@ -1073,7 +1079,7 @@ export default function InspectionPage() {
                         {item.definition.title}
                       </p>
                       <p className="text-xs text-red-600 mt-0.5">
-                        {CATEGORY_LABELS[item.definition.category]}
+                        {getCategoryLabel(item.definition.category, locale)}
                       </p>
                     </div>
                     <span className="text-xs bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded-full flex-shrink-0">

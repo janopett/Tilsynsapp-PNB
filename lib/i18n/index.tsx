@@ -117,6 +117,27 @@ export interface Translations {
     saving: string;
     saveChanges: string;
     errorNoAddress: string;
+    tilsynsomrade: string;
+    tilsynstype: string;
+    bakgrunn: string;
+    behandlingstrinn: string;
+    selectTreatmentStep: string;
+    loadingTreatmentSteps: string;
+    addExternalParticipant: string;
+    externalParticipants: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+    company: string;
+    save: string;
+    gnr: string;
+    bnr: string;
+  };
+  checklist: {
+    categoryLabels: Record<string, string>;
+    statusOk: string;
+    statusDeviation: string;
+    statusNotChecked: string;
   };
   language: {
     nb: string;
@@ -238,6 +259,38 @@ const nb: Translations = {
     saving: "Lagrer…",
     saveChanges: "Lagre endringer",
     errorNoAddress: "Eiendomsadresse er påkrevd.",
+    tilsynsomrade: "Tilsynsområde",
+    tilsynstype: "Tilsynstype",
+    bakgrunn: "Bakgrunn for tilsynet",
+    behandlingstrinn: "Behandlingstrinn",
+    selectTreatmentStep: "— Velg behandlingstrinn —",
+    loadingTreatmentSteps: "Henter behandlingstrinn…",
+    addExternalParticipant: "+ Legg til ekstern deltaker",
+    externalParticipants: "Eksterne deltakere",
+    firstName: "Fornavn",
+    lastName: "Etternavn",
+    role: "Rolle",
+    company: "Foretak",
+    save: "Lagre",
+    gnr: "Gnr",
+    bnr: "Bnr",
+  },
+  checklist: {
+    categoryLabels: {
+      formelle_forhold: "Formelle forhold",
+      plassering: "Plassering",
+      utnyttelse_stoerrelse: "Utnyttelse / Størrelse",
+      konstruksjon: "Konstruksjon",
+      brann: "Brann",
+      fukt_overvann: "Fukt / Overvann",
+      terreng: "Terreng",
+      teknisk: "Teknisk",
+      bruk_funksjon: "Bruk / Funksjon",
+      dokumentasjon_ferdigattest: "Dokumentasjon / Ferdigattest",
+    },
+    statusOk: "OK",
+    statusDeviation: "Avvik",
+    statusNotChecked: "Ikke kontrollert",
   },
   language: {
     nb: "Norsk",
@@ -359,6 +412,38 @@ const en: Translations = {
     saving: "Saving…",
     saveChanges: "Save changes",
     errorNoAddress: "Property address is required.",
+    tilsynsomrade: "Inspection area",
+    tilsynstype: "Inspection type",
+    bakgrunn: "Background for the inspection",
+    behandlingstrinn: "Processing stage",
+    selectTreatmentStep: "— Select processing stage —",
+    loadingTreatmentSteps: "Loading processing stages…",
+    addExternalParticipant: "+ Add external participant",
+    externalParticipants: "External participants",
+    firstName: "First name",
+    lastName: "Last name",
+    role: "Role",
+    company: "Company",
+    save: "Save",
+    gnr: "Gnr",
+    bnr: "Bnr",
+  },
+  checklist: {
+    categoryLabels: {
+      formelle_forhold: "Formal requirements",
+      plassering: "Placement",
+      utnyttelse_stoerrelse: "Utilisation / Size",
+      konstruksjon: "Construction",
+      brann: "Fire safety",
+      fukt_overvann: "Moisture / Stormwater",
+      terreng: "Terrain",
+      teknisk: "Technical",
+      bruk_funksjon: "Use / Function",
+      dokumentasjon_ferdigattest: "Documentation / Completion",
+    },
+    statusOk: "OK",
+    statusDeviation: "Deviation",
+    statusNotChecked: "Not checked",
   },
   language: {
     nb: "Norwegian",
