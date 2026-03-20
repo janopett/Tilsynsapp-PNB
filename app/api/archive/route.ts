@@ -123,6 +123,7 @@ export async function POST(req: NextRequest) {
     jsonFileName,
     attachments: attachmentFiles,
     additionalFields,
+    sifStageRecno: inspection.sif_stage_recno ?? undefined,
   });
 
   // Update archival record and (if successful) inspection status in parallel.
