@@ -58,6 +58,12 @@ interface SyncContactResult {
   error?: string;
 }
 
+interface EnterpriseHit {
+  Recno: number;
+  Name: string;
+  OrgNo?: string;
+}
+
 export default function SifTestPage() {
   const [versionResult, setVersionResult] = useState<VersionResult | null>(null);
   const [versionLoading, setVersionLoading] = useState(false);
@@ -79,6 +85,12 @@ export default function SifTestPage() {
   const [syncExternalId, setSyncExternalId] = useState("");
   const [syncResult, setSyncResult] = useState<SyncContactResult | null>(null);
   const [syncLoading, setSyncLoading] = useState(false);
+
+  // Enterprise search
+  const [enterpriseQuery, setEnterpriseQuery] = useState("");
+  const [enterpriseHits, setEnterpriseHits] = useState<EnterpriseHit[]>([]);
+  const [enterpriseSearching, setEnterpriseSearching] = useState(false);
+  const enterpriseSearchTimer = useState<ReturnType<typeof setTimeout> | null>(null);
 
   // GetContactPersons lookup
   const [lookupExternalId, setLookupExternalId] = useState("");
@@ -107,6 +119,31 @@ export default function SifTestPage() {
     const data = await res.json();
     setSyncResult(data);
     setSyncLoading(false);
+  }
+
+  function handleEnterpriseQueryChange(value: string) {
+    setEnterpriseQuery(value);
+    setEnterpriseHits([]);
+    if (enterpriseSearchTimer[0]) clearTimeout(enterpriseSearchTimer[0]);
+    if (value.trim().length < 2) return;
+    enterpriseSearchTimer[0] = setTimeout(async () => {
+      setEnterpriseSearching(true);
+      try {
+        const res = await authFetch(
+          `/api/sif/enterprise-search?q=${encodeURIComponent(value.trim())}`
+        );
+        const data = await res.json();
+        setEnterpriseHits(data.ok ? (data.enterprises ?? []) : []);
+      } finally {
+        setEnterpriseSearching(false);
+      }
+    }, 300);
+  }
+
+  function selectEnterprise(hit: EnterpriseHit) {
+    setSyncEnterprise(`recno:${hit.Recno}`);
+    setEnterpriseQuery(hit.Name);
+    setEnterpriseHits([]);
   }
 
   async function lookupContact(e: React.FormEvent) {
@@ -292,15 +329,44 @@ export default function SifTestPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Foretak <span className="text-gray-400 font-normal">(kun &quot;recno:1234&quot; — fritekst-navn støttes ikke)</span>
+              Foretak <span className="text-gray-400 font-normal">(søk på navn, velg resultat)</span>
             </label>
-            <input
-              type="text"
-              value={syncEnterprise}
-              onChange={(e) => setSyncEnterprise(e.target.value)}
-              placeholder='recno:1234 (fritekst-navn sendes ikke til 360°)'
-              className="input text-sm"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={enterpriseQuery}
+                onChange={(e) => handleEnterpriseQueryChange(e.target.value)}
+                placeholder="Søk på foretaksnavn eller org.nr…"
+                className="input text-sm"
+                autoComplete="off"
+              />
+              {enterpriseSearching && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                  Søker…
+                </span>
+              )}
+              {enterpriseHits.length > 0 && (
+                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg text-sm overflow-hidden">
+                  {enterpriseHits.map((hit) => (
+                    <li key={hit.Recno}>
+                      <button
+                        type="button"
+                        onClick={() => selectEnterprise(hit)}
+                        className="w-full text-left px-4 py-2 hover:bg-brand-50 transition flex justify-between items-center gap-2"
+                      >
+                        <span>{hit.Name}</span>
+                        <span className="text-xs text-gray-400 shrink-0">
+                          {hit.OrgNo ? `${hit.OrgNo} · ` : ""}recno:{hit.Recno}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {syncEnterprise && (
+              <p className="text-xs text-gray-500 mt-1 font-mono">{syncEnterprise}</p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
