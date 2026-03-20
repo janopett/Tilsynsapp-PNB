@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { LanguageProvider } from "@/lib/i18n";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Tilsynsapp – Plan & Bygg",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="nb">
       <body className="min-h-screen bg-gray-50 text-gray-900 antialiased">
         <LanguageProvider>{children}</LanguageProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
