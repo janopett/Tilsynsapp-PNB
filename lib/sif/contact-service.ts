@@ -199,10 +199,15 @@ export async function synchronizeContactPerson(input: {
   let existing = await lookupContactPersonByExternalId(input.externalId);
 
   // 2. If not found by ExternalId, fall back to name-based lookup.
-  //    This handles contacts created before ExternalId was introduced, or cases
-  //    where SIF didn't persist the ExternalId on the contact record.
+  //    Pass externalId so it can be used as a tiebreaker when multiple contacts
+  //    share the same name (e.g. after duplicate test runs).
   if (!existing) {
-    existing = await lookupContactPersonByName(input.firstName, input.lastName, enterpriseRecno);
+    existing = await lookupContactPersonByName(
+      input.firstName,
+      input.lastName,
+      enterpriseRecno,
+      input.externalId
+    );
     if (existing) {
       console.info("[SIF] Found contact by name (ExternalId lookup returned nothing)", {
         externalId: input.externalId,
@@ -219,27 +224,27 @@ export async function synchronizeContactPerson(input: {
       storedRecno: existing.Recno,
       storedName: existing.Name,
       storedEnterpriseRecno: existing.EnterpriseRecno,
+      storedTitle: existing.Title,
+      inputTitle: input.title,
       inputEnterprise: input.enterprise,
       sameEnterprise,
     });
 
     if (sameEnterprise) {
-      // Same person, same employer: update Title if it differs, return existing Recno.
-      if (input.title && existing.Title !== input.title) {
-        // Use UpdateContactPersons (by Recno) instead of SynchronizeContactPerson so
-        // 360° updates the existing record rather than creating a new one.
-        await callUpdateContactPerson({
-          recno: existing.Recno,
-          firstName: existing.FirstName ?? input.firstName,
-          lastName: existing.LastName ?? input.lastName,
-          externalId: input.externalId,
-          enterprise:
-            existing.EnterpriseRecno !== undefined
-              ? `recno:${existing.EnterpriseRecno}`
-              : input.enterprise,
-          title: input.title,
-        });
-      }
+      // Same person, same employer: always update via UpdateContactPerson so 360°
+      // modifies the existing record. Calling it even when nothing changed is safe
+      // (idempotent) and avoids conditional bugs.
+      await callUpdateContactPerson({
+        recno: existing.Recno,
+        firstName: existing.FirstName ?? input.firstName,
+        lastName: existing.LastName ?? input.lastName,
+        externalId: input.externalId,
+        enterprise:
+          existing.EnterpriseRecno !== undefined
+            ? `recno:${existing.EnterpriseRecno}`
+            : input.enterprise,
+        title: input.title,
+      });
       return existing.Recno;
     }
 
@@ -270,7 +275,9 @@ async function lookupContactPersonByExternalId(
       true
     );
     console.info("[SIF] GetContactPersons(ExternalId) raw result", { externalId, result });
-    return result.Successful && result.ContactPersons?.length ? result.ContactPersons[0] : null;
+    // Accept contacts regardless of Successful flag — some SIF instances return
+    // Successful: false for "no results" rather than for actual errors.
+    return result.ContactPersons?.length ? result.ContactPersons[0] : null;
   } catch (err) {
     console.warn("[SIF] GetContactPersons(ExternalId) lookup failed (non-fatal)", {
       externalId,
@@ -282,14 +289,17 @@ async function lookupContactPersonByExternalId(
 
 /**
  * Fallback: search GetContactPersons by full name when ExternalId lookup returns nothing.
- * Returns the best match if exactly one active contact with that name is found,
- * or the one that also matches enterprise recno when multiple candidates exist.
- * Returns null if no match or ambiguous.
+ * Tiebreaking priority (highest first):
+ *  1. Candidate whose stored ExternalId matches the caller's externalId
+ *  2. Single candidate matching name + enterprise recno
+ *  3. Single exact-name match (no enterprise filter available)
+ * Returns null if no match or still ambiguous after tiebreaking.
  */
 async function lookupContactPersonByName(
   firstName?: string,
   lastName?: string,
-  enterpriseRecno?: number
+  enterpriseRecno?: number,
+  externalId?: string
 ): Promise<SifContactPersonResult | null> {
   const nameParts = [firstName, lastName].filter(Boolean);
   if (!nameParts.length) return null;
@@ -309,27 +319,43 @@ async function lookupContactPersonByName(
         true
       );
       console.info("[SIF] GetContactPersons(Name) raw result", { nameQuery, result });
-      if (!result.Successful || !result.ContactPersons?.length) continue;
+      // Accept results regardless of Successful flag (some SIF versions return false for empty).
+      if (!result.ContactPersons?.length) continue;
 
       const candidates = result.ContactPersons;
 
-      // If we have an enterprise recno, prefer candidates linked to that enterprise.
-      if (enterpriseRecno !== undefined) {
-        const withEnterprise = candidates.filter((c) => c.EnterpriseRecno === enterpriseRecno);
-        if (withEnterprise.length === 1) return withEnterprise[0];
-        if (withEnterprise.length > 1) {
-          console.info("[SIF] Ambiguous name+enterprise match, skipping", { nameQuery, count: withEnterprise.length });
-          return null;
+      // Priority 1: match by stored ExternalId (handles duplicates from test runs).
+      if (externalId) {
+        const withId = candidates.filter((c) => c.ExternalId === externalId);
+        if (withId.length === 1) return withId[0];
+        if (withId.length > 1) {
+          // Multiple contacts with same ExternalId — take the most recently matched.
+          console.info("[SIF] Multiple contacts share ExternalId, using first", { externalId });
+          return withId[0];
         }
       }
 
-      // No enterprise filter or no match with enterprise: accept single exact-name match.
+      // Priority 2: match by name + enterprise.
       const fullName = nameParts.join(" ").toLowerCase();
-      const exact = candidates.filter((c) => {
+      const nameMatches = candidates.filter((c) => {
         const stored = (c.Name ?? [c.FirstName, c.LastName].filter(Boolean).join(" ")).toLowerCase();
         return stored === fullName;
       });
-      if (exact.length === 1) return exact[0];
+
+      if (enterpriseRecno !== undefined) {
+        const withEnterprise = nameMatches.filter((c) => c.EnterpriseRecno === enterpriseRecno);
+        if (withEnterprise.length >= 1) return withEnterprise[0];
+      }
+
+      // Priority 3: single exact-name match.
+      if (nameMatches.length === 1) return nameMatches[0];
+
+      if (nameMatches.length > 1) {
+        console.info("[SIF] Ambiguous name match (no ExternalId or enterprise tiebreak)", {
+          nameQuery,
+          count: nameMatches.length,
+        });
+      }
     } catch (err) {
       console.warn("[SIF] GetContactPersons(Name) lookup failed (non-fatal)", {
         nameQuery,
