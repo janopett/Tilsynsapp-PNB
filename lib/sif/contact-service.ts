@@ -254,6 +254,8 @@ export async function synchronizeContactPerson(input: {
     ? (parseEnterpriseRecno(input.enterprise) ?? undefined)
     : undefined;
 
+  // Look up by name + enterprise first — handles contacts that predate this app
+  // and therefore have no ExternalId set in PNB.
   const existing = await lookupContactPersonByName(
     input.firstName,
     input.lastName,
@@ -261,35 +263,15 @@ export async function synchronizeContactPerson(input: {
   );
 
   if (existing) {
-    // Contact already exists in PNB — update it in place.
-    // We always call UpdateContactPerson even when only the title changed so
-    // the record stays in sync without risk of creating a duplicate.
-    console.info("[SIF] Contact found — updating via UpdateContactPerson", {
+    console.info("[SIF] Contact found by name — reusing existing recno", {
       recno: existing.Recno,
       name: existing.Name,
-      storedTitle: existing.Title,
-      inputTitle: input.title,
       enterpriseRecno: existing.EnterpriseRecno,
-    });
-    await callUpdateContactPerson({
-      recno: existing.Recno,
-      // Prefer the names already stored in PNB so 360° recognises the record.
-      firstName: existing.FirstName ?? input.firstName,
-      lastName: existing.LastName ?? input.lastName,
-      externalId: input.externalId,
-      // Always derive the enterprise from the stored recno, not from the caller's
-      // input — the caller may pass a plain name which would resolve to undefined
-      // and cause 360° to create a new contact instead of updating the existing one.
-      enterprise:
-        existing.EnterpriseRecno !== undefined
-          ? `recno:${existing.EnterpriseRecno}`
-          : input.enterprise,
-      title: input.title,
     });
     return existing.Recno;
   }
 
-  // No match in PNB — create a new contact record.
+  // Not found — create a new contact record.
   console.info("[SIF] Contact not found — creating via SynchronizeContactPerson", {
     firstName: input.firstName,
     lastName: input.lastName,
