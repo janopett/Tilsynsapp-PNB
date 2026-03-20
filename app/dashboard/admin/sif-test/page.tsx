@@ -97,6 +97,20 @@ export default function SifTestPage() {
   const [lookupResult, setLookupResult] = useState<RawDebugResult | null>(null);
   const [lookupLoading, setLookupLoading] = useState(false);
 
+  // UpdateContactPerson test
+  const [updateRecno, setUpdateRecno] = useState("");
+  const [updateFirstName, setUpdateFirstName] = useState("");
+  const [updateLastName, setUpdateLastName] = useState("");
+  const [updateTitle, setUpdateTitle] = useState("");
+  const [updateExternalId, setUpdateExternalId] = useState("");
+  const [updateEnterprise, setUpdateEnterprise] = useState("");
+  const [updateEnterpriseQuery, setUpdateEnterpriseQuery] = useState("");
+  const [updateEnterpriseHits, setUpdateEnterpriseHits] = useState<EnterpriseHit[]>([]);
+  const [updateEnterpriseSearching, setUpdateEnterpriseSearching] = useState(false);
+  const updateEnterpriseTimer = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [updateResult, setUpdateResult] = useState<RawDebugResult | null>(null);
+  const [updateLoading, setUpdateLoading] = useState(false);
+
   async function syncContact(e: React.FormEvent) {
     e.preventDefault();
     if (!syncFirstName.trim() && !syncLastName.trim()) return;
@@ -144,6 +158,55 @@ export default function SifTestPage() {
     setSyncEnterprise(`recno:${hit.Recno}`);
     setEnterpriseQuery(hit.Name);
     setEnterpriseHits([]);
+  }
+
+  function handleUpdateEnterpriseQueryChange(value: string) {
+    setUpdateEnterpriseQuery(value);
+    setUpdateEnterpriseHits([]);
+    if (updateEnterpriseTimer[0]) clearTimeout(updateEnterpriseTimer[0]);
+    if (value.trim().length < 2) return;
+    updateEnterpriseTimer[0] = setTimeout(async () => {
+      setUpdateEnterpriseSearching(true);
+      try {
+        const res = await authFetch(`/api/sif/enterprise-search?q=${encodeURIComponent(value.trim())}`);
+        const data = await res.json();
+        setUpdateEnterpriseHits(data.ok ? (data.enterprises ?? []) : []);
+      } finally {
+        setUpdateEnterpriseSearching(false);
+      }
+    }, 300);
+  }
+
+  function selectUpdateEnterprise(hit: EnterpriseHit) {
+    setUpdateEnterprise(`recno:${hit.Recno}`);
+    setUpdateEnterpriseQuery(hit.Name);
+    setUpdateEnterpriseHits([]);
+  }
+
+  async function runUpdateContactPerson(e: React.FormEvent) {
+    e.preventDefault();
+    const recno = parseInt(updateRecno.trim(), 10);
+    if (!updateRecno.trim() || isNaN(recno)) return;
+    setUpdateLoading(true);
+    setUpdateResult(null);
+    try {
+      const res = await authFetch("/api/sif/update-contact-person", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recno,
+          firstName: updateFirstName.trim() || undefined,
+          lastName: updateLastName.trim() || undefined,
+          title: updateTitle.trim() || undefined,
+          externalId: updateExternalId.trim() || undefined,
+          enterprise: updateEnterprise.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      setUpdateResult({ ok: data.ok, raw: data.ok ? data.raw : data.error });
+    } finally {
+      setUpdateLoading(false);
+    }
   }
 
   async function lookupContact(e: React.FormEvent) {
@@ -439,6 +502,133 @@ export default function SifTestPage() {
             data={lookupResult.ok ? lookupResult.raw : lookupResult.error}
             ok={lookupResult.ok}
           />
+        )}
+      </div>
+
+      {/* UpdateContactPerson test */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+        <h2 className="text-base font-semibold mb-1">Test: UpdateContactPerson</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Kaller{" "}
+          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">ContactService/UpdateContactPerson</code>{" "}
+          direkte med angitt Recno. Returnerer råsvaret fra SIF. Bruk dette til å verifisere at oppdatering av
+          eksisterende kontaktperson fungerer.
+        </p>
+        <form onSubmit={runUpdateContactPerson} className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Recno <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="number"
+              value={updateRecno}
+              onChange={(e) => setUpdateRecno(e.target.value)}
+              placeholder="F.eks. 219065"
+              className="input text-sm font-mono"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Fornavn</label>
+              <input
+                type="text"
+                value={updateFirstName}
+                onChange={(e) => setUpdateFirstName(e.target.value)}
+                placeholder="Ola"
+                className="input text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Etternavn</label>
+              <input
+                type="text"
+                value={updateLastName}
+                onChange={(e) => setUpdateLastName(e.target.value)}
+                placeholder="Nordmann"
+                className="input text-sm"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Ny rolle / tittel <span className="text-gray-400 font-normal">(Title-feltet)</span>
+            </label>
+            <input
+              type="text"
+              value={updateTitle}
+              onChange={(e) => setUpdateTitle(e.target.value)}
+              placeholder="Brannvernleder"
+              className="input text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Foretak <span className="text-gray-400 font-normal">(søk på navn, velg resultat)</span>
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={updateEnterpriseQuery}
+                onChange={(e) => handleUpdateEnterpriseQueryChange(e.target.value)}
+                placeholder="Søk på foretaksnavn eller org.nr…"
+                className="input text-sm"
+                autoComplete="off"
+              />
+              {updateEnterpriseSearching && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                  Søker…
+                </span>
+              )}
+              {updateEnterpriseHits.length > 0 && (
+                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg text-sm overflow-hidden">
+                  {updateEnterpriseHits.map((hit) => (
+                    <li key={hit.Recno}>
+                      <button
+                        type="button"
+                        onClick={() => selectUpdateEnterprise(hit)}
+                        className="w-full text-left px-4 py-2 hover:bg-brand-50 transition flex justify-between items-center gap-2"
+                      >
+                        <span>{hit.Name}</span>
+                        <span className="text-xs text-gray-400 shrink-0">
+                          {hit.OrgNo ? `${hit.OrgNo} · ` : ""}recno:{hit.Recno}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {updateEnterprise && (
+              <p className="text-xs text-gray-500 mt-1 font-mono">{updateEnterprise}</p>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              ExternalId <span className="text-gray-400 font-normal">(valgfri)</span>
+            </label>
+            <input
+              type="text"
+              value={updateExternalId}
+              onChange={(e) => setUpdateExternalId(e.target.value)}
+              placeholder="UUID"
+              className="input text-sm font-mono"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={updateLoading || !updateRecno.trim()}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {updateLoading ? "Oppdaterer…" : "Oppdater kontaktperson"}
+          </button>
+        </form>
+        {updateResult && (
+          <div className="mt-4">
+            <p className={`text-xs font-semibold mb-1 ${updateResult.ok ? "text-green-700" : "text-red-700"}`}>
+              {updateResult.ok ? "Svar fra SIF:" : "Feil:"}
+            </p>
+            <CopyableJson data={updateResult.raw} ok={updateResult.ok} />
+          </div>
         )}
       </div>
 
