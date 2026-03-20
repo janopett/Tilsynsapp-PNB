@@ -254,6 +254,47 @@ export async function synchronizeContactPerson(input: {
     ? (parseEnterpriseRecno(input.enterprise) ?? undefined)
     : undefined;
 
+  // Step 1: Look up by ExternalId — most reliable, works even if the name
+  // stored in PNB differs from what we have locally.
+  try {
+    const byId = await sifRpcCall<SifGetContactPersonsQuery, SifGetContactPersonsResult>(
+      "ContactService",
+      "GetContactPersons",
+      { ExternalId: input.externalId, Active: true, MaxRows: 5 },
+      undefined,
+      true
+    );
+    console.info("[SIF] GetContactPersons(ExternalId) result", {
+      externalId: input.externalId,
+      count: byId.ContactPersons?.length ?? 0,
+    });
+    const match = byId.ContactPersons?.[0];
+    if (match) {
+      console.info("[SIF] Contact found by ExternalId — updating via UpdateContactPerson", {
+        recno: match.Recno,
+        name: match.Name,
+      });
+      await callUpdateContactPerson({
+        recno: match.Recno,
+        firstName: match.FirstName ?? input.firstName,
+        lastName: match.LastName ?? input.lastName,
+        externalId: input.externalId,
+        enterprise:
+          match.EnterpriseRecno !== undefined
+            ? `recno:${match.EnterpriseRecno}`
+            : input.enterprise,
+        title: input.title,
+      });
+      return match.Recno;
+    }
+  } catch (err) {
+    console.warn("[SIF] GetContactPersons(ExternalId) lookup failed (non-fatal)", {
+      externalId: input.externalId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+
+  // Step 2: Fall back to name lookup.
   const existing = await lookupContactPersonByName(
     input.firstName,
     input.lastName,
