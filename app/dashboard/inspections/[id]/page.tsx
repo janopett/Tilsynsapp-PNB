@@ -1079,7 +1079,7 @@ export default function InspectionPage() {
                         {item.definition.title}
                       </p>
                       <p className="text-xs text-red-600 mt-0.5">
-                        {CATEGORY_LABELS[item.definition.category]}
+                        {getCategoryLabel(item.definition.category, locale)}
                       </p>
                     </div>
                     <span className="text-xs bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded-full flex-shrink-0">
