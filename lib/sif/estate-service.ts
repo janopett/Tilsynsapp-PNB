@@ -6,13 +6,17 @@ import { sifRpcCall } from "./client";
 import type { SifEstate } from "@/types";
 
 interface EstateQuery {
+  // NOTE: CaseNumber/CaseRecno are not in the official Swagger for GetEstates,
+  // but some SIF installations support them as undocumented filters.
   CaseNumber?: string;
   CaseRecno?: number;
   EstateNumber?: number;
   WorkNumber?: number;
   SectionNumber?: number;
   LeaseHoldNumber?: number;
-  MaxResults?: number;
+  BuildingNumber?: number;
+  /** Swagger field name: MaxRows (NOT MaxResults) */
+  MaxRows?: number;
 }
 
 interface RawEstateAddress {
@@ -70,7 +74,7 @@ export async function getEstateByMatrikkel(
     const result = await sifRpcCall<EstateQuery, EstateListResult>(
       "EstateService",
       "GetEstates",
-      { EstateNumber: gnr, WorkNumber: bnr, MaxResults: 10 },
+      { EstateNumber: gnr, WorkNumber: bnr, MaxRows: 10 },
       correlationId
     );
     if (!result.Successful || !result.Estates?.length) return null;
@@ -93,7 +97,7 @@ export async function getCaseEstates(
   const { caseRecno, caseNumber } = input;
   if (!caseRecno && !caseNumber) return [];
 
-  const query: EstateQuery = { MaxResults: 50 };
+  const query: EstateQuery = { MaxRows: 50 };
   if (caseRecno) query.CaseRecno = caseRecno;
   else if (caseNumber) query.CaseNumber = caseNumber;
 

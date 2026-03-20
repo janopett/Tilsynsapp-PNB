@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     if (service === "estates") {
       raw = await sifRpcCall("EstateService", "GetEstates", {
         CaseNumber: caseNumber,
-        MaxResults: 10,
+        MaxRows: 10,
       });
     } else if (service === "contacts") {
       // Try with CaseNumber first; also try CaseRecno if we can look it up
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       // Raw GetCases with all include-flags — shows Contacts, ReferringCases, and Stages
       raw = await sifRpcCall("CaseService", "GetCases", {
         CaseNumber: caseNumber,
-        MaxResults: 1,
+        MaxReturnedCases: 1,
         IncludeReferringCases: true,
         IncludeCaseContacts: true,
         IncludeStages: true,

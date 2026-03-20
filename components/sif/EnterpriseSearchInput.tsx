@@ -116,9 +116,9 @@ export default function EnterpriseSearchInput({
                     onMouseDown={() => handleSelect(e)}
                   >
                     <span className="text-sm font-medium text-gray-900">{e.Name}</span>
-                    {(e.OrgNo || e.ZipPlace) && (
+                    {(e.EnterpriseNumber || e.PostAddress?.ZipPlace) && (
                       <span className="text-xs text-gray-500">
-                        {[e.OrgNo, e.ZipPlace].filter(Boolean).join(" · ")}
+                        {[e.EnterpriseNumber, e.PostAddress?.ZipPlace].filter(Boolean).join(" · ")}
                       </span>
                     )}
                   </button>
