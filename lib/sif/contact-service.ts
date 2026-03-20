@@ -380,14 +380,13 @@ async function callSynchronize(input: {
   title?: string;
 }): Promise<number> {
   // 360° resolves Enterprise via a Contact lookup (ExternalID or Referencenumber).
-  // A plain integer string is accepted directly as a recno.
-  // Plain name strings are NOT supported — 360° cannot resolve them and throws a
-  // LookupException. Only pass Enterprise when we have a reliable "recno:XXXX" value.
+  // Must use "recno:XXXX" syntax — a bare integer is treated as an ExternalID string
+  // lookup and throws LookupException. Plain name strings are also not supported.
   let enterpriseForSif: string | undefined;
   if (input.enterprise) {
     const recno = parseEnterpriseRecno(input.enterprise);
     if (recno !== null) {
-      enterpriseForSif = String(recno); // pass as plain integer string — 360° accepts this
+      enterpriseForSif = `recno:${recno}`; // "recno:XXXX" tells 360° to look up by recno directly
     }
     // Plain name → omit; better to have no enterprise than a failed creation.
   }
