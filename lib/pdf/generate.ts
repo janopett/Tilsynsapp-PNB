@@ -418,6 +418,11 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
     },
     selected_tags: inspection.selected_tags ?? [],
     deltakere: inspection.participants ?? [],
+    eksterne_deltakere: (inspection.external_participants ?? []).map((ep) => ({
+      navn: ep.name,
+      rolle: ep.role ?? null,
+      foretak: ep.company ?? null,
+    })),
     eiendommer: inspection.estates ?? [],
     sjekkpunkter: merged.map((item) => ({
       id: item.definition.id,
