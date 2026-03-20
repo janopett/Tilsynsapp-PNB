@@ -229,7 +229,13 @@ export async function synchronizeContactPerson(input: {
           // Prefer stored names so PNB recognises this as an update, not a new record.
           firstName: existing.FirstName ?? input.firstName,
           lastName: existing.LastName ?? input.lastName,
-          enterprise: input.enterprise,
+          // Always use the stored recno for the enterprise — the caller may have passed a
+          // plain name string that resolves to undefined, which would cause 360° to create
+          // a new contact instead of updating the existing one.
+          enterprise:
+            existing.EnterpriseRecno !== undefined
+              ? `recno:${existing.EnterpriseRecno}`
+              : input.enterprise,
           title: input.title,
         });
       }
