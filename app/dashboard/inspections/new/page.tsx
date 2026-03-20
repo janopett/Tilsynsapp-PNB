@@ -13,7 +13,7 @@ import { useLanguage } from "@/lib/i18n";
 
 export default function NewInspectionPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
@@ -69,9 +69,9 @@ export default function NewInspectionPage() {
   const [longitude, setLongitude] = useState<number | null>(null);
 
   // Configurable lists
-  const [tilsynsomradeItems, setTilsynsomradeItems] = useState<string[]>([]);
-  const [tilsynstypeItems, setTilsynstypeItems] = useState<string[]>([]);
-  const [bakgrunnItems, setBakgrunnItems] = useState<string[]>([]);
+  const [tilsynsomradeItems, setTilsynsomradeItems] = useState<{ label: string; en_label: string | null }[]>([]);
+  const [tilsynstypeItems, setTilsynstypeItems] = useState<{ label: string; en_label: string | null }[]>([]);
+  const [bakgrunnItems, setBakgrunnItems] = useState<{ label: string; en_label: string | null }[]>([]);
   const [tilsynsomrade, setTilsynsomrade] = useState("");
   const [tilsynstype, setTilsynstype] = useState("");
   const [selectedBakgrunn, setSelectedBakgrunn] = useState<string[]>([]);
@@ -90,9 +90,9 @@ export default function NewInspectionPage() {
         fetch("/api/inspection-config?category=tilsynstype", { headers }).then((r) => r.json()),
         fetch("/api/inspection-config?category=bakgrunn", { headers }).then((r) => r.json()),
       ]).then(([a, b, c]) => {
-        setTilsynsomradeItems((a.items ?? []).map((i: { label: string }) => i.label));
-        setTilsynstypeItems((b.items ?? []).map((i: { label: string }) => i.label));
-        setBakgrunnItems((c.items ?? []).map((i: { label: string }) => i.label));
+        setTilsynsomradeItems(a.items ?? []);
+        setTilsynstypeItems(b.items ?? []);
+        setBakgrunnItems(c.items ?? []);
       });
     });
   }, []);
@@ -484,10 +484,10 @@ export default function NewInspectionPage() {
             {(stagesLoading || stages.length > 0) && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Behandlingstrinn
+                  {t.inspection.behandlingstrinn}
                 </label>
                 {stagesLoading ? (
-                  <p className="text-sm text-gray-400 animate-pulse">Henter behandlingstrinn…</p>
+                  <p className="text-sm text-gray-400 animate-pulse">{t.inspection.loadingTreatmentSteps}</p>
                 ) : (
                   <select
                     value={selectedStageRecno ?? ""}
@@ -496,7 +496,7 @@ export default function NewInspectionPage() {
                     }
                     className="input"
                   >
-                    <option value="">— Velg behandlingstrinn —</option>
+                    <option value="">{t.inspection.selectTreatmentStep}</option>
                     {stages.map((s) => (
                       <option key={s.recno} value={s.recno}>
                         {s.title ?? `Trinn ${s.recno}`}
@@ -765,7 +765,7 @@ export default function NewInspectionPage() {
                   onClick={() => setShowExtForm(true)}
                   className="text-sm text-brand-600 hover:text-brand-700 font-medium"
                 >
-                  + Legg til ekstern deltaker
+                  {t.inspection.addExternalParticipant}
                 </button>
               )}
             </div>
@@ -774,7 +774,7 @@ export default function NewInspectionPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tilsynsområde
+                  {t.inspection.tilsynsomrade}
                 </label>
                 <select
                   value={tilsynsomrade}
@@ -782,14 +782,16 @@ export default function NewInspectionPage() {
                   className="input"
                 >
                   <option value="">— Velg —</option>
-                  {tilsynsomradeItems.map((label) => (
-                    <option key={label} value={label}>{label}</option>
+                  {tilsynsomradeItems.map((item) => (
+                    <option key={item.label} value={item.label}>
+                      {locale === "en" && item.en_label ? item.en_label : item.label}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tilsynstype
+                  {t.inspection.tilsynstype}
                 </label>
                 <select
                   value={tilsynstype}
@@ -797,8 +799,10 @@ export default function NewInspectionPage() {
                   className="input"
                 >
                   <option value="">— Velg —</option>
-                  {tilsynstypeItems.map((label) => (
-                    <option key={label} value={label}>{label}</option>
+                  {tilsynstypeItems.map((item) => (
+                    <option key={item.label} value={item.label}>
+                      {locale === "en" && item.en_label ? item.en_label : item.label}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -808,27 +812,29 @@ export default function NewInspectionPage() {
             {bakgrunnItems.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bakgrunn for tilsynet
+                  {t.inspection.bakgrunn}
                 </label>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                   {bakgrunnItems.map((item) => (
                     <label
-                      key={item}
+                      key={item.label}
                       className="flex items-center gap-2 cursor-pointer select-none"
                     >
                       <input
                         type="checkbox"
-                        checked={selectedBakgrunn.includes(item)}
+                        checked={selectedBakgrunn.includes(item.label)}
                         onChange={() =>
                           setSelectedBakgrunn((prev) =>
-                            prev.includes(item)
-                              ? prev.filter((v) => v !== item)
-                              : [...prev, item]
+                            prev.includes(item.label)
+                              ? prev.filter((v) => v !== item.label)
+                              : [...prev, item.label]
                           )
                         }
                         className="w-4 h-4 accent-brand-600 flex-shrink-0"
                       />
-                      <span className="text-sm text-gray-700">{item}</span>
+                      <span className="text-sm text-gray-700">
+                        {locale === "en" && item.en_label ? item.en_label : item.label}
+                      </span>
                     </label>
                   ))}
                 </div>

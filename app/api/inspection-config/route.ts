@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await auth.supabase
     .from("inspection_list_items")
-    .select("id, label, sort_order")
+    .select("id, label, en_label, sort_order")
     .eq("category", category)
     .eq("active", true)
     .order("sort_order", { ascending: true });

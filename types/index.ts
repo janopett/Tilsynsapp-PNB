@@ -75,6 +75,8 @@ export type CheckpointSeverity = "info" | "warning" | "critical";
 export interface CheckpointDefinition {
   id: string;
   title: string;
+  /** English translation of title */
+  en_title?: string;
   category: CheckpointCategory;
   description: string;
   /** Tiltakstyper this checkpoint applies to */
