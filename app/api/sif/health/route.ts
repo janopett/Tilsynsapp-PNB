@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { testSifConnection } from "@/lib/sif/support-service";
 import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "@/lib/sif/settings";
-import { buildRpcUrl } from "@/lib/sif/client";
+import { buildRpcUrl, maskUrl } from "@/lib/sif/client";
 
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
@@ -10,8 +10,9 @@ export async function GET(req: NextRequest) {
 
   const settings = await loadSifSettingsWithEnvFallback();
   const config = toSifClientConfig(settings);
+  // Mask authkey before returning URL to client
   const attemptedUrl = config.baseUrl
-    ? buildRpcUrl(config, "SupportService", "GetSIFVersion")
+    ? maskUrl(buildRpcUrl(config, "SupportService", "GetSIFVersion"))
     : null;
 
   const result = await testSifConnection();

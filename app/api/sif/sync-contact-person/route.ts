@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser } from "@/lib/api-auth";
+import { requireAdmin } from "@/lib/api-auth";
 import { synchronizeContactPerson } from "@/lib/sif/contact-service";
 import { sifRpcCall } from "@/lib/sif/client";
 
 // ── GET /api/sif/sync-contact-person?externalId=... ──────────────────────────
 // Debug: raw GetContactPersons response for a given ExternalId.
 export async function GET(req: NextRequest) {
-  const auth = await requireUser(req);
+  const auth = await requireAdmin(req);
   if (auth.error) return auth.error;
 
   const externalId = new URL(req.url).searchParams.get("externalId");
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 // Test endpoint for ContactService/SynchronizeContactPerson.
 // Creates or updates a contact person in PNB and returns their Recno.
 export async function POST(req: NextRequest) {
-  const auth = await requireUser(req);
+  const auth = await requireAdmin(req);
   if (auth.error) return auth.error;
 
   const body = await req.json().catch(() => null);

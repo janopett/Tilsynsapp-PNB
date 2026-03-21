@@ -99,10 +99,10 @@ export async function GET(req: NextRequest) {
     }
     const msg = result.ErrorMessage ?? result.ErrorDetails ?? firstError ?? "Ukjent SIF-feil";
     console.error("[SIF code-tables] Both attempts failed", { tableName, msg });
-    return NextResponse.json({ ok: false, error: msg }, { status: 502 });
+    return NextResponse.json({ ok: false, error: "Kunne ikke hente kodeverdier fra SIF." }, { status: 502 });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error("[SIF code-tables] Both attempts threw", { tableName, firstError, secondError: msg });
-    return NextResponse.json({ ok: false, error: firstError ?? msg }, { status: 502 });
+    return NextResponse.json({ ok: false, error: "Kunne ikke hente kodeverdier fra SIF." }, { status: 502 });
   }
 }
