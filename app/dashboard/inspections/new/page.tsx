@@ -354,13 +354,13 @@ export default function NewInspectionPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{t.newInspection.title}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.newInspection.title}</h1>
         <div className="flex items-center gap-2 mt-3">
           {[1, 2].map((s) => (
             <div
               key={s}
               className={`flex items-center gap-1 text-sm font-medium ${
-                step === s ? "text-brand-600" : "text-gray-400"
+                step === s ? "text-brand-600" : "text-gray-400 dark:text-slate-500"
               }`}
             >
               <span
@@ -369,7 +369,7 @@ export default function NewInspectionPage() {
                     ? "bg-brand-600 text-white"
                     : step > s
                     ? "bg-green-500 text-white"
-                    : "bg-gray-200 text-gray-500"
+                    : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
                 }`}
               >
                 {s}
@@ -380,13 +380,13 @@ export default function NewInspectionPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
         {/* Step 1: Case metadata */}
         {step === 1 && (
           <div className="space-y-4">
             {/* Case number */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 {t.newInspection.caseNumber}
               </label>
               <CaseSearchInput
@@ -396,7 +396,7 @@ export default function NewInspectionPage() {
                 placeholder={t.newInspection.caseSearchPlaceholder}
               />
               {caseTitle && (
-                <p className="mt-1 text-xs text-gray-500 truncate" title={caseTitle}>
+                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400 truncate" title={caseTitle}>
                   {caseTitle}
                 </p>
               )}
@@ -405,11 +405,11 @@ export default function NewInspectionPage() {
             {/* Estates section */}
             {(estatesLoading || estates.length > 0) && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   {t.newInspection.estates}
                 </label>
                 {estatesLoading ? (
-                  <p className="text-sm text-gray-400 animate-pulse">
+                  <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">
                     {t.newInspection.loadingEstates}
                   </p>
                 ) : (
@@ -420,7 +420,7 @@ export default function NewInspectionPage() {
                         {selectedEstates.map((e) => (
                           <span
                             key={e.recno}
-                            className="inline-flex items-center gap-1 bg-brand-50 text-brand-700 border border-brand-200 rounded-full px-3 py-1 text-xs font-medium"
+                            className="inline-flex items-center gap-1 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-800 rounded-full px-3 py-1 text-xs font-medium"
                           >
                             <button
                               type="button"
@@ -432,7 +432,7 @@ export default function NewInspectionPage() {
                             </button>
                             <button
                               onClick={() => removeEstate(e.recno)}
-                              className="ml-1 text-brand-400 hover:text-brand-700 leading-none"
+                              className="ml-1 text-brand-400 dark:text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 leading-none"
                             >
                               ✕
                             </button>
@@ -483,11 +483,11 @@ export default function NewInspectionPage() {
             {/* Stage (behandlingstrinn) */}
             {(stagesLoading || stages.length > 0) && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   {t.inspection.behandlingstrinn}
                 </label>
                 {stagesLoading ? (
-                  <p className="text-sm text-gray-400 animate-pulse">{t.inspection.loadingTreatmentSteps}</p>
+                  <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">{t.inspection.loadingTreatmentSteps}</p>
                 ) : (
                   <select
                     value={selectedStageRecno ?? ""}
@@ -508,14 +508,14 @@ export default function NewInspectionPage() {
             )}
 
             {/* Eiendomsinformasjon – grouped card */}
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            <div className="rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/30 p-4 space-y-3">
+              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
                 {t.newInspection.propertyInfo}
               </p>
 
               {/* Address */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   {t.newInspection.propertyAddress} <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -524,7 +524,7 @@ export default function NewInspectionPage() {
                   onChange={(e) => setPropertyAddress(e.target.value)}
                   required
                   placeholder="Storgata 1, 0001 Oslo"
-                  className="input bg-white"
+                  className="input"
                 />
               </div>
 
@@ -532,19 +532,19 @@ export default function NewInspectionPage() {
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Gnr</label>
-                  <input type="text" value={gnr} onChange={(e) => setGnr(e.target.value)} placeholder="123" className="input bg-white text-sm" />
+                  <input type="text" value={gnr} onChange={(e) => setGnr(e.target.value)} placeholder="123" className="input text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Bnr</label>
-                  <input type="text" value={bnr} onChange={(e) => setBnr(e.target.value)} placeholder="45" className="input bg-white text-sm" />
+                  <input type="text" value={bnr} onChange={(e) => setBnr(e.target.value)} placeholder="45" className="input text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Snr</label>
-                  <input type="text" value={snr} onChange={(e) => setSnr(e.target.value)} placeholder="0" className="input bg-white text-sm" />
+                  <input type="text" value={snr} onChange={(e) => setSnr(e.target.value)} placeholder="0" className="input text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Fnr</label>
-                  <input type="text" value={fnr} onChange={(e) => setFnr(e.target.value)} placeholder="0" className="input bg-white text-sm" />
+                  <input type="text" value={fnr} onChange={(e) => setFnr(e.target.value)} placeholder="0" className="input text-sm" />
                 </div>
               </div>
             </div>
@@ -552,7 +552,7 @@ export default function NewInspectionPage() {
             {/* Date + Inspector */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   {t.newInspection.inspectionDate} <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -563,7 +563,7 @@ export default function NewInspectionPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   {t.newInspection.inspector}
                 </label>
                 <input
@@ -578,7 +578,7 @@ export default function NewInspectionPage() {
 
             {/* Applicant */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 {t.newInspection.applicantName}
               </label>
               {caseContacts.length > 0 ? (
@@ -615,7 +615,7 @@ export default function NewInspectionPage() {
 
             {/* Participants */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 {t.newInspection.participants}
               </label>
               {participants.length > 0 && (
@@ -623,15 +623,15 @@ export default function NewInspectionPage() {
                   {participants.map((p) => (
                     <span
                       key={p.recno}
-                      className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium"
+                      className="inline-flex items-center gap-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-full px-3 py-1 text-xs font-medium"
                     >
                       {p.name}
                       {p.role && (
-                        <span className="text-gray-400"> · {p.role}</span>
+                        <span className="text-gray-400 dark:text-slate-500"> · {p.role}</span>
                       )}
                       <button
                         onClick={() => removeParticipant(p.recno)}
-                        className="ml-1 text-gray-400 hover:text-gray-700 leading-none"
+                        className="ml-1 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 leading-none"
                       >
                         ✕
                       </button>
@@ -671,7 +671,7 @@ export default function NewInspectionPage() {
                   </button>
                 </div>
               ) : (
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-400 dark:text-slate-500">
                   {contactsLoading
                     ? t.newInspection.loadingCaseContacts
                     : caseNumber
@@ -683,23 +683,23 @@ export default function NewInspectionPage() {
 
             {/* External participants */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Eksterne deltakere{" "}
-                <span className="text-gray-400 font-normal text-xs">(f.eks. Brannvernleder, Verneombud)</span>
+                <span className="text-gray-400 dark:text-slate-500 font-normal text-xs">(f.eks. Brannvernleder, Verneombud)</span>
               </label>
               {externalParticipants.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-2">
                   {externalParticipants.map((ep) => (
                     <span
                       key={ep.id}
-                      className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-3 py-1 text-xs font-medium"
+                      className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full px-3 py-1 text-xs font-medium"
                     >
                       {ep.name}
-                      {ep.role && <span className="text-amber-500"> · {ep.role}</span>}
-                      {ep.company && <span className="text-amber-500"> · {ep.company}</span>}
+                      {ep.role && <span className="text-amber-500 dark:text-amber-400"> · {ep.role}</span>}
+                      {ep.company && <span className="text-amber-500 dark:text-amber-400"> · {ep.company}</span>}
                       <button
                         onClick={() => removeExternalParticipant(ep.id)}
-                        className="ml-1 text-amber-400 hover:text-amber-700 leading-none"
+                        className="ml-1 text-amber-400 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 leading-none"
                       >
                         ✕
                       </button>
@@ -708,7 +708,7 @@ export default function NewInspectionPage() {
                 </div>
               )}
               {showExtForm ? (
-                <div className="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
+                <div className="border border-gray-200 dark:border-slate-600 rounded-xl p-3 space-y-2 bg-gray-50 dark:bg-slate-700/50">
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="text"
@@ -745,7 +745,7 @@ export default function NewInspectionPage() {
                     <button
                       type="button"
                       onClick={() => { setShowExtForm(false); setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined }); }}
-                      className="text-sm text-gray-500 hover:text-gray-700"
+                      className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
                     >
                       Avbryt
                     </button>
@@ -763,7 +763,7 @@ export default function NewInspectionPage() {
                 <button
                   type="button"
                   onClick={() => setShowExtForm(true)}
-                  className="text-sm text-brand-600 hover:text-brand-700 font-medium"
+                  className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium"
                 >
                   {t.inspection.addExternalParticipant}
                 </button>
@@ -773,7 +773,7 @@ export default function NewInspectionPage() {
             {/* Tilsynsområde + Tilsynstype */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   {t.inspection.tilsynsomrade}
                 </label>
                 <select
@@ -790,7 +790,7 @@ export default function NewInspectionPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   {t.inspection.tilsynstype}
                 </label>
                 <select
@@ -811,7 +811,7 @@ export default function NewInspectionPage() {
             {/* Bakgrunn for tilsynet */}
             {bakgrunnItems.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                   {t.inspection.bakgrunn}
                 </label>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -832,7 +832,7 @@ export default function NewInspectionPage() {
                         }
                         className="w-4 h-4 accent-brand-600 flex-shrink-0"
                       />
-                      <span className="text-sm text-gray-700">
+                      <span className="text-sm text-gray-700 dark:text-slate-300">
                         {locale === "en" && item.en_label ? item.en_label : item.label}
                       </span>
                     </label>
@@ -843,7 +843,7 @@ export default function NewInspectionPage() {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 {t.newInspection.notes}
               </label>
               <textarea
@@ -857,14 +857,14 @@ export default function NewInspectionPage() {
 
             {/* Map */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 {t.newInspection.mapPosition}
               </label>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setShowMap(true)}
                   type="button"
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition text-gray-700"
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition text-gray-700 dark:text-slate-300"
                 >
                   🗺️{" "}
                   {latitude != null
@@ -872,14 +872,14 @@ export default function NewInspectionPage() {
                     : t.newInspection.selectPosition}
                 </button>
                 {latitude != null && longitude != null && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 dark:text-slate-400">
                     {latitude.toFixed(5)}°N, {longitude.toFixed(5)}°Ø
                     <button
                       onClick={() => {
                         setLatitude(null);
                         setLongitude(null);
                       }}
-                      className="ml-2 text-gray-400 hover:text-gray-600"
+                      className="ml-2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
                     >
                       ✕
                     </button>
@@ -894,7 +894,7 @@ export default function NewInspectionPage() {
         {step === 2 && (
           <div className="space-y-6">
             <div>
-              <h2 className="text-base font-semibold text-gray-800 mb-3">
+              <h2 className="text-base font-semibold text-gray-800 dark:text-slate-200 mb-3">
                 {t.newInspection.selectMeasureType}
               </h2>
               <div className="grid grid-cols-2 gap-3">
@@ -904,13 +904,13 @@ export default function NewInspectionPage() {
                     onClick={() => setMeasureTypeId(mt.id)}
                     className={`border-2 rounded-xl p-3 text-left transition ${
                       measureTypeId === mt.id
-                        ? "border-brand-500 bg-brand-50"
-                        : "border-gray-200 hover:border-gray-300"
+                        ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20"
+                        : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
                     }`}
                   >
                     <span className="text-2xl">{mt.icon}</span>
-                    <p className="font-medium text-sm mt-1">{mt.name}</p>
-                    <p className="text-xs text-gray-500 mt-0.5">
+                    <p className="font-medium text-sm mt-1 dark:text-slate-100">{mt.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                       {mt.description}
                     </p>
                   </button>
@@ -919,17 +919,17 @@ export default function NewInspectionPage() {
             </div>
 
             <div>
-              <h2 className="text-base font-semibold text-gray-800 mb-1">
+              <h2 className="text-base font-semibold text-gray-800 dark:text-slate-200 mb-1">
                 {t.newInspection.measureProperties}
               </h2>
-              <p className="text-sm text-gray-500 mb-3">
+              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
                 {t.newInspection.measurePropertiesHint}
               </p>
               <div className="space-y-2">
                 {PROPERTY_QUESTIONS.map((q) => (
                   <label
                     key={q.tag}
-                    className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition"
+                    className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-700/30 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                   >
                     <input
                       type="checkbox"
@@ -938,11 +938,11 @@ export default function NewInspectionPage() {
                       className="mt-0.5 w-5 h-5 accent-brand-600 flex-shrink-0"
                     />
                     <div>
-                      <p className="text-sm font-medium text-gray-800">
+                      <p className="text-sm font-medium text-gray-800 dark:text-slate-200">
                         {q.label}
                       </p>
                       {q.description && (
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                           {q.description}
                         </p>
                       )}
@@ -955,7 +955,7 @@ export default function NewInspectionPage() {
         )}
 
         {error && (
-          <div className="mt-4 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+          <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl px-4 py-3 text-sm">
             {error}
           </div>
         )}
@@ -966,7 +966,7 @@ export default function NewInspectionPage() {
           ) : (
             <button
               onClick={() => setStep(1)}
-              className="text-gray-600 hover:text-gray-900 font-medium"
+              className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 font-medium"
             >
               {t.newInspection.back}
             </button>

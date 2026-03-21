@@ -77,15 +77,15 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
     }
   }
 
-  const inp = "block w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
-  const label = "block text-sm font-medium text-gray-700 mb-1";
-  const section = "bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4";
-  const heading = "text-base font-semibold text-gray-800 mb-3";
+  const inp = "block w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
+  const label = "block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1";
+  const section = "bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 space-y-4";
+  const heading = "text-base font-semibold text-gray-800 dark:text-slate-200 mb-3";
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-6">
       <div className="flex items-center justify-between mb-2">
-        <h1 className="text-xl font-bold text-gray-900">SIF-konfigurasjon</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100">SIF-konfigurasjon</h1>
         <button
           type="submit"
           disabled={saving}
@@ -96,12 +96,12 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
       </div>
 
       {success && (
-        <p className="text-sm text-green-700 bg-green-50 rounded-xl px-4 py-2">
+        <p className="text-sm text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-xl px-4 py-2">
           Innstillingene er lagret.
         </p>
       )}
       {error && (
-        <p className="text-sm text-red-600 bg-red-50 rounded-xl px-4 py-2">{error}</p>
+        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2">{error}</p>
       )}
 
       {/* Connection */}
@@ -141,7 +141,7 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
           <label className={label}>
             Authkey{" "}
             {form.hasAuthkey && (
-              <span className="text-xs text-gray-400 font-normal">(satt – tøm feltet for å beholde)</span>
+              <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">(satt – tøm feltet for å beholde)</span>
             )}
           </label>
           <input
@@ -182,7 +182,7 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
             <label className={label}>
               Client Secret{" "}
               {form.hasOauthClientSecret && (
-                <span className="text-xs text-gray-400 font-normal">(satt)</span>
+                <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">(satt)</span>
               )}
             </label>
             <input
@@ -253,7 +253,7 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
             placeholder="Tilsynsrapport - {{propertyAddress}} - {{date}}"
             className={inp}
           />
-          <p className="text-xs text-gray-400 mt-1">Variabler: {"{{propertyAddress}}"}, {"{{date}}"}, {"{{caseNumber}}"}</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Variabler: {"{{propertyAddress}}"}, {"{{date}}"}, {"{{caseNumber}}"}</p>
         </div>
         <div className="flex items-center gap-3">
           <input
@@ -263,7 +263,7 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
             onChange={(e) => set("autoDispatch", e.target.checked)}
             className="w-4 h-4 accent-brand-600"
           />
-          <label htmlFor="autoDispatch" className="text-sm text-gray-700 cursor-pointer select-none">
+          <label htmlFor="autoDispatch" className="text-sm text-gray-700 dark:text-slate-300 cursor-pointer select-none">
             Send automatisk til mottakere etter arkivering
           </label>
         </div>

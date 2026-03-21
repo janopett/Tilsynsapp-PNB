@@ -156,7 +156,7 @@ export default function AdminUsersPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
           Brukere og admin-tilgang
         </h1>
         <button
@@ -170,7 +170,7 @@ export default function AdminUsersPage() {
           {showCreate ? "Avbryt" : "+ Legg til bruker"}
         </button>
       </div>
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
         Brukere med admin-tilgang kan konfigurere SIF og administrere
         applikasjonen.
       </p>
@@ -179,14 +179,14 @@ export default function AdminUsersPage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6 space-y-4"
+          className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mb-6 space-y-4"
         >
-          <h2 className="text-base font-semibold text-gray-800">
+          <h2 className="text-base font-semibold text-gray-800 dark:text-slate-200">
             Legg til ny bruker
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Fornavn <span className="text-red-500">*</span>
               </label>
               <input
@@ -199,7 +199,7 @@ export default function AdminUsersPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Etternavn <span className="text-red-500">*</span>
               </label>
               <input
@@ -241,7 +241,7 @@ export default function AdminUsersPage() {
           </div>
 
           {createError && (
-            <div className="rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+            <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
               {createError}
             </div>
           )}
@@ -259,36 +259,36 @@ export default function AdminUsersPage() {
       )}
 
       {createSuccess && (
-        <div className="mb-4 rounded-xl bg-green-50 border border-green-200 text-green-800 px-4 py-3 text-sm">
+        <div className="mb-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-400 px-4 py-3 text-sm">
           {createSuccess}
         </div>
       )}
 
       {error && (
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+        <div className="mb-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 text-sm">
           {error}
         </div>
       )}
 
       {loading ? (
-        <div className="flex justify-center items-center h-32 text-gray-400 text-sm">
+        <div className="flex justify-center items-center h-32 text-gray-400 dark:text-slate-500 text-sm">
           Laster brukere…
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
           {users.length === 0 ? (
-            <p className="p-6 text-sm text-gray-400">Ingen brukere funnet.</p>
+            <p className="p-6 text-sm text-gray-400 dark:text-slate-500">Ingen brukere funnet.</p>
           ) : (
-            <ul className="divide-y divide-gray-100">
+            <ul className="divide-y divide-gray-100 dark:divide-slate-700">
               {users.map((u) => (
                 <li key={u.id} className="px-5 py-4 space-y-2">
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {u.name ?? <span className="text-gray-400 italic">Navn ikke satt</span>}
+                      <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
+                        {u.name ?? <span className="text-gray-400 dark:text-slate-500 italic">Navn ikke satt</span>}
                       </p>
-                      <p className="text-xs text-gray-400 truncate">{u.email}</p>
-                      <p className="text-xs text-gray-300 mt-0.5">
+                      <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{u.email}</p>
+                      <p className="text-xs text-gray-300 dark:text-slate-600 mt-0.5">
                         Sist innlogget:{" "}
                         {u.lastSignIn
                           ? new Date(u.lastSignIn).toLocaleDateString("nb-NO")
@@ -297,13 +297,13 @@ export default function AdminUsersPage() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       {u.isAdmin && (
-                        <span className="text-xs font-medium bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">
+                        <span className="text-xs font-medium bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 px-2 py-0.5 rounded-full">
                           Admin
                         </span>
                       )}
                       <button
                         onClick={() => editingId === u.id ? setEditingId(null) : startEdit(u)}
-                        className="text-sm font-medium px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 transition"
+                        className="text-sm font-medium px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition"
                       >
                         {editingId === u.id ? "Avbryt" : "Rediger navn"}
                       </button>
@@ -312,8 +312,8 @@ export default function AdminUsersPage() {
                         disabled={pending === u.id}
                         className={`text-sm font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-50 ${
                           u.isAdmin
-                            ? "bg-red-50 text-red-600 hover:bg-red-100"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
+                            : "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600"
                         }`}
                       >
                         {pending === u.id ? "…" : u.isAdmin ? "Fjern admin" : "Gi admin"}
@@ -324,7 +324,7 @@ export default function AdminUsersPage() {
                   {editingId === u.id && (
                     <div className="flex gap-2 items-end pt-1">
                       <div>
-                        <label className="block text-xs text-gray-500 mb-0.5">Fornavn</label>
+                        <label className="block text-xs text-gray-500 dark:text-slate-400 mb-0.5">Fornavn</label>
                         <input
                           type="text"
                           value={editFirst}
@@ -335,7 +335,7 @@ export default function AdminUsersPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 mb-0.5">Etternavn</label>
+                        <label className="block text-xs text-gray-500 dark:text-slate-400 mb-0.5">Etternavn</label>
                         <input
                           type="text"
                           value={editLast}
@@ -353,7 +353,7 @@ export default function AdminUsersPage() {
                         {savingName ? "Lagrer…" : "Lagre"}
                       </button>
                       {nameError && (
-                        <p className="text-xs text-red-600">{nameError}</p>
+                        <p className="text-xs text-red-600 dark:text-red-400">{nameError}</p>
                       )}
                     </div>
                   )}
@@ -364,12 +364,12 @@ export default function AdminUsersPage() {
         </div>
       )}
 
-      <div className="mt-6 bg-amber-50 border border-amber-200 rounded-2xl p-5 text-sm text-amber-800">
+      <div className="mt-6 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl p-5 text-sm text-amber-800 dark:text-amber-300">
         <p className="font-semibold mb-1">Første admin (bootstrap)</p>
         <p className="mb-2">
           Hvis ingen admin finnes ennå, kan du sette den første via terminalen:
         </p>
-        <pre className="bg-white rounded-lg p-3 text-xs font-mono text-gray-700 overflow-x-auto">
+        <pre className="bg-white dark:bg-slate-700 rounded-lg p-3 text-xs font-mono text-gray-700 dark:text-slate-300 overflow-x-auto">
           npx tsx scripts/set-admin.ts brukernavn@epost.no
         </pre>
       </div>
