@@ -7,7 +7,7 @@ import { SifUploadError, SifValidationError } from "./errors";
 import type { SifUploadInput, SifUploadResult } from "./types";
 import type { SifUploadedFileReference } from "@/types";
 
-const MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024; // 50 MB
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB — matches Supabase Storage bucket limit
 
 export interface UploadFileInput {
   fileName: string;       // Must include extension, e.g. "rapport.pdf"

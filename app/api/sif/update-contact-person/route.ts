@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser } from "@/lib/api-auth";
+import { requireAdmin } from "@/lib/api-auth";
 import { sifRpcCall } from "@/lib/sif/client";
 import type { SifUpdateContactPersonInput, SifUpdateContactPersonResult } from "@/lib/sif/types";
 
@@ -7,7 +7,7 @@ import type { SifUpdateContactPersonInput, SifUpdateContactPersonResult } from "
 // Test endpoint for ContactService/UpdateContactPerson.
 // Calls the SIF endpoint directly and returns the raw response for inspection.
 export async function POST(req: NextRequest) {
-  const auth = await requireUser(req);
+  const auth = await requireAdmin(req);
   if (auth.error) return auth.error;
 
   const body = await req.json().catch(() => null);

@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireAdmin } from "@/lib/api-auth";
 import { cookies } from "next/headers";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (auth.error) return auth.error;
+
   const cookieStore = cookies();
   const all = cookieStore.getAll();
 
@@ -12,7 +16,7 @@ export async function GET() {
     supabase_cookies: supabaseCookies.map((c) => ({
       name: c.name,
       length: c.value.length,
-      preview: c.value.slice(0, 60) + "…",
+      // Return only length, not value preview — cookie values are sensitive
     })),
     all_cookie_names: all.map((c) => c.name),
   });

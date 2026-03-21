@@ -112,6 +112,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, estates });
   } catch (err) {
     console.error("[case-estates] Error", err);
-    return NextResponse.json({ ok: false, estates: [], error: String(err) });
+    return NextResponse.json({ ok: false, estates: [], error: "Kunne ikke hente eiendommer fra SIF." });
   }
 }

@@ -94,7 +94,7 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
     correlationId,
     service,
     method,
-    url,
+    url: maskUrl(url),
     headers: maskAuthHeaders(headers as Record<string, string>),
     retryCount,
   };
@@ -209,4 +209,9 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Replace authkey query parameter value with **** before logging or returning to clients. */
+export function maskUrl(url: string): string {
+  return url.replace(/([?&]authkey=)[^&]*/gi, "$1****");
 }
