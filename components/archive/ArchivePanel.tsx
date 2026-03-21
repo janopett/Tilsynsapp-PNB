@@ -90,10 +90,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       });
       onArchived();
     } else {
-      setResult({
-        status: "failed",
-        message: data.error ?? "Ukjent feil",
-      });
+      setResult({ status: "failed", message: data.error ?? "Ukjent feil" });
     }
     setLoading(false);
   }
@@ -103,19 +100,31 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       {/* Status display */}
       {result && (
         <div
+          role="status"
+          aria-live="polite"
           className={`rounded-2xl p-4 border ${
             result.status === "success"
-              ? "bg-green-50 border-green-200"
-              : "bg-red-50 border-red-200"
+              ? "bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800"
+              : "bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800"
           }`}
         >
           <div className="flex items-center gap-2">
-            <span className="text-xl">{result.status === "success" ? "✅" : "❌"}</span>
+            <span className="text-xl" aria-hidden="true">
+              {result.status === "success" ? "✅" : "❌"}
+            </span>
             <div>
-              <p className={`font-semibold text-sm ${result.status === "success" ? "text-green-800" : "text-red-800"}`}>
+              <p className={`font-semibold text-sm ${
+                result.status === "success"
+                  ? "text-green-800 dark:text-green-300"
+                  : "text-red-800 dark:text-red-300"
+              }`}>
                 {result.status === "success" ? "Sendt og arkivert i Plan & Build" : "Arkivering feilet"}
               </p>
-              <p className={`text-sm ${result.status === "success" ? "text-green-700" : "text-red-700"}`}>
+              <p className={`text-sm ${
+                result.status === "success"
+                  ? "text-green-700 dark:text-green-400"
+                  : "text-red-700 dark:text-red-400"
+              }`}>
                 {result.message}
               </p>
             </div>
@@ -126,7 +135,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                 href={result.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-sm text-brand-600 hover:text-brand-800 font-medium"
+                className="inline-flex items-center gap-1 text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium"
               >
                 Åpne dokument i 360° →
               </a>
@@ -135,13 +144,16 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               <button
                 onClick={handleMarkCompleted}
                 disabled={completing}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-semibold transition disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg
+                           bg-green-600 hover:bg-green-700 text-white text-sm font-semibold
+                           transition disabled:opacity-50
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
               >
                 {completing ? "⏳ Avslutter…" : "✅ Sett som avsluttet"}
               </button>
             )}
             {isCompleted && (
-              <span className="inline-flex items-center gap-1 text-sm text-green-700 font-medium">
+              <span className="inline-flex items-center gap-1 text-sm text-green-700 dark:text-green-400 font-medium">
                 ✅ Tilsynet er avsluttet
               </span>
             )}
@@ -149,16 +161,18 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h2 className="font-semibold text-gray-900 mb-1">Send og arkiver i Plan & Build</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Generer tilsynsrapport (PDF), arkiver den på saken i Plan & Build og send den til mottakerne.
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5">
+        <h2 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">
+          Send og arkiver i Plan &amp; Build
+        </h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+          Generer tilsynsrapport (PDF), arkiver den på saken i Plan &amp; Build og send den til mottakerne.
         </p>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Saksnummer i Plan & Build
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              Saksnummer i Plan &amp; Build
             </label>
             <CaseSearchInput
               value={caseNumber}
@@ -167,14 +181,13 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
             />
           </div>
 
-          {/* Advanced fields */}
           <details className="text-sm">
-            <summary className="cursor-pointer text-gray-500 hover:text-gray-700 font-medium select-none">
+            <summary className="cursor-pointer text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 font-medium select-none">
               Avansert oppslag (eksternt ID / UID)
             </summary>
-            <div className="mt-3 space-y-3 pl-4 border-l-2 border-gray-100">
+            <div className="mt-3 space-y-3 pl-4 border-l-2 border-gray-100 dark:border-slate-700">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   Eksternt ID
                 </label>
                 <input
@@ -186,7 +199,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                   UID
                 </label>
                 <input
@@ -204,11 +217,15 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         <button
           onClick={handleArchive}
           disabled={loading}
-          className="mt-5 w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+          aria-busy={loading}
+          className="mt-5 w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl
+                     transition disabled:opacity-50 flex items-center justify-center gap-2
+                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2
+                     dark:focus-visible:ring-offset-slate-800"
         >
           {loading ? (
             <>
-              <span className="animate-spin">⏳</span>
+              <span className="animate-spin" aria-hidden="true">⏳</span>
               Arkiverer og sender...
             </>
           ) : (
@@ -217,13 +234,13 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         </button>
       </div>
 
-      {/* Info boxes */}
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-blue-700">
+      {/* Info box */}
+      <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-xl p-4 text-xs text-blue-700 dark:text-blue-300">
         <p className="font-semibold mb-1">Hva skjer?</p>
         <ol className="list-decimal list-inside space-y-0.5">
           <li>Tilsynsrapport genereres som PDF</li>
           <li>Eventuelle bilder/vedlegg lastes opp til SIF</li>
-          <li>Dokument opprettes på saken i Plan & Build</li>
+          <li>Dokument opprettes på saken i Plan &amp; Build</li>
           <li>Dokumentet sendes til mottakerne (hvis aktivert i admin)</li>
           <li>Dokumentreferansen lagres i appen</li>
         </ol>

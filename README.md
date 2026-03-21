@@ -29,7 +29,8 @@ Webapplikasjon for gjennomføring og arkivering av byggetilsyn i kommunen. Inspe
 | PDF-rapport | Generer profesjonell tilsynsrapport med underskrift og kart |
 | Arkivering | Send ferdig tilsyn til kommunens arkivsystem (Public 360°) med ett klikk |
 | Dashboard | Oversikt over aktive og arkiverte tilsyn med filtrering og statusinformasjon |
-| Kartplukkingr | Velg koordinater for tilsynsstedet via interaktivt kart |
+| Kartplukking | Velg koordinater for tilsynsstedet via interaktivt kart |
+| Mørkt/lyst tema | Automatisk systemtema med manuell overstyring (lys/mørk/system) |
 
 ### SIF-integrasjon (Plan & Bygg / Public 360°)
 
@@ -211,6 +212,17 @@ Alle admin-handlinger logges automatisk til `audit_logs`-tabellen i henhold til 
 | `sif_settings.update` | SIF-innstillinger lagret (sensitive felt utelatt) |
 
 ---
+
+## Universell utforming (WCAG 2.1 AA)
+
+- **Skip-to-content-lenke** — tastaturfokus hopper direkte til hovedinnhold (WCAG 2.4.1)
+- **Fargekontrast** — alle tekstelementer møter 4.5:1-kravet i både lyst og mørkt tema
+- **Synlige fokusindikatorer** — `focus-visible`-ringer på alle interaktive elementer
+- **ARIA-attributter** — `aria-expanded`, `aria-haspopup`, `aria-pressed`, `aria-live`, `role="dialog"` og `role="alert"` brukt gjennomgående
+- **Semantisk HTML** — `<nav aria-label>`, `role="menu"`, `role="listbox"`, `role="group"` på relevante elementer
+- **Tastaturnavigasjon** — dropdowns og modaler lukkes med Escape-tasten
+- **Vedleggsknapper** — fjern-knapp vises ved hover *og* tastaturfokus
+- **Skjermleserstøtte** — `aria-label` på alle ikon-knapper, `aria-hidden` på dekorative elementer
 
 ## Sikkerhet
 
