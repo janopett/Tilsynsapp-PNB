@@ -94,6 +94,7 @@ export interface Translations {
     tabChecklist: string;
     tabDeviations: (n: number) => string;
     tabArchive: string;
+    scrollToTop: string;
     deviationsCount: (n: number) => string;
     editTitle: string;
     caseNumber: string;
@@ -236,6 +237,7 @@ const nb: Translations = {
     tabChecklist: "Sjekkliste",
     tabDeviations: (n) => `Avvik (${n})`,
     tabArchive: "Arkiver",
+    scrollToTop: "Til toppen",
     deviationsCount: (n) => `${n} avvik`,
     editTitle: "Rediger tilsyn",
     caseNumber: "Saksnummer",
@@ -389,6 +391,7 @@ const en: Translations = {
     tabChecklist: "Checklist",
     tabDeviations: (n) => `Deviations (${n})`,
     tabArchive: "Archive",
+    scrollToTop: "Back to top",
     deviationsCount: (n) => `${n} deviation${n !== 1 ? "s" : ""}`,
     editTitle: "Edit inspection",
     caseNumber: "Case number",

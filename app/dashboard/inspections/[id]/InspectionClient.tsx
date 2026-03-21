@@ -1068,6 +1068,23 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
               />
             ))}
           </div>
+
+          {displayItems.length > 3 && (
+            <div className="flex gap-3 mt-6 pt-5 border-t border-gray-100">
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                className="flex-1 flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
+              >
+                ↑ {t.inspection.scrollToTop}
+              </button>
+              <button
+                onClick={() => setActiveTab("archive")}
+                className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition"
+              >
+                {t.inspection.tabArchive} →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
