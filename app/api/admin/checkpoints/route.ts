@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { createServiceClient } from "@/lib/supabase/server";
 
 // ── GET /api/admin/checkpoints ────────────────────────────────────────────────
@@ -65,6 +66,13 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "checkpoint.create",
+    targetType: "checkpoint",
+    targetId: data.id,
+    metadata: { title: data.title, category: data.category },
+  });
   return NextResponse.json({ ok: true, checkpoint: data }, { status: 201 });
 }
 
@@ -97,6 +105,13 @@ export async function PATCH(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "checkpoint.update",
+    targetType: "checkpoint",
+    targetId: id,
+    metadata: allowed,
+  });
   return NextResponse.json({ ok: true, checkpoint: data });
 }
 
@@ -124,6 +139,7 @@ export async function DELETE(req: NextRequest) {
       .update({ active: false, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    await writeAuditLog({ adminId: auth.user.id, action: "checkpoint.deactivate", targetType: "checkpoint", targetId: id });
     return NextResponse.json({ ok: true, deactivated: true });
   }
 
@@ -133,5 +149,6 @@ export async function DELETE(req: NextRequest) {
     .delete()
     .eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await writeAuditLog({ adminId: auth.user.id, action: "checkpoint.delete", targetType: "checkpoint", targetId: id });
   return NextResponse.json({ ok: true, deleted: true });
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { createServiceClient } from "@/lib/supabase/server";
 import { loadSifSettings, sanitizeForClient } from "@/lib/sif/settings";
 import type { SifAuthMode } from "@/lib/sif/auth";
@@ -108,6 +109,20 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "sif_settings.update",
+    targetType: "sif_settings",
+    // Log non-sensitive fields only — never log authkey or client_secret
+    metadata: {
+      baseUrl: row.base_url,
+      authMode: row.auth_mode,
+      docArchive: row.doc_archive,
+      docCategory: row.doc_category,
+      autoDispatch: row.auto_dispatch,
+    },
+  });
 
   return NextResponse.json({ ok: true });
 }

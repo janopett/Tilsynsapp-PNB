@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminClient() {
@@ -59,6 +60,14 @@ export async function POST(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "user.create",
+    targetType: "user",
+    targetId: data.user.id,
+    metadata: { email: data.user.email, name: `${firstName.trim()} ${lastName.trim()}` },
+  });
 
   return NextResponse.json({
     user: {

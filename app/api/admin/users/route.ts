@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminClient() {
@@ -85,6 +86,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "user.set_admin",
+    targetType: "user",
+    targetId: body.userId,
+    metadata: { isAdmin: body.isAdmin },
+  });
+
   return NextResponse.json({ ok: true });
 }
 
@@ -122,6 +131,14 @@ export async function PATCH(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "user.update_name",
+    targetType: "user",
+    targetId: userId,
+    metadata: { firstName: firstName.trim(), lastName: lastName.trim() },
+  });
 
   return NextResponse.json({ ok: true });
 }
