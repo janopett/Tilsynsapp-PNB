@@ -4,6 +4,12 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  // Skip session refresh on the login page — saves a round-trip to Supabase
+  // which was causing ~1s TTFB on an otherwise static route.
+  if (request.nextUrl.pathname === "/login") {
+    return supabaseResponse;
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
