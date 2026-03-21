@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path // empty' | { read -r f; echo \"$f\" | grep -qE '(app/api|lib/|supabase/migrations|components/)' && echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"Du har nettopp endret en kildefil (API-rute, lib, migrasjon eller komponent). Vurder om README.md bør oppdateres for å reflektere endringen (funksjoner, arkitektur, miljøvariabler, migrasjonshistorikk, admin-funksjonalitet osv.). Oppdater README.md om nødvendig.\"}}' || true; }",
+            "statusMessage": "Sjekker om README.md bør oppdateres..."
+          }
+        ]
+      }
+    ]
+  }
+}
