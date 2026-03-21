@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
+import { writeAuditLog } from "@/lib/audit-log";
 import { createServiceClient } from "@/lib/supabase/server";
 
 // ── GET /api/admin/inspection-config?category=... ────────────────────────────
@@ -57,6 +58,13 @@ export async function POST(req: NextRequest) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "inspection_config.create",
+    targetType: "inspection_config",
+    targetId: String(data.id),
+    metadata: { category, label: label.trim() },
+  });
   return NextResponse.json({ ok: true, item: data }, { status: 201 });
 }
 
@@ -76,5 +84,11 @@ export async function DELETE(req: NextRequest) {
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "inspection_config.delete",
+    targetType: "inspection_config",
+    targetId: id,
+  });
   return NextResponse.json({ ok: true });
 }
