@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import LogoutButton from "./LogoutButton";
+import ThemeToggle from "./ThemeToggle";
 import { useLanguage, type Locale } from "@/lib/i18n";
 
 interface DashboardNavProps {
@@ -20,15 +21,19 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
   ];
 
   return (
-    <nav className="bg-brand-900 text-white shadow-lg sticky top-0 z-50">
+    <nav aria-label="Hovednavigasjon" className="bg-brand-900 text-white shadow-lg sticky top-0 z-50">
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/dashboard" className="text-lg font-bold tracking-tight">
+        <Link
+          href="/dashboard"
+          className="text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
+        >
           Tilsynsapp
         </Link>
+
         <div className="flex items-center gap-4">
           <Link
             href="/dashboard"
-            className="text-sm text-blue-200 hover:text-white transition"
+            className="text-sm text-blue-200 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
           >
             {t.nav.myInspections}
           </Link>
@@ -37,7 +42,10 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
             <div className="relative">
               <button
                 onClick={() => setAdminOpen((o) => !o)}
-                className="text-sm text-blue-200 hover:text-white transition flex items-center gap-1"
+                aria-expanded={adminOpen}
+                aria-haspopup="menu"
+                className="text-sm text-blue-200 hover:text-white transition flex items-center gap-1
+                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
               >
                 {t.nav.admin}
                 <svg
@@ -46,63 +54,52 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
+                  aria-hidden="true"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M19 9l-7 7-7-7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
 
               {adminOpen && (
                 <>
-                  {/* backdrop */}
                   <div
                     className="fixed inset-0 z-10"
                     onClick={() => setAdminOpen(false)}
+                    aria-hidden="true"
                   />
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
-                    <Link
-                      href="/dashboard/admin/sif-config"
-                      onClick={() => setAdminOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      {t.nav.sifConfig}
-                    </Link>
-                    <Link
-                      href="/dashboard/admin/sif-test"
-                      onClick={() => setAdminOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      {t.nav.sifTest}
-                    </Link>
-                    <Link
-                      href="/dashboard/admin/arkiveringslogg"
-                      onClick={() => setAdminOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      {t.nav.archivalLog}
-                    </Link>
-                    <Link
-                      href="/dashboard/admin/tilsyn-config"
-                      onClick={() => setAdminOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      Tilsynskonfigurering
-                    </Link>
-                    <Link
-                      href="/dashboard/admin/checkpoints"
-                      onClick={() => setAdminOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
-                    >
-                      Sjekkpunkter
-                    </Link>
-                    <div className="border-t border-gray-100 my-1" />
+                  <div
+                    role="menu"
+                    aria-label="Administrasjon"
+                    className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-800 rounded-xl shadow-lg
+                               border border-gray-100 dark:border-slate-700 py-1 z-20"
+                  >
+                    {[
+                      { href: "/dashboard/admin/sif-config", label: t.nav.sifConfig },
+                      { href: "/dashboard/admin/sif-test", label: t.nav.sifTest },
+                      { href: "/dashboard/admin/arkiveringslogg", label: t.nav.archivalLog },
+                      { href: "/dashboard/admin/tilsyn-config", label: "Tilsynskonfigurering" },
+                      { href: "/dashboard/admin/checkpoints", label: "Sjekkpunkter" },
+                    ].map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        role="menuitem"
+                        onClick={() => setAdminOpen(false)}
+                        className="block px-4 py-2 text-sm text-gray-700 dark:text-slate-300
+                                   hover:bg-gray-50 dark:hover:bg-slate-700 transition
+                                   focus-visible:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-slate-700"
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" aria-hidden="true" />
                     <Link
                       href="/dashboard/admin/users"
+                      role="menuitem"
                       onClick={() => setAdminOpen(false)}
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition"
+                      className="block px-4 py-2 text-sm text-gray-700 dark:text-slate-300
+                                 hover:bg-gray-50 dark:hover:bg-slate-700 transition
+                                 focus-visible:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-slate-700"
                     >
                       {t.nav.users}
                     </Link>
@@ -116,8 +113,11 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
           <div className="relative">
             <button
               onClick={() => setLangOpen((o) => !o)}
-              className="text-sm text-blue-200 hover:text-white transition flex items-center gap-1"
-              aria-label="Change language"
+              aria-expanded={langOpen}
+              aria-haspopup="listbox"
+              aria-label="Bytt språk"
+              className="text-sm text-blue-200 hover:text-white transition flex items-center gap-1
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
             >
               {languages.find((l) => l.code === locale)?.flag}{" "}
               <span className="uppercase text-xs font-semibold">{locale}</span>
@@ -127,12 +127,9 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 9l-7 7-7-7"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
 
@@ -141,30 +138,40 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                 <div
                   className="fixed inset-0 z-10"
                   onClick={() => setLangOpen(false)}
+                  aria-hidden="true"
                 />
-                <div className="absolute right-0 top-full mt-1 w-36 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20">
+                <ul
+                  role="listbox"
+                  aria-label="Velg språk"
+                  className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-lg
+                             border border-gray-100 dark:border-slate-700 py-1 z-20"
+                >
                   {languages.map((lang) => (
-                    <button
-                      key={lang.code}
-                      onClick={() => {
-                        setLocale(lang.code);
-                        setLangOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm transition flex items-center gap-2 ${
-                        locale === lang.code
-                          ? "text-brand-700 font-semibold bg-brand-50"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span>{lang.flag}</span>
-                      <span>{lang.label}</span>
-                    </button>
+                    <li key={lang.code} role="option" aria-selected={locale === lang.code}>
+                      <button
+                        onClick={() => {
+                          setLocale(lang.code);
+                          setLangOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2 text-sm transition flex items-center gap-2
+                                    focus-visible:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-slate-700
+                                    ${
+                                      locale === lang.code
+                                        ? "text-brand-700 dark:text-brand-400 font-semibold bg-brand-50 dark:bg-brand-900/30"
+                                        : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                                    }`}
+                      >
+                        <span aria-hidden="true">{lang.flag}</span>
+                        <span>{lang.label}</span>
+                      </button>
+                    </li>
                   ))}
-                </div>
+                </ul>
               </>
             )}
           </div>
 
+          <ThemeToggle />
           <LogoutButton />
         </div>
       </div>

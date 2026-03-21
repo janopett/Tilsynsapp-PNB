@@ -26,6 +26,7 @@ export default function EnterpriseSearchInput({
   const [noResults, setNoResults] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listboxId = "enterprise-search-listbox";
 
   useEffect(() => { setQuery(value); }, [value]);
 
@@ -47,17 +48,12 @@ export default function EnterpriseSearchInput({
       const res = await authFetch(`/api/sif/enterprise-search?q=${encodeURIComponent(q.trim())}`);
       const data = await res.json();
       if (data.ok && data.enterprises.length > 0) {
-        setResults(data.enterprises);
-        setNoResults(false);
-        setOpen(true);
+        setResults(data.enterprises); setNoResults(false); setOpen(true);
       } else {
-        setResults([]);
-        setNoResults(true);
-        setOpen(true);
+        setResults([]); setNoResults(true); setOpen(true);
       }
     } catch {
-      setResults([]);
-      setNoResults(false);
+      setResults([]); setNoResults(false);
     } finally {
       setLoading(false);
     }
@@ -69,8 +65,7 @@ export default function EnterpriseSearchInput({
     onChange(val);
     setNoResults(false);
     if (val.trim().length < 2) {
-      setOpen(false);
-      setResults([]);
+      setOpen(false); setResults([]);
       if (debounceRef.current) clearTimeout(debounceRef.current);
       return;
     }
@@ -91,6 +86,10 @@ export default function EnterpriseSearchInput({
       <div className="relative">
         <input
           type="text"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={open}
+          aria-controls={listboxId}
           value={query}
           onChange={handleChange}
           onFocus={() => results.length > 0 && setOpen(true)}
@@ -99,25 +98,34 @@ export default function EnterpriseSearchInput({
           autoComplete="off"
         />
         {loading && (
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs animate-pulse">
+          <span aria-live="polite" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 text-xs animate-pulse">
             Søker…
           </span>
         )}
       </div>
 
       {open && (
-        <ul className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+        <ul
+          id={listboxId}
+          role="listbox"
+          aria-label="Søkeresultater"
+          className="absolute z-50 mt-1 w-full bg-white dark:bg-slate-800
+                     border border-gray-200 dark:border-slate-700
+                     rounded-xl shadow-lg overflow-hidden"
+        >
           {results.length > 0
             ? results.map((e) => (
-                <li key={e.Recno}>
+                <li key={e.Recno} role="option" aria-selected={false}>
                   <button
                     type="button"
-                    className="w-full text-left px-4 py-2.5 hover:bg-gray-50 transition flex flex-col gap-0.5"
+                    className="w-full text-left px-4 py-2.5 transition flex flex-col gap-0.5
+                               hover:bg-gray-50 dark:hover:bg-slate-700
+                               focus-visible:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-slate-700"
                     onMouseDown={() => handleSelect(e)}
                   >
-                    <span className="text-sm font-medium text-gray-900">{e.Name}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-slate-100">{e.Name}</span>
                     {(e.EnterpriseNumber || e.PostAddress?.ZipPlace) && (
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 dark:text-slate-400">
                         {[e.EnterpriseNumber, e.PostAddress?.ZipPlace].filter(Boolean).join(" · ")}
                       </span>
                     )}
@@ -125,7 +133,9 @@ export default function EnterpriseSearchInput({
                 </li>
               ))
             : noResults && (
-                <li className="px-4 py-3 text-sm text-gray-400">Ingen foretak funnet i Plan &amp; Build</li>
+                <li className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
+                  Ingen foretak funnet i Plan &amp; Build
+                </li>
               )}
         </ul>
       )}

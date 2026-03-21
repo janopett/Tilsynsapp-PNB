@@ -2,8 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Skip-to-content link for keyboard users (WCAG 2.4.1) */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[9999]
+           focus:rounded-xl focus:bg-brand-600 focus:px-4 focus:py-2
+           focus:text-sm focus:font-semibold focus:text-white focus:shadow-lg;
+  }
+
+  /* Smooth theme transitions — bg and border only to avoid janky UI */
+  body,
+  .card,
+  nav,
+  aside,
+  header,
+  footer,
+  [class*="bg-white"],
+  [class*="bg-gray"],
+  [class*="bg-slate"],
+  [class*="border-"] {
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.1s ease;
+  }
+}
+
 @layer components {
   .input {
-    @apply w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 bg-white;
+    @apply w-full border border-gray-300 dark:border-slate-600 rounded-xl px-4 py-2.5 text-sm
+           focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent
+           bg-white dark:bg-slate-800
+           text-gray-900 dark:text-slate-100
+           placeholder:text-gray-400 dark:placeholder:text-slate-500;
   }
 }

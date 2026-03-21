@@ -15,7 +15,7 @@ export default async function DashboardLayout({
       <DashboardNav isAdmin={isAdmin} />
 
       {/* Page content */}
-      <main className="flex-1 max-w-5xl mx-auto w-full px-4 py-6">
+      <main id="main-content" className="flex-1 max-w-5xl mx-auto w-full px-4 py-6">
         {children}
       </main>
     </div>
