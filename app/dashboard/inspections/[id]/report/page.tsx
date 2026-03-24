@@ -66,9 +66,11 @@ export default async function ReportPage({ params }: Props) {
     }
   }
 
-  // Checkpoints that have at least one attachment
-  const checkpointsWithAttachments = merged.filter(
-    (item) => (attByCheckpoint.get(item.definition.id)?.length ?? 0) > 0
+  // Checkpoints that have attachments OR a registered coordinate — shown in appendix
+  const appendixItems = merged.filter(
+    (item) =>
+      (attByCheckpoint.get(item.definition.id)?.length ?? 0) > 0 ||
+      (item.answer?.latitude != null && item.answer?.longitude != null)
   );
 
   const statusLabel: Record<string, string> = {
@@ -77,17 +79,28 @@ export default async function ReportPage({ params }: Props) {
     not_checked: "Ikke kontrollert",
   };
   const statusClass: Record<string, string> = {
-    ok: "text-green-700 bg-green-50",
-    deviation: "text-red-700 bg-red-50 font-bold",
-    not_checked: "text-yellow-700 bg-yellow-50",
+    ok: "text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-900/30",
+    deviation: "text-red-700 bg-red-50 font-bold dark:text-red-400 dark:bg-red-900/30",
+    not_checked: "text-yellow-700 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/30",
   };
+
+  function kartverketMapUrl(lat: number, lng: number): string {
+    const dLat = 0.0022;
+    const dLon = 0.0044;
+    const bbox = `${lat - dLat},${lng - dLon},${lat + dLat},${lng + dLon}`;
+    return (
+      `https://openwms.statkart.no/skwms1/wms.topo4?SERVICE=WMS&REQUEST=GetMap` +
+      `&VERSION=1.3.0&LAYERS=topo4_WMS&STYLES=&CRS=EPSG:4326` +
+      `&BBOX=${bbox}&WIDTH=600&HEIGHT=300&FORMAT=image/png`
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Link
           href={`/dashboard/inspections/${params.id}`}
-          className="text-brand-600 hover:text-brand-800 text-sm"
+          className="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 text-sm"
         >
           ← Tilbake til tilsyn
         </Link>
@@ -204,20 +217,22 @@ export default async function ReportPage({ params }: Props) {
         )}
 
         {/* ── Vedlegg (Appendix) ─────────────────────────────────────── */}
-        {checkpointsWithAttachments.length > 0 && (
+        {appendixItems.length > 0 && (
           <div className="mt-8 border-t-2 border-gray-300 pt-6 print:break-before-page">
             <h2 className="text-base font-bold text-gray-800 mb-1">
-              Vedlegg – Bilder og dokumenter
+              Vedlegg – Kart, bilder og dokumenter
             </h2>
             <p className="text-xs text-gray-500 mb-5">
-              {checkpointsWithAttachments.length} sjekkpunkt
-              {checkpointsWithAttachments.length !== 1 ? "er" : ""} med vedlegg
+              {appendixItems.length} sjekkpunkt
+              {appendixItems.length !== 1 ? "er" : ""} med vedlegg
             </p>
 
             <div className="space-y-6">
-              {checkpointsWithAttachments.map((item) => {
+              {appendixItems.map((item) => {
                 const atts = attByCheckpoint.get(item.definition.id) ?? [];
                 const st = item.answer?.status ?? "not_checked";
+                const hasCoords =
+                  item.answer?.latitude != null && item.answer?.longitude != null;
                 return (
                   <div
                     key={item.definition.id}
@@ -243,29 +258,64 @@ export default async function ReportPage({ params }: Props) {
                       </span>
                     </div>
 
-                    {/* Attachments grid */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {atts.map((att) => (
-                        <div key={att.id} className="space-y-1">
-                          {att.file_type.startsWith("image/") && att.storage_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={att.storage_url}
-                              alt={att.file_name}
-                              className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                    {/* Map snapshot (if coordinates registered) */}
+                    {hasCoords && (
+                      <div className="relative mb-3 rounded-lg overflow-hidden border border-gray-200">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={kartverketMapUrl(item.answer!.latitude!, item.answer!.longitude!)}
+                          alt="Kartutsnitt for sjekkpunkt"
+                          className="w-full h-52 object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        {/* Centered pin marker */}
+                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                          <svg
+                            width="28"
+                            height="36"
+                            viewBox="0 0 28 36"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            style={{ filter: "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" }}
+                          >
+                            <path
+                              d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.268 21.732 0 14 0z"
+                              fill="#DC2626"
                             />
-                          ) : (
-                            <div className="w-full h-40 flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
-                              <span className="text-4xl mb-2">📄</span>
-                              <span className="text-xs text-gray-500 font-medium">
-                                {att.file_name.split(".").pop()?.toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                          <p className="text-xs text-gray-500 truncate">{att.file_name}</p>
+                            <circle cx="14" cy="14" r="5" fill="white" />
+                          </svg>
                         </div>
-                      ))}
-                    </div>
+                        <p className="absolute bottom-1.5 right-2 text-[10px] text-white/80 bg-black/30 rounded px-1">
+                          © Kartverket
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Attachments grid */}
+                    {atts.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {atts.map((att) => (
+                          <div key={att.id} className="space-y-1">
+                            {att.file_type.startsWith("image/") && att.storage_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={att.storage_url}
+                                alt={att.file_name}
+                                className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                              />
+                            ) : (
+                              <div className="w-full h-40 flex flex-col items-center justify-center bg-gray-50 rounded-lg border border-gray-200">
+                                <span className="text-4xl mb-2">📄</span>
+                                <span className="text-xs text-gray-500 font-medium">
+                                  {att.file_name.split(".").pop()?.toUpperCase()}
+                                </span>
+                              </div>
+                            )}
+                            <p className="text-xs text-gray-500 truncate">{att.file_name}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -275,7 +325,7 @@ export default async function ReportPage({ params }: Props) {
 
         <div className="mt-8 border-t pt-4 text-xs text-gray-400 text-center print:mt-16">
           Generert av Tilsynsapp-PNB · {new Date().toLocaleDateString("nb-NO")}
-          {checkpointsWithAttachments.length > 0 && (
+          {attachmentsWithUrls.length > 0 && (
             <> · {attachmentsWithUrls.length} vedlegg</>
           )}
         </div>
