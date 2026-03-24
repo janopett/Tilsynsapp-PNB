@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import { findCaseInSif } from "./case-service";
 import { synchronizeContactPerson } from "./contact-service";
 import { uploadFilesToSif } from "./file-service";
-import { createInspectionDocumentInSif, dispatchDocumentsInSif } from "./document-service";
+import { createInspectionDocumentInSif, updateInspectionDocumentInSif, dispatchDocumentsInSif } from "./document-service";
 import { loadSifSettingsWithEnvFallback } from "./settings";
 import { buildDocumentTitle } from "@/config/sif-mapping";
 import {
@@ -64,6 +64,11 @@ export interface ArchivalContext {
   additionalFields?: Array<{ name: string; value: string }>;
   /** Recno of the selected SIF stage. Will be sent via AdditionalListFields on CreateDocument. */
   sifStageRecno?: number;
+  /**
+   * If set, update this existing document instead of creating a new one.
+   * The new files will be added as new versions on the existing document.
+   */
+  existingDocumentRecno?: number;
 }
 
 /**
@@ -253,26 +258,36 @@ export async function archiveInspectionToSif(
       stageName = caseStages.find((s) => s.Recno === ctx.sifStageRecno)?.Title;
     }
 
-    // Step 6: Create document
-    const sifDocument = await createInspectionDocumentInSif({
-      caseNumber: sifCase.caseNumber,
-      title,
-      archive: settings.docArchive,
-      category: settings.docCategory,
-      status: settings.docStatus,
-      responsiblePersonRecno:
-        settings.responsiblePersonRecno > 0
-          ? settings.responsiblePersonRecno
-          : undefined,
-      files: docFiles,
-      contacts: docContacts.length > 0 ? docContacts : undefined,
-      additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
-      stageRecno: ctx.sifStageRecno,
-      stageName,
-      documentDate: ctx.inspectionDate,
-      accessCode: settings.docAccessCode || undefined,
-      correlationId,
-    });
+    // Step 6: Create or update document
+    const sifDocument = ctx.existingDocumentRecno
+      ? await updateInspectionDocumentInSif({
+          documentRecno: ctx.existingDocumentRecno,
+          files: docFiles,
+          contacts: docContacts.length > 0 ? docContacts : undefined,
+          additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
+          stageRecno: ctx.sifStageRecno,
+          stageName,
+          correlationId,
+        })
+      : await createInspectionDocumentInSif({
+          caseNumber: sifCase.caseNumber,
+          title,
+          archive: settings.docArchive,
+          category: settings.docCategory,
+          status: settings.docStatus,
+          responsiblePersonRecno:
+            settings.responsiblePersonRecno > 0
+              ? settings.responsiblePersonRecno
+              : undefined,
+          files: docFiles,
+          contacts: docContacts.length > 0 ? docContacts : undefined,
+          additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
+          stageRecno: ctx.sifStageRecno,
+          stageName,
+          documentDate: ctx.inspectionDate,
+          accessCode: settings.docAccessCode || undefined,
+          correlationId,
+        });
 
     console.info("[SIF] Archival complete", {
       correlationId,

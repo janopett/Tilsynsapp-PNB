@@ -8,9 +8,14 @@ import { SifCreateDocumentError } from "./errors";
 import type {
   SifCreateDocumentInput,
   SifCreateDocumentResult,
+  SifUpdateDocumentInput,
+  SifUpdateDocumentResult,
   SifDispatchDocumentsInput,
   SifDispatchDocumentsResult,
   SifFileInput,
+  SifGetCasesQuery,
+  SifGetCasesResult,
+  SifDocumentInCase,
 } from "./types";
 import type { SifDocument, SifUploadedFileReference } from "@/types";
 
@@ -154,6 +159,145 @@ export async function createInspectionDocumentInSif(
     recno: result.Recno ?? 0,
     documentNumber: result.DocumentNumber,
     title,
+    url: docUrl || undefined,
+    raw: result,
+  };
+}
+
+/**
+ * Fetch all documents on a case via GetCases with IncludeDocuments.
+ * Returns an abbreviated list suitable for display in a picker.
+ */
+export async function fetchCaseDocumentsFromSif(
+  caseNumber: string,
+  correlationId?: string
+): Promise<SifDocumentInCase[]> {
+  const query: SifGetCasesQuery = {
+    CaseNumber: caseNumber,
+    MaxReturnedCases: 1,
+    IncludeDocuments: true,
+  };
+
+  console.info("[SIF] CaseService/GetCases (IncludeDocuments)", { correlationId, caseNumber });
+
+  const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
+    "CaseService",
+    "GetCases",
+    query,
+    correlationId
+  );
+
+  if (!result.Successful || !result.Cases?.length) return [];
+
+  const raw = result.Cases[0].Documents;
+  if (!Array.isArray(raw)) return [];
+
+  const settings = await loadSifSettingsWithEnvFallback();
+  const baseUrl = settings.baseUrl.replace(/\/$/, "");
+
+  return (raw as SifDocumentInCase[]).map((d) => ({
+    ...d,
+    URL: d.URL
+      ? d.URL.startsWith("/") ? `${baseUrl}${d.URL}` : d.URL
+      : undefined,
+  }));
+}
+
+export interface UpdateInspectionDocumentInput {
+  documentRecno: number;
+  files: Array<{
+    title: string;
+    format: string;
+    uploadedFileReference: string;
+    relationType?: string;
+  }>;
+  contacts?: Array<{ role: string; recno?: number }>;
+  additionalFields?: Array<{ name: string; value: string }>;
+  stageRecno?: number;
+  stageName?: string;
+  correlationId?: string;
+}
+
+/**
+ * Update an existing document in 360° by adding new file versions.
+ * Used when the user wants to update a tilsynsrapport on an existing document
+ * rather than creating a new one.
+ */
+export async function updateInspectionDocumentInSif(
+  input: UpdateInspectionDocumentInput
+): Promise<SifDocument> {
+  const { documentRecno, files, contacts, additionalFields, stageRecno, stageName, correlationId } = input;
+
+  const sifFiles: SifFileInput[] = files.map((f, idx) => ({
+    Title: f.title,
+    Format: f.format,
+    UploadedFileReference: f.uploadedFileReference,
+    RelationType: f.relationType ?? (idx === 0 ? "H" : "V"),
+  }));
+
+  const payload: SifUpdateDocumentInput = {
+    Recno: documentRecno,
+    Files: sifFiles,
+    ...(contacts?.length
+      ? {
+          Contacts: contacts.map((c) => ({
+            Role: c.role,
+            ExternalId: c.recno ? `recno:${c.recno}` : undefined,
+          })),
+        }
+      : {}),
+    ...(additionalFields?.length
+      ? {
+          AdditionalFields: additionalFields.map((f) => ({
+            Name: f.name,
+            Value: f.value,
+          })),
+        }
+      : {}),
+    ...(stageRecno
+      ? {
+          AdditionalListFields: [
+            { Name: stageName ?? "Behandlingstrinn", Value: stageRecno },
+          ],
+        }
+      : {}),
+  };
+
+  console.info("[SIF] DocumentService/UpdateDocument", {
+    correlationId,
+    documentRecno,
+    fileCount: files.length,
+  });
+
+  const result = await sifRpcCall<SifUpdateDocumentInput, SifUpdateDocumentResult>(
+    "DocumentService",
+    "UpdateDocument",
+    payload,
+    correlationId,
+    true
+  );
+
+  if (!result.Successful) {
+    throw new SifCreateDocumentError(
+      result.ErrorMessage ?? result.ErrorDetails ?? "UpdateDocument failed",
+      result
+    );
+  }
+
+  console.info("[SIF] Document updated", {
+    correlationId,
+    recno: result.Recno ?? documentRecno,
+    documentNumber: result.DocumentNumber,
+  });
+
+  const settings = await loadSifSettingsWithEnvFallback();
+  const baseUrl = settings.baseUrl.replace(/\/$/, "");
+  const rawUrl = result.URL ?? "";
+  const docUrl = rawUrl.startsWith("/") ? `${baseUrl}${rawUrl}` : rawUrl;
+
+  return {
+    recno: result.Recno ?? documentRecno,
+    documentNumber: result.DocumentNumber,
     url: docUrl || undefined,
     raw: result,
   };
