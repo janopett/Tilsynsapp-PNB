@@ -279,9 +279,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                   <option value="">— Velg dokument —</option>
                   {documents.map((d) => (
                     <option key={d.Recno} value={d.Recno}>
-                      {[d.DocumentNumber, d.Title, d.DocumentDate?.slice(0, 10)]
-                        .filter(Boolean)
-                        .join(" · ")}
+                      {[d.DocumentNumber, d.Title].filter(Boolean).join(" - ")}
                     </option>
                   ))}
                 </select>
