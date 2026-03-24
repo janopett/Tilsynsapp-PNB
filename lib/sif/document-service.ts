@@ -13,8 +13,8 @@ import type {
   SifDispatchDocumentsInput,
   SifDispatchDocumentsResult,
   SifFileInput,
-  SifGetDocumentsQuery,
-  SifGetDocumentsResult,
+  SifGetCasesQuery,
+  SifGetCasesResult,
   SifDocumentInCase,
 } from "./types";
 import type { SifDocument, SifUploadedFileReference } from "@/types";
@@ -165,7 +165,7 @@ export async function createInspectionDocumentInSif(
 }
 
 /**
- * Fetch all documents on a case via DocumentService/GetDocuments.
+ * Fetch all documents on a case via CaseService/GetCases with IncludeDocuments.
  * Returns an abbreviated list suitable for display in a picker.
  * Recno values match directly what UpdateDocument expects.
  */
@@ -173,27 +173,30 @@ export async function fetchCaseDocumentsFromSif(
   caseNumber: string,
   correlationId?: string
 ): Promise<SifDocumentInCase[]> {
-  const query: SifGetDocumentsQuery = {
+  const query: SifGetCasesQuery = {
     CaseNumber: caseNumber,
-    MaxReturnedDocuments: 200,
-    SortCriterion: "RecnoDescending",
+    MaxReturnedCases: 1,
+    IncludeDocuments: true,
   };
 
-  console.info("[SIF] DocumentService/GetDocuments", { correlationId, caseNumber });
+  console.info("[SIF] CaseService/GetCases (IncludeDocuments)", { correlationId, caseNumber });
 
-  const result = await sifRpcCall<SifGetDocumentsQuery, SifGetDocumentsResult>(
-    "DocumentService",
-    "GetDocuments",
+  const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
+    "CaseService",
+    "GetCases",
     query,
     correlationId
   );
 
-  if (!result.Successful || !result.Documents?.length) return [];
+  if (!result.Successful || !result.Cases?.length) return [];
+
+  const rawDocs = result.Cases[0].Documents;
+  if (!Array.isArray(rawDocs) || rawDocs.length === 0) return [];
 
   const settings = await loadSifSettingsWithEnvFallback();
   const baseUrl = settings.baseUrl.replace(/\/$/, "");
 
-  return result.Documents.map((d) => ({
+  return (rawDocs as SifDocumentInCase[]).map((d) => ({
     ...d,
     URL: d.URL
       ? d.URL.startsWith("/") ? `${baseUrl}${d.URL}` : d.URL
