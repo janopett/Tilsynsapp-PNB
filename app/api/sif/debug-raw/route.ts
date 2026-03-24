@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
         IncludeReferringCases: true,
         IncludeCaseContacts: true,
         IncludeStages: true,
+        IncludeDocuments: true,
       });
     } else if (service === "documents") {
       raw = await sifRpcCall("DocumentService", "GetDocuments", {
