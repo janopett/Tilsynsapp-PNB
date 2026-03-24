@@ -518,7 +518,32 @@ export interface SifCreateDocumentResult {
 }
 
 // ============================================================
-// DocumentService — Document returned inside GetCases (IncludeDocuments)
+// DocumentService — GetDocuments
+// ============================================================
+
+export interface SifGetDocumentsQuery {
+  CaseNumber?: string;
+  DocumentNumber?: string;
+  Recno?: number;
+  Title?: string;
+  MaxReturnedDocuments?: number;
+  Page?: number;
+  SortCriterion?: "RecnoDescending" | "RecnoAscending";
+  IncludeFiles?: boolean;
+  ADContextUser?: string;
+}
+
+export interface SifGetDocumentsResult {
+  Successful: boolean;
+  Documents?: SifDocumentInCase[];
+  TotalPageCount?: number;
+  TotalCount?: number;
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
+// DocumentService — Document returned by GetDocuments / GetCases(IncludeDocuments)
 // ============================================================
 
 export interface SifDocumentInCase {
