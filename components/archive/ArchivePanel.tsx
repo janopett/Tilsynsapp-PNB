@@ -55,8 +55,9 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       : null
   );
 
-  async function fetchDocuments(cn: string) {
-    if (!cn.trim() || fetchedForCase.current === cn.trim()) return;
+  async function fetchDocuments(cn: string, force = false) {
+    if (!cn.trim()) return;
+    if (!force && fetchedForCase.current === cn.trim()) return;
     fetchedForCase.current = cn.trim();
     setDocsLoading(true);
     setDocsError(null);
@@ -73,6 +74,11 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     } finally {
       setDocsLoading(false);
     }
+  }
+
+  function switchToUpdateMode() {
+    setDocMode("update");
+    if (caseNumber.trim()) fetchDocuments(caseNumber);
   }
 
   async function handleMarkCompleted() {
@@ -229,14 +235,14 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
                 Dokument i Plan &amp; Build
               </p>
-              {caseNumber.trim() && (
+              {docMode === "update" && caseNumber.trim() && documents !== null && (
                 <button
                   type="button"
-                  onClick={() => fetchDocuments(caseNumber)}
+                  onClick={() => fetchDocuments(caseNumber, true)}
                   disabled={docsLoading}
                   className="text-xs text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50"
                 >
-                  {docsLoading ? "Henter…" : documents === null ? "Hent dokumenter fra saken" : "Oppdater liste"}
+                  {docsLoading ? "Henter…" : "Oppdater liste"}
                 </button>
               )}
             </div>
@@ -245,28 +251,41 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               <p className="text-xs text-red-600 dark:text-red-400">{docsError}</p>
             )}
 
-            {/* Mode toggle — only shown once documents are loaded */}
-            {documents !== null && (
-              <div className="flex gap-2">
-                {(["new", "update"] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setDocMode(mode)}
-                    className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-medium border transition
-                      ${docMode === mode
-                        ? "bg-brand-600 border-brand-600 text-white"
-                        : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
-                      }`}
-                  >
-                    {mode === "new" ? "Opprett nytt dokument" : "Oppdater eksisterende"}
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Mode toggle — always visible */}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setDocMode("new")}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-medium border transition
+                  ${docMode === "new"
+                    ? "bg-brand-600 border-brand-600 text-white"
+                    : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                  }`}
+              >
+                Opprett nytt dokument
+              </button>
+              <button
+                type="button"
+                onClick={switchToUpdateMode}
+                disabled={!caseNumber.trim()}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-medium border transition disabled:opacity-40
+                  ${docMode === "update"
+                    ? "bg-brand-600 border-brand-600 text-white"
+                    : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                  }`}
+              >
+                Oppdater eksisterende
+              </button>
+            </div>
 
-            {docMode === "update" && documents !== null && (
-              documents.length === 0 ? (
+            {docMode === "update" && (
+              docsLoading ? (
+                <p className="text-xs text-gray-400 dark:text-slate-500">Henter dokumenter…</p>
+              ) : documents === null ? (
+                <p className="text-xs text-gray-400 dark:text-slate-500">
+                  {caseNumber.trim() ? "Angi saksnummer og klikk «Oppdater eksisterende» for å laste inn dokumenter." : "Angi saksnummer for å hente dokumenter."}
+                </p>
+              ) : documents.length === 0 ? (
                 <p className="text-xs text-gray-500 dark:text-slate-400">
                   Ingen dokumenter funnet på saken.
                 </p>
@@ -284,12 +303,6 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                   ))}
                 </select>
               )
-            )}
-
-            {documents === null && !caseNumber.trim() && (
-              <p className="text-xs text-gray-400 dark:text-slate-500">
-                Angi saksnummer for å hente dokumenter.
-              </p>
             )}
           </div>
 

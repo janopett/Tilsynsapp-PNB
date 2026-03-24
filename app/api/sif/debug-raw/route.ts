@@ -62,8 +62,14 @@ export async function GET(req: NextRequest) {
         IncludeCaseContacts: true,
         IncludeStages: true,
       });
+    } else if (service === "documents") {
+      raw = await sifRpcCall("DocumentService", "GetDocuments", {
+        CaseNumber: caseNumber,
+        MaxReturnedDocuments: 10,
+        SortCriterion: "RecnoDescending",
+      });
     } else {
-      return NextResponse.json({ error: "service must be 'estates', 'contacts', or 'cases'" }, { status: 400 });
+      return NextResponse.json({ error: "service must be 'estates', 'contacts', 'cases', or 'documents'" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true, raw });

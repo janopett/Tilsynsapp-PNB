@@ -126,6 +126,18 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
             className={inp}
           />
         </div>
+        {form.baseUrl && (
+          <p className="text-xs text-gray-400 dark:text-slate-500">
+            <a
+              href={`${form.baseUrl.replace(/\/$/, "")}/Biz/v2/api/swagger/SI.Data.RPC`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-brand-600 dark:text-brand-400 hover:underline"
+            >
+              Åpne Swagger-dokumentasjon →
+            </a>
+          </p>
+        )}
         <div>
           <label className={label}>Autentiseringsmodus</label>
           <select
