@@ -34,7 +34,7 @@ function CopyableJson({ data, ok }: { data: unknown; ok: boolean }) {
       <div className="flex justify-end mb-1">
         <button
           onClick={copy}
-          className="text-xs px-2 py-1 rounded border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 hover:text-gray-900 transition"
+          className="text-xs px-2 py-1 rounded border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 hover:bg-gray-50 dark:hover:bg-slate-600 text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100 transition"
         >
           {copied ? "Kopiert!" : "Kopier"}
         </button>
@@ -42,8 +42,8 @@ function CopyableJson({ data, ok }: { data: unknown; ok: boolean }) {
       <pre
         className={`text-xs whitespace-pre-wrap overflow-auto rounded-xl p-3 max-h-72 ${
           ok
-            ? "bg-gray-50 border border-gray-200 text-gray-700"
-            : "bg-red-50 border border-red-200 text-red-700"
+            ? "bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 text-gray-700 dark:text-slate-300"
+            : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400"
         }`}
       >
         {text}
@@ -264,12 +264,12 @@ export default function SifTestPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">SIF Admin – Testverktøy</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6">SIF Admin – Testverktøy</h1>
 
       {/* Connection test */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mb-5">
         <h2 className="text-base font-semibold mb-4">Tilkoblingstest</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller SupportService/GetSIFVersion for å verifisere at SIF-endepunktet er nåbart og at
           autentiseringen fungerer.
         </p>
@@ -285,8 +285,8 @@ export default function SifTestPage() {
           <div
             className={`mt-4 rounded-xl p-4 text-sm ${
               versionResult.ok
-                ? "bg-green-50 border border-green-200 text-green-800"
-                : "bg-red-50 border border-red-200 text-red-800"
+                ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300"
+                : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300"
             }`}
           >
             {versionResult.ok ? (
@@ -307,9 +307,9 @@ export default function SifTestPage() {
       </div>
 
       {/* Case lookup */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
         <h2 className="text-base font-semibold mb-4">Saksoppslag</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Slå opp en sak i Plan &amp; Build ved hjelp av saksnummer.
           Bruk dette for å verifisere at saksnummer er riktig formatert.
         </p>
@@ -338,7 +338,7 @@ export default function SifTestPage() {
                 <CopyableJson data={caseLookupResult.case} ok={true} />
               </>
             ) : (
-              <div className="rounded-xl p-4 text-sm bg-red-50 border border-red-200 text-red-800">
+              <div className="rounded-xl p-4 text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300">
                 <span className="font-semibold">Feil:</span> {caseLookupResult.error}
               </div>
             )}
@@ -347,18 +347,18 @@ export default function SifTestPage() {
       </div>
 
       {/* SynchronizeContactPerson test */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Test: SynchronizeContactPerson</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Oppretter eller oppdaterer en kontaktperson i Plan &amp; Build via{" "}
-          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">ContactService/SynchronizeContactPerson</code>.
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">ContactService/SynchronizeContactPerson</code>.
           Returnerer <code className="text-xs bg-gray-100 rounded px-1 py-0.5">Recno</code> som brukes
           som kopimottaker ved arkivering. Rollen legges i <em>Title</em>-feltet.
         </p>
         <form onSubmit={syncContact} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Fornavn</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fornavn</label>
               <input
                 type="text"
                 value={syncFirstName}
@@ -368,7 +368,7 @@ export default function SifTestPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Etternavn</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Etternavn</label>
               <input
                 type="text"
                 value={syncLastName}
@@ -379,7 +379,7 @@ export default function SifTestPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
               Rolle / tittel <span className="text-gray-400 font-normal">(lagres i Title-feltet)</span>
             </label>
             <input
@@ -391,7 +391,7 @@ export default function SifTestPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
               Foretak <span className="text-gray-400 font-normal">(søk på navn, velg resultat)</span>
             </label>
             <div className="relative">
@@ -409,16 +409,16 @@ export default function SifTestPage() {
                 </span>
               )}
               {enterpriseHits.length > 0 && (
-                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg text-sm overflow-hidden">
+                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg text-sm overflow-hidden">
                   {enterpriseHits.map((hit) => (
                     <li key={hit.Recno}>
                       <button
                         type="button"
                         onClick={() => selectEnterprise(hit)}
-                        className="w-full text-left px-4 py-2 hover:bg-brand-50 transition flex justify-between items-center gap-2"
+                        className="w-full text-left px-4 py-2 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition flex justify-between items-center gap-2 dark:text-slate-100"
                       >
                         <span>{hit.Name}</span>
-                        <span className="text-xs text-gray-400 shrink-0">
+                        <span className="text-xs text-gray-400 dark:text-slate-500 shrink-0">
                           {hit.OrgNo ? `${hit.OrgNo} · ` : ""}recno:{hit.Recno}
                         </span>
                       </button>
@@ -428,11 +428,11 @@ export default function SifTestPage() {
               )}
             </div>
             {syncEnterprise && (
-              <p className="text-xs text-gray-500 mt-1 font-mono">{syncEnterprise}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">{syncEnterprise}</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
               ExternalId <span className="text-gray-400 font-normal">(valgfri – genereres automatisk om tom)</span>
             </label>
             <input
@@ -455,7 +455,7 @@ export default function SifTestPage() {
         {syncResult && (
           <div className="mt-4">
             {syncResult.ok ? (
-              <div className="rounded-xl p-4 text-sm bg-green-50 border border-green-200 text-green-800">
+              <div className="rounded-xl p-4 text-sm bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300">
                 <span className="font-semibold">Kontaktperson synkronisert!</span>{" "}
                 Recno:{" "}
                 <code className="font-mono font-bold">{syncResult.recno}</code>
@@ -464,7 +464,7 @@ export default function SifTestPage() {
                 </p>
               </div>
             ) : (
-              <div className="rounded-xl p-4 text-sm bg-red-50 border border-red-200 text-red-800">
+              <div className="rounded-xl p-4 text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300">
                 <span className="font-semibold">Feil:</span> {syncResult.error}
               </div>
             )}
@@ -473,11 +473,11 @@ export default function SifTestPage() {
       </div>
 
       {/* GetContactPersons lookup */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Debug: GetContactPersons</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Slår opp råsvaret fra{" "}
-          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">ContactService/GetContactPersons</code>{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">ContactService/GetContactPersons</code>{" "}
           for et gitt ExternalId. Bruk dette for å verifisere at oppslaget fungerer og for å se
           nøyaktig hvilke feltnavn og verdier PNB returnerer (Name, FirstName, LastName, Enterprise, osv.).
         </p>
@@ -506,17 +506,17 @@ export default function SifTestPage() {
       </div>
 
       {/* UpdateContactPerson test */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Test: UpdateContactPerson</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
-          <code className="text-xs bg-gray-100 rounded px-1 py-0.5">ContactService/UpdateContactPerson</code>{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">ContactService/UpdateContactPerson</code>{" "}
           direkte med angitt Recno. Returnerer råsvaret fra SIF. Bruk dette til å verifisere at oppdatering av
           eksisterende kontaktperson fungerer.
         </p>
         <form onSubmit={runUpdateContactPerson} className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
               Recno <span className="text-red-400">*</span>
             </label>
             <input
@@ -529,7 +529,7 @@ export default function SifTestPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Fornavn</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fornavn</label>
               <input
                 type="text"
                 value={updateFirstName}
@@ -539,7 +539,7 @@ export default function SifTestPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Etternavn</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Etternavn</label>
               <input
                 type="text"
                 value={updateLastName}
@@ -550,7 +550,7 @@ export default function SifTestPage() {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
               Ny rolle / tittel <span className="text-gray-400 font-normal">(Title-feltet)</span>
             </label>
             <input
@@ -562,7 +562,7 @@ export default function SifTestPage() {
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
               Foretak <span className="text-gray-400 font-normal">(søk på navn, velg resultat)</span>
             </label>
             <div className="relative">
@@ -580,16 +580,16 @@ export default function SifTestPage() {
                 </span>
               )}
               {updateEnterpriseHits.length > 0 && (
-                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg text-sm overflow-hidden">
+                <ul className="absolute z-10 left-0 right-0 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg text-sm overflow-hidden">
                   {updateEnterpriseHits.map((hit) => (
                     <li key={hit.Recno}>
                       <button
                         type="button"
                         onClick={() => selectUpdateEnterprise(hit)}
-                        className="w-full text-left px-4 py-2 hover:bg-brand-50 transition flex justify-between items-center gap-2"
+                        className="w-full text-left px-4 py-2 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition flex justify-between items-center gap-2 dark:text-slate-100"
                       >
                         <span>{hit.Name}</span>
-                        <span className="text-xs text-gray-400 shrink-0">
+                        <span className="text-xs text-gray-400 dark:text-slate-500 shrink-0">
                           {hit.OrgNo ? `${hit.OrgNo} · ` : ""}recno:{hit.Recno}
                         </span>
                       </button>
@@ -599,11 +599,11 @@ export default function SifTestPage() {
               )}
             </div>
             {updateEnterprise && (
-              <p className="text-xs text-gray-500 mt-1 font-mono">{updateEnterprise}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">{updateEnterprise}</p>
             )}
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
               ExternalId <span className="text-gray-400 font-normal">(valgfri)</span>
             </label>
             <input
@@ -624,7 +624,7 @@ export default function SifTestPage() {
         </form>
         {updateResult && (
           <div className="mt-4">
-            <p className={`text-xs font-semibold mb-1 ${updateResult.ok ? "text-green-700" : "text-red-700"}`}>
+            <p className={`text-xs font-semibold mb-1 ${updateResult.ok ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
               {updateResult.ok ? "Svar fra SIF:" : "Feil:"}
             </p>
             <CopyableJson data={updateResult.raw} ok={updateResult.ok} />
@@ -633,9 +633,9 @@ export default function SifTestPage() {
       </div>
 
       {/* Raw debug: estates + contacts */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Rådata-debug: eiendommer og kontakter</h2>
-        <p className="text-sm text-gray-500 mb-4">
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Viser det SIF faktisk returnerer fra <code>EstateService/GetEstates</code> og{" "}
           <code>CaseService/GetCaseContacts</code> – brukes til å avdekke feltnavnfeil.
         </p>
@@ -658,7 +658,7 @@ export default function SifTestPage() {
 
         {estatesResult && (
           <div className="mb-4">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
               EstateService/GetEstates
             </p>
             <CopyableJson
@@ -670,7 +670,7 @@ export default function SifTestPage() {
 
         {contactsResult && (
           <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
               CaseService/GetCaseContacts
             </p>
             <CopyableJson

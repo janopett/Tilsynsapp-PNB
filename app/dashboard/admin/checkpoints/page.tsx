@@ -14,9 +14,9 @@ const SEVERITY_LABELS: Record<string, string> = {
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: "bg-red-100 text-red-700",
-  warning: "bg-amber-100 text-amber-700",
-  info: "bg-blue-100 text-blue-700",
+  critical: "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400",
+  warning: "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
+  info: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
 };
 
 const MEASURE_TYPE_OPTIONS: { id: MeasureTypeId; label: string }[] = [
@@ -121,7 +121,7 @@ function CheckpointForm({
       {/* ID — only editable for new checkpoints */}
       {isNew && (
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">
+          <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
             ID (valgfritt — auto-genereres hvis tom)
           </label>
           <input
@@ -134,7 +134,7 @@ function CheckpointForm({
         </div>
       )}
       {!isNew && (
-        <div className="text-xs text-gray-400 font-mono">ID: {draft.id}</div>
+        <div className="text-xs text-gray-400 dark:text-slate-500 font-mono">ID: {draft.id}</div>
       )}
 
       {/* Title */}
@@ -186,7 +186,7 @@ function CheckpointForm({
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
                 draft.severity === s
                   ? `${SEVERITY_COLORS[s]} border-transparent`
-                  : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
+                  : "bg-white dark:bg-slate-700 text-gray-500 dark:text-slate-400 border-gray-200 dark:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-600"
               }`}
             >
               {SEVERITY_LABELS[s]}
@@ -213,7 +213,7 @@ function CheckpointForm({
             placeholder="Hyperlenke (valgfritt) — f.eks. https://lovdata.no/…"
             className="input w-full text-sm"
           />
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
             Brukes som lenke på lovhenvisningen. Overstyrer auto-generert Lovdata-lenke.
           </p>
         </div>
@@ -221,7 +221,7 @@ function CheckpointForm({
 
       {/* Applies to — measure types */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-2">
+        <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-2">
           Gjelder for tiltakstyper
           <span className="ml-1 font-normal text-gray-400">(velg alle som er relevante)</span>
         </label>
@@ -234,7 +234,7 @@ function CheckpointForm({
                 onChange={() => setDraft((d) => ({ ...d, applies_to: toggleArray(d.applies_to, id) }))}
                 className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-gray-700">{label}</span>
+              <span className="text-sm text-gray-700 dark:text-slate-300">{label}</span>
             </label>
           ))}
         </div>
@@ -242,7 +242,7 @@ function CheckpointForm({
 
       {/* Required tags — property questions */}
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-2">
+        <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-2">
           Vises kun hvis egenskap er valgt
           <span className="ml-1 font-normal text-gray-400">(alle må være til stede)</span>
         </label>
@@ -255,7 +255,7 @@ function CheckpointForm({
                 onChange={() => setDraft((d) => ({ ...d, required_tags: toggleArray(d.required_tags, tag) }))}
                 className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
               />
-              <span className="text-sm text-gray-700">{label}</span>
+              <span className="text-sm text-gray-700 dark:text-slate-300">{label}</span>
             </label>
           ))}
         </div>
@@ -273,7 +273,7 @@ function CheckpointForm({
         </button>
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-gray-500 text-sm hover:text-gray-700"
+          className="px-4 py-2 text-gray-500 dark:text-slate-400 text-sm hover:text-gray-700 dark:hover:text-slate-200"
         >
           Avbryt
         </button>
@@ -340,9 +340,9 @@ function CheckpointRow({
   }
 
   return (
-    <div className={`border rounded-xl overflow-hidden transition ${checkpoint.active ? "border-gray-200" : "border-gray-100 opacity-60"}`}>
+    <div className={`border rounded-xl overflow-hidden transition ${checkpoint.active ? "border-gray-200 dark:border-slate-700" : "border-gray-100 dark:border-slate-800 opacity-60"}`}>
       {/* Header row */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-white">
+      <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800">
         {/* Severity dot */}
         <span
           className={`w-2 h-2 rounded-full flex-shrink-0 ${
@@ -354,17 +354,17 @@ function CheckpointRow({
         {/* Title + meta */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-sm font-medium text-gray-900 truncate">{checkpoint.title}</span>
-            <span className="text-xs text-gray-400 font-mono">{checkpoint.id}</span>
+            <span className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{checkpoint.title}</span>
+            <span className="text-xs text-gray-400 dark:text-slate-500 font-mono">{checkpoint.id}</span>
             {checkpoint.legal_reference && (
-              <span className="text-xs text-brand-600">{checkpoint.legal_reference}</span>
+              <span className="text-xs text-brand-600 dark:text-brand-400">{checkpoint.legal_reference}</span>
             )}
             {!checkpoint.active && (
-              <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">Inaktiv</span>
+              <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-2 py-0.5 rounded-full">Inaktiv</span>
             )}
           </div>
           {checkpoint.required_tags.length > 0 && (
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
               Krever: {checkpoint.required_tags.map((t) => PROPERTY_TAG_OPTIONS.find((p) => p.tag === t)?.label ?? t).join(", ")}
             </p>
           )}
@@ -374,14 +374,14 @@ function CheckpointRow({
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             onClick={() => setExpanded((e) => !e)}
-            className="text-xs text-brand-600 hover:text-brand-800 font-medium transition"
+            className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 font-medium transition"
           >
             {expanded ? "Lukk" : "Rediger"}
           </button>
           <button
             onClick={handleToggleActive}
             disabled={toggling}
-            className="text-xs text-gray-500 hover:text-gray-700 transition disabled:opacity-40"
+            className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition disabled:opacity-40"
             title={checkpoint.active ? "Deaktiver" : "Aktiver"}
           >
             {toggling ? "…" : checkpoint.active ? "Deaktiver" : "Aktiver"}
@@ -398,7 +398,7 @@ function CheckpointRow({
 
       {/* Expanded edit form */}
       {expanded && (
-        <div className="border-t border-gray-100 px-4 py-4 bg-gray-50">
+        <div className="border-t border-gray-100 dark:border-slate-700 px-4 py-4 bg-gray-50 dark:bg-slate-700/30">
           <CheckpointForm
             initial={{
               id: checkpoint.id,
@@ -490,8 +490,8 @@ export default function CheckpointsAdminPage() {
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Sjekkpunkter</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Sjekkpunkter</h1>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
             {totalActive} aktive{totalInactive > 0 ? `, ${totalInactive} inaktive` : ""} sjekkpunkter
           </p>
         </div>
@@ -505,8 +505,8 @@ export default function CheckpointsAdminPage() {
 
       {/* New checkpoint form */}
       {showNewForm && (
-        <div className="bg-white rounded-2xl border border-brand-200 shadow-sm p-5">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Nytt sjekkpunkt</h2>
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-brand-200 dark:border-brand-700 shadow-sm p-5">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">Nytt sjekkpunkt</h2>
           <CheckpointForm
             initial={EMPTY_DRAFT}
             onSave={handleCreate}
@@ -525,7 +525,7 @@ export default function CheckpointsAdminPage() {
             className={`px-3 py-1 rounded-full text-xs font-medium transition ${
               filterCategory === "all"
                 ? "bg-brand-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"
             }`}
           >
             Alle kategorier
@@ -537,7 +537,7 @@ export default function CheckpointsAdminPage() {
               className={`px-3 py-1 rounded-full text-xs font-medium transition ${
                 filterCategory === cat
                   ? "bg-brand-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"
               }`}
             >
               {CATEGORY_LABELS[cat]}
@@ -547,7 +547,7 @@ export default function CheckpointsAdminPage() {
 
         {/* Show inactive toggle */}
         {totalInactive > 0 && (
-          <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer ml-auto">
+          <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 cursor-pointer ml-auto">
             <input
               type="checkbox"
               checked={showInactive}
@@ -561,16 +561,16 @@ export default function CheckpointsAdminPage() {
 
       {/* List */}
       {loading ? (
-        <p className="text-sm text-gray-400 animate-pulse py-8 text-center">Laster sjekkpunkter…</p>
+        <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse py-8 text-center">Laster sjekkpunkter…</p>
       ) : Object.keys(grouped).length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">Ingen sjekkpunkter funnet.</p>
+        <p className="text-sm text-gray-400 dark:text-slate-500 py-8 text-center">Ingen sjekkpunkter funnet.</p>
       ) : (
         <div className="space-y-6">
           {Object.entries(grouped).map(([cat, items]) => (
             <div key={cat}>
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-2">
                 {CATEGORY_LABELS[cat as CheckpointCategory]}
-                <span className="ml-2 text-gray-400 font-normal normal-case">({items.length})</span>
+                <span className="ml-2 text-gray-400 dark:text-slate-500 font-normal normal-case">({items.length})</span>
               </h2>
               <div className="space-y-2">
                 {items.map((cp) => (

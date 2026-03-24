@@ -247,12 +247,12 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 
   return (
     <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-xl shadow-xl my-4">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="font-semibold text-gray-900">{t.inspection.editTitle}</h2>
+      <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-xl shadow-xl my-4">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+          <h2 className="font-semibold text-gray-900 dark:text-slate-100">{t.inspection.editTitle}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none"
+            className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 text-xl leading-none"
           >
             ✕
           </button>
@@ -261,7 +261,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Case number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.caseNumber}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.caseNumber}</label>
             <CaseSearchInput
               value={caseNumber}
               onChange={(val) => { setCaseNumber(val); if (!val) setCaseTitle(""); }}
@@ -269,18 +269,18 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               placeholder={t.inspection.caseSearchPlaceholder}
             />
             {caseTitle && (
-              <p className="mt-1 text-xs text-gray-500 truncate" title={caseTitle}>{caseTitle}</p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400 truncate" title={caseTitle}>{caseTitle}</p>
             )}
           </div>
 
           {/* Stage (behandlingstrinn) */}
           {(stagesLoading || stages.length > 0) && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 {t.inspection.behandlingstrinn}
               </label>
               {stagesLoading ? (
-                <p className="text-sm text-gray-400 animate-pulse">{t.inspection.loadingTreatmentSteps}</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">{t.inspection.loadingTreatmentSteps}</p>
               ) : (
                 <select
                   value={selectedStageRecno ?? ""}
@@ -314,7 +314,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Date + Inspector */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.date}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.date}</label>
               <input
                 type="date"
                 value={inspectionDate}
@@ -323,7 +323,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.inspector}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.inspector}</label>
               <input
                 type="text"
                 value={inspectorName}
@@ -336,11 +336,11 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Gnr/Bnr */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Gnr</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Gnr</label>
               <input type="text" value={gnr} onChange={(e) => setGnr(e.target.value)} placeholder="123" className="input" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bnr</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Bnr</label>
               <input type="text" value={bnr} onChange={(e) => setBnr(e.target.value)} placeholder="45" className="input" />
             </div>
           </div>
@@ -385,15 +385,15 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 {participants.map((p) => (
                   <span
                     key={p.recno}
-                    className="inline-flex items-center gap-1 bg-gray-100 text-gray-700 rounded-full px-3 py-1 text-xs font-medium"
+                    className="inline-flex items-center gap-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-full px-3 py-1 text-xs font-medium"
                   >
                     {p.name}
                     {p.role && (
-                      <span className="text-gray-400"> · {p.role}</span>
+                      <span className="text-gray-400 dark:text-slate-500"> · {p.role}</span>
                     )}
                     <button
                       onClick={() => removeParticipant(p.recno)}
-                      className="ml-1 text-gray-400 hover:text-gray-700"
+                      className="ml-1 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300"
                     >
                       ✕
                     </button>
@@ -428,7 +428,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 </button>
               </div>
             ) : caseContacts.length === 0 ? (
-              <p className="text-xs text-gray-400">{t.inspection.linkCaseForParticipants}</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500">{t.inspection.linkCaseForParticipants}</p>
             ) : null}
           </div>
 
@@ -436,7 +436,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Eksterne deltakere
-              <span className="ml-1 text-xs font-normal text-gray-400">(f.eks. Brannvernleder, Verneombud)</span>
+              <span className="ml-1 text-xs font-normal text-gray-400 dark:text-slate-500">(f.eks. Brannvernleder, Verneombud)</span>
             </label>
             {externalParticipants.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
@@ -459,7 +459,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               </div>
             )}
             {showExtForm ? (
-              <div className="border border-gray-200 rounded-xl p-3 space-y-2 bg-gray-50">
+              <div className="border border-gray-200 dark:border-slate-600 rounded-xl p-3 space-y-2 bg-gray-50 dark:bg-slate-700/50">
                 <div className="flex gap-2">
                   <input
                     type="text"
@@ -501,7 +501,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                   </button>
                   <button
                     onClick={() => { setShowExtForm(false); setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined }); }}
-                    className="px-3 py-2 text-gray-500 text-sm hover:text-gray-700"
+                    className="px-3 py-2 text-gray-500 dark:text-slate-400 text-sm hover:text-gray-700 dark:hover:text-slate-200"
                   >
                     Avbryt
                   </button>
@@ -520,17 +520,17 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Estates */}
           {selectedEstates.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.estates}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.estates}</label>
               <div className="flex flex-wrap gap-2">
                 {selectedEstates.map((e) => (
                   <span
                     key={e.recno}
-                    className="inline-flex items-center gap-1 bg-brand-50 text-brand-700 border border-brand-200 rounded-full px-3 py-1 text-xs font-medium"
+                    className="inline-flex items-center gap-1 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-800 rounded-full px-3 py-1 text-xs font-medium"
                   >
                     {estateLabel(e)}
                     <button
                       onClick={() => removeEstate(e.recno)}
-                      className="ml-1 text-brand-400 hover:text-brand-700"
+                      className="ml-1 text-brand-400 dark:text-brand-500 hover:text-brand-700 dark:hover:text-brand-300"
                     >
                       ✕
                     </button>
@@ -543,7 +543,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Tilsynsområde + Tilsynstype */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.tilsynsomrade}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.tilsynsomrade}</label>
               <select
                 value={tilsynsomrade}
                 onChange={(e) => setTilsynsomrade(e.target.value)}
@@ -558,7 +558,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.tilsynstype}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.tilsynstype}</label>
               <select
                 value={tilsynstype}
                 onChange={(e) => setTilsynstype(e.target.value)}
@@ -577,7 +577,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Bakgrunn for tilsynet */}
           {bakgrunnItems.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
                 {t.inspection.bakgrunn}
               </label>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
@@ -598,7 +598,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                       }
                       className="w-4 h-4 accent-brand-600 flex-shrink-0"
                     />
-                    <span className="text-sm text-gray-700">
+                    <span className="text-sm text-gray-700 dark:text-slate-300">
                       {locale === "en" && item.en_label ? item.en_label : item.label}
                     </span>
                   </label>
@@ -625,16 +625,16 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               <button
                 onClick={() => setShowMap(true)}
                 type="button"
-                className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-xl text-sm hover:bg-gray-50 transition text-gray-700"
+                className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition text-gray-700 dark:text-slate-300"
               >
                 🗺️ {latitude != null ? t.inspection.changePosition : t.inspection.selectPosition}
               </button>
               {latitude != null && longitude != null && (
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-gray-500 dark:text-slate-400">
                   {latitude.toFixed(5)}°N, {longitude.toFixed(5)}°Ø
                   <button
                     onClick={() => { setLatitude(null); setLongitude(null); }}
-                    className="ml-2 text-gray-400 hover:text-gray-600"
+                    className="ml-2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
                   >
                     ✕
                   </button>
@@ -648,10 +648,10 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           )}
         </div>
 
-        <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-100">
+        <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-100 dark:border-slate-700">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-50 transition"
+            className="px-4 py-2 text-sm border border-gray-200 dark:border-slate-600 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 dark:text-slate-300 transition"
           >
             {t.inspection.cancel}
           </button>
@@ -896,21 +896,21 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         <div className="min-w-0 flex-1">
           <Link
             href="/dashboard"
-            className="text-sm text-brand-600 hover:text-brand-800 mb-1 inline-block"
+            className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 mb-1 inline-block"
           >
             {t.inspection.back}
           </Link>
-          <h1 className="text-xl font-bold text-gray-900 truncate">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 truncate">
             {inspection.case_number
               ? <>
                   {inspection.case_number}
                   {inspection.case_title && (
-                    <span className="font-normal text-gray-500"> · {inspection.case_title}</span>
+                    <span className="font-normal text-gray-500 dark:text-slate-400"> · {inspection.case_title}</span>
                   )}
                 </>
               : inspection.property_address}
           </h1>
-          <div className="flex items-center gap-2 text-sm text-gray-500 mt-1 flex-wrap">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400 mt-1 flex-wrap">
             <span>
               {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
             </span>
@@ -922,11 +922,11 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
               {participants.map((p) => (
                 <span
                   key={p.recno}
-                  className="inline-flex items-center bg-gray-100 text-gray-600 rounded-full px-2 py-0.5 text-xs"
+                  className="inline-flex items-center bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5 text-xs"
                 >
                   {p.name}
                   {p.role && (
-                    <span className="text-gray-400 ml-1">· {p.role}</span>
+                    <span className="text-gray-400 dark:text-slate-500 ml-1">· {p.role}</span>
                   )}
                 </span>
               ))}
@@ -938,11 +938,11 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
               {externalParticipantsDisplay.map((ep) => (
                 <span
                   key={ep.id}
-                  className="inline-flex items-center bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-2 py-0.5 text-xs"
+                  className="inline-flex items-center bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full px-2 py-0.5 text-xs"
                 >
                   {ep.name}
-                  {ep.role && <span className="text-amber-500 ml-1">· {ep.role}</span>}
-                  {ep.company && <span className="text-amber-500 ml-1">· {ep.company}</span>}
+                  {ep.role && <span className="text-amber-500 dark:text-amber-400 ml-1">· {ep.role}</span>}
+                  {ep.company && <span className="text-amber-500 dark:text-amber-400 ml-1">· {ep.company}</span>}
                 </span>
               ))}
             </div>
@@ -953,7 +953,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
               {estates.map((e) => (
                 <span
                   key={e.recno}
-                  className="inline-flex items-center bg-brand-50 text-brand-700 rounded-full px-2 py-0.5 text-xs"
+                  className="inline-flex items-center bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 rounded-full px-2 py-0.5 text-xs"
                 >
                   🏠{" "}
                   {e.address ?? (e.gnr && e.bnr ? `Gnr/Bnr ${e.gnr}/${e.bnr}` : `${t.inspection.estates} ${e.recno}`)}
@@ -963,7 +963,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
           )}
           {/* Coordinates */}
           {inspection.latitude != null && inspection.longitude != null && (
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
               📍 {inspection.latitude.toFixed(5)}°N, {inspection.longitude.toFixed(5)}°Ø
             </p>
           )}
@@ -971,13 +971,13 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         <div className="flex gap-2 flex-shrink-0">
           <button
             onClick={() => setShowEdit(true)}
-            className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-xl transition"
+            className="text-sm bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 font-medium px-4 py-2 rounded-xl transition"
           >
             {t.inspection.edit}
           </button>
           <Link
             href={`/dashboard/inspections/${id}/report`}
-            className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-2 rounded-xl transition"
+            className="text-sm bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-300 font-medium px-4 py-2 rounded-xl transition"
           >
             {t.inspection.report}
           </Link>
@@ -987,10 +987,10 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
       {/* Summary bar */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {[
-          { label: t.inspection.total, value: summary.total, color: "bg-gray-100 text-gray-700" },
-          { label: t.inspection.ok, value: summary.ok, color: "bg-green-50 text-green-700" },
-          { label: t.inspection.deviations, value: summary.deviations, color: "bg-red-50 text-red-700" },
-          { label: t.inspection.notChecked, value: summary.not_checked, color: "bg-yellow-50 text-yellow-700" },
+          { label: t.inspection.total, value: summary.total, color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300" },
+          { label: t.inspection.ok, value: summary.ok, color: "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400" },
+          { label: t.inspection.deviations, value: summary.deviations, color: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400" },
+          { label: t.inspection.notChecked, value: summary.not_checked, color: "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400" },
         ].map((s) => (
           <div key={s.label} className={`${s.color} rounded-xl p-3 text-center`}>
             <p className="text-2xl font-bold">{s.value}</p>
@@ -1000,15 +1000,15 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-5">
+      <div className="flex gap-1 bg-gray-100 dark:bg-slate-700/50 rounded-xl p-1 mb-5">
         {TABS.map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === tab
-                ? "bg-white shadow text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white dark:bg-slate-800 shadow text-gray-900 dark:text-slate-100"
+                : "text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
             }`}
           >
             {tab === "checklist" && t.inspection.tabChecklist}
@@ -1027,7 +1027,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
               className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${
                 activeCategory === "all"
                   ? "bg-brand-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"
               }`}
             >
               {t.inspection.all} ({merged.length})
@@ -1042,7 +1042,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
                   className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition ${
                     activeCategory === cat
                       ? "bg-brand-600 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      : "bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-slate-600"
                   }`}
                 >
                   {getCategoryLabel(cat, locale)} ({items.length}
@@ -1070,10 +1070,10 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
           </div>
 
           {displayItems.length > 3 && (
-            <div className="flex gap-3 mt-6 pt-5 border-t border-gray-100">
+            <div className="flex gap-3 mt-6 pt-5 border-t border-gray-100 dark:border-slate-700">
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-                className="flex-1 flex items-center justify-center gap-2 py-3 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
+                className="flex-1 flex items-center justify-center gap-2 py-3 border border-gray-200 dark:border-slate-600 rounded-xl text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition"
               >
                 ↑ {t.inspection.scrollToTop}
               </button>
@@ -1092,37 +1092,37 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
       {activeTab === "summary" && (
         <div>
           {summary.deviations === 0 ? (
-            <div className="text-center py-16 text-gray-400">
+            <div className="text-center py-16 text-gray-400 dark:text-slate-500">
               <p className="text-5xl mb-3">✅</p>
-              <p className="text-lg font-medium text-gray-600">{t.inspection.noDeviations}</p>
+              <p className="text-lg font-medium text-gray-600 dark:text-slate-400">{t.inspection.noDeviations}</p>
             </div>
           ) : (
             <div className="space-y-3">
               {summary.deviation_items.map((item) => (
                 <div
                   key={item.definition.id}
-                  className="bg-red-50 border border-red-200 rounded-xl p-4"
+                  className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-semibold text-red-800 text-sm">
+                      <p className="font-semibold text-red-800 dark:text-red-300 text-sm">
                         {item.definition.title}
                       </p>
-                      <p className="text-xs text-red-600 mt-0.5">
+                      <p className="text-xs text-red-600 dark:text-red-400 mt-0.5">
                         {getCategoryLabel(item.definition.category, locale)}
                       </p>
                     </div>
-                    <span className="text-xs bg-red-100 text-red-700 font-semibold px-2 py-0.5 rounded-full flex-shrink-0">
+                    <span className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-semibold px-2 py-0.5 rounded-full flex-shrink-0">
                       {t.inspection.deviation}
                     </span>
                   </div>
                   {item.answer?.comment && (
-                    <p className="text-sm text-red-700 mt-2 border-t border-red-200 pt-2">
+                    <p className="text-sm text-red-700 dark:text-red-400 mt-2 border-t border-red-200 dark:border-red-800 pt-2">
                       {item.answer.comment}
                     </p>
                   )}
                   {item.answer?.latitude != null && item.answer?.longitude != null && (
-                    <p className="text-xs text-red-500 mt-1">
+                    <p className="text-xs text-red-500 dark:text-red-400 mt-1">
                       📍 {item.answer.latitude.toFixed(5)}°N, {item.answer.longitude.toFixed(5)}°Ø
                     </p>
                   )}

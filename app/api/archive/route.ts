@@ -14,6 +14,7 @@ const ArchiveRequestSchema = z.object({
   externalId: z.string().optional(),
   uid: z.string().optional(),
   additionalFields: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
+  existingDocumentRecno: z.number().int().positive().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid request" } satisfies ArchiveInspectionResponse, { status: 400 });
   }
 
-  const { inspectionId, caseNumber, externalId, uid, additionalFields } = parsed.data;
+  const { inspectionId, caseNumber, externalId, uid, additionalFields, existingDocumentRecno } = parsed.data;
 
   // Load inspection with answers
   const [inspRes, answersRes, attachRes] = await Promise.all([
@@ -139,6 +140,7 @@ export async function POST(req: NextRequest) {
     attachments: [...attachmentFiles, ...extraAttachments],
     additionalFields,
     sifStageRecno: inspection.sif_stage_recno ?? undefined,
+    existingDocumentRecno,
   });
 
   // Update archival record and (if successful) inspection status in parallel.

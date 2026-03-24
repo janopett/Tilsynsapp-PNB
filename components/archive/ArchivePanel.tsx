@@ -1,10 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
+
+interface CaseDocument {
+  Recno: number;
+  DocumentNumber?: string;
+  Title?: string;
+  DocumentDate?: string;
+  StatusDescription?: string;
+}
 
 interface Props {
   inspection: InspectionWithAnswers;
@@ -20,6 +28,14 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   const [loading, setLoading] = useState(false);
   const [completing, setCompleting] = useState(false);
   const isCompleted = inspection.status === "completed";
+
+  // Document picker state
+  const [docMode, setDocMode] = useState<"new" | "update">("new");
+  const [documents, setDocuments] = useState<CaseDocument[] | null>(null);
+  const [docsLoading, setDocsLoading] = useState(false);
+  const [docsError, setDocsError] = useState<string | null>(null);
+  const [selectedDocRecno, setSelectedDocRecno] = useState<number | null>(null);
+  const fetchedForCase = useRef<string>("");
   const [result, setResult] = useState<{
     status: ArchivalStatus;
     message: string;
@@ -38,6 +54,26 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         }
       : null
   );
+
+  async function fetchDocuments(cn: string) {
+    if (!cn.trim() || fetchedForCase.current === cn.trim()) return;
+    fetchedForCase.current = cn.trim();
+    setDocsLoading(true);
+    setDocsError(null);
+    setDocuments(null);
+    setSelectedDocRecno(null);
+    try {
+      const res = await authFetch(`/api/sif/case-documents?caseNumber=${encodeURIComponent(cn.trim())}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Feil ved henting av dokumenter");
+      setDocuments(data.documents ?? []);
+    } catch (err) {
+      setDocsError(err instanceof Error ? err.message : "Ukjent feil");
+      fetchedForCase.current = "";
+    } finally {
+      setDocsLoading(false);
+    }
+  }
 
   async function handleMarkCompleted() {
     setCompleting(true);
@@ -59,6 +95,10 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       alert("Angi saksnummer, eksternt ID eller UID.");
       return;
     }
+    if (docMode === "update" && !selectedDocRecno) {
+      alert("Velg et eksisterende dokument å oppdatere.");
+      return;
+    }
     setLoading(true);
     setResult(null);
 
@@ -70,6 +110,8 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         caseNumber: caseNumber.trim() || undefined,
         externalId: externalId.trim() || undefined,
         uid: uid.trim() || undefined,
+        existingDocumentRecno:
+          docMode === "update" && selectedDocRecno ? selectedDocRecno : undefined,
       }),
     });
 
@@ -181,6 +223,78 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
             />
           </div>
 
+          {/* Document picker */}
+          <div className="border border-gray-100 dark:border-slate-700 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Dokument i Plan &amp; Build
+              </p>
+              {caseNumber.trim() && (
+                <button
+                  type="button"
+                  onClick={() => fetchDocuments(caseNumber)}
+                  disabled={docsLoading}
+                  className="text-xs text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50"
+                >
+                  {docsLoading ? "Henter…" : documents === null ? "Hent dokumenter fra saken" : "Oppdater liste"}
+                </button>
+              )}
+            </div>
+
+            {docsError && (
+              <p className="text-xs text-red-600 dark:text-red-400">{docsError}</p>
+            )}
+
+            {/* Mode toggle — only shown once documents are loaded */}
+            {documents !== null && (
+              <div className="flex gap-2">
+                {(["new", "update"] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setDocMode(mode)}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-medium border transition
+                      ${docMode === mode
+                        ? "bg-brand-600 border-brand-600 text-white"
+                        : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                      }`}
+                  >
+                    {mode === "new" ? "Opprett nytt dokument" : "Oppdater eksisterende"}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {docMode === "update" && documents !== null && (
+              documents.length === 0 ? (
+                <p className="text-xs text-gray-500 dark:text-slate-400">
+                  Ingen dokumenter funnet på saken.
+                </p>
+              ) : (
+                <select
+                  value={selectedDocRecno ?? ""}
+                  onChange={(e) => setSelectedDocRecno(e.target.value ? Number(e.target.value) : null)}
+                  className="input text-sm"
+                >
+                  <option value="">— Velg dokument —</option>
+                  {documents.map((d) => (
+                    <option key={d.Recno} value={d.Recno}>
+                      {[d.DocumentNumber, d.Title, d.DocumentDate?.slice(0, 10)]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </option>
+                  ))}
+                </select>
+              )
+            )}
+
+            {documents === null && !caseNumber.trim() && (
+              <p className="text-xs text-gray-400 dark:text-slate-500">
+                Angi saksnummer for å hente dokumenter.
+              </p>
+            )}
+          </div>
+
           <details className="text-sm">
             <summary className="cursor-pointer text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 font-medium select-none">
               Avansert oppslag (eksternt ID / UID)
@@ -216,7 +330,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
 
         <button
           onClick={handleArchive}
-          disabled={loading}
+          disabled={loading || (docMode === "update" && !selectedDocRecno)}
           aria-busy={loading}
           className="mt-5 w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl
                      transition disabled:opacity-50 flex items-center justify-center gap-2
@@ -226,8 +340,10 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
           {loading ? (
             <>
               <span className="animate-spin" aria-hidden="true">⏳</span>
-              Arkiverer og sender...
+              {docMode === "update" ? "Oppdaterer dokument..." : "Arkiverer og sender..."}
             </>
+          ) : docMode === "update" ? (
+            <>📝 Oppdater dokument i Plan &amp; Build</>
           ) : (
             <>📨 Send og arkiver i Plan &amp; Build</>
           )}

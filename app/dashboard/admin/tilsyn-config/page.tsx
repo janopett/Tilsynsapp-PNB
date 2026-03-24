@@ -59,16 +59,16 @@ function CategorySection({ category, title }: CategorySectionProps) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-      <h2 className="text-base font-semibold text-gray-900 mb-4">{title}</h2>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
+      <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">{title}</h2>
 
       {loading ? (
-        <p className="text-sm text-gray-400 animate-pulse">Laster…</p>
+        <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">Laster…</p>
       ) : (
-        <ul className="divide-y divide-gray-100 mb-4">
+        <ul className="divide-y divide-gray-100 dark:divide-slate-700 mb-4">
           {items.map((item) => (
             <li key={item.id} className="flex items-center justify-between py-2">
-              <span className="text-sm text-gray-800">{item.label}</span>
+              <span className="text-sm text-gray-800 dark:text-slate-300">{item.label}</span>
               <button
                 onClick={() => handleDelete(item.id)}
                 disabled={deletingId === item.id}
@@ -79,7 +79,7 @@ function CategorySection({ category, title }: CategorySectionProps) {
             </li>
           ))}
           {items.length === 0 && (
-            <li className="py-3 text-sm text-gray-400 text-center">Ingen elementer ennå</li>
+            <li className="py-3 text-sm text-gray-400 dark:text-slate-500 text-center">Ingen elementer ennå</li>
           )}
         </ul>
       )}
@@ -110,8 +110,8 @@ export default function TilsynConfigPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="mb-2">
-        <h1 className="text-2xl font-bold text-gray-900">Tilsynskonfigurering</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Tilsynskonfigurering</h1>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
           Administrer listene for tilsynsområde og tilsynstype.
         </p>
       </div>

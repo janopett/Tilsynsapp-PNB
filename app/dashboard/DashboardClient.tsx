@@ -47,8 +47,8 @@ export default function DashboardClient({ list }: DashboardClientProps) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t.dashboard.title}</h1>
-          <p className="text-gray-500 text-sm mt-1">{t.dashboard.count(list.length)}</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.dashboard.title}</h1>
+          <p className="text-gray-500 dark:text-slate-400 text-sm mt-1">{t.dashboard.count(list.length)}</p>
         </div>
         <Link
           href="/dashboard/inspections/new"
@@ -59,7 +59,7 @@ export default function DashboardClient({ list }: DashboardClientProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-5 border-b border-gray-200 pb-1">
+      <div className="flex gap-2 mb-5 border-b border-gray-200 dark:border-slate-700 pb-1">
         {tabs.map(({ key, label }) => {
           const count = counts[key];
           const isActive = tab === key;
@@ -69,16 +69,16 @@ export default function DashboardClient({ list }: DashboardClientProps) {
               onClick={() => setTab(key)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-t-lg text-sm font-medium transition border-b-2 -mb-[1px] ${
                 isActive
-                  ? "border-brand-600 text-brand-700 bg-white"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  ? "border-brand-600 text-brand-700 dark:text-brand-400 bg-white dark:bg-slate-900"
+                  : "border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600"
               }`}
             >
               {label}
               <span
                 className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 rounded-full px-1.5 text-xs font-semibold ${
                   isActive
-                    ? "bg-brand-100 text-brand-700"
-                    : "bg-gray-100 text-gray-500"
+                    ? "bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400"
+                    : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
                 }`}
               >
                 {count}
@@ -89,7 +89,7 @@ export default function DashboardClient({ list }: DashboardClientProps) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 text-gray-400">
+        <div className="text-center py-20 text-gray-400 dark:text-slate-500">
           <p className="text-5xl mb-4">📋</p>
           <p className="text-lg font-medium">{t.dashboard.empty}</p>
           <p className="text-sm mt-1">{t.dashboard.emptyHint}</p>
@@ -118,26 +118,26 @@ export default function DashboardClient({ list }: DashboardClientProps) {
               <Link
                 key={inspection.id}
                 href={`/dashboard/inspections/${inspection.id}`}
-                className="block bg-white rounded-2xl shadow-sm border border-gray-100 p-4 hover:shadow-md transition"
+                className="block bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 hover:shadow-md transition"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-gray-900 text-sm leading-snug">
+                    <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm leading-snug">
                       {heading}
                     </p>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 flex-wrap">
+                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-slate-400 flex-wrap">
                       <span>{mt?.icon} {mt?.name ?? inspection.measure_type_id}</span>
-                      <span className="text-gray-400">
+                      <span className="text-gray-400 dark:text-slate-500">
                         · {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
                       </span>
                     </div>
                     {participants.length > 0 && (
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
                         {participants.map((p, i) => (
-                          <span key={p.recno ?? i} className="text-xs text-gray-500">
+                          <span key={p.recno ?? i} className="text-xs text-gray-500 dark:text-slate-400">
                             {p.name}
                             {(p.roleDescription ?? p.role) && (
-                              <span className="text-gray-400"> · {p.roleDescription ?? p.role}</span>
+                              <span className="text-gray-400 dark:text-slate-500"> · {p.roleDescription ?? p.role}</span>
                             )}
                           </span>
                         ))}
@@ -146,9 +146,9 @@ export default function DashboardClient({ list }: DashboardClientProps) {
                     {extParticipants.length > 0 && (
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
                         {extParticipants.map((ep) => (
-                          <span key={ep.id} className="text-xs text-amber-700">
+                          <span key={ep.id} className="text-xs text-amber-700 dark:text-amber-400">
                             {ep.name}
-                            {ep.role && <span className="text-amber-400"> · {ep.role}</span>}
+                            {ep.role && <span className="text-amber-400 dark:text-amber-500"> · {ep.role}</span>}
                           </span>
                         ))}
                       </div>
@@ -156,7 +156,7 @@ export default function DashboardClient({ list }: DashboardClientProps) {
                     {estates.length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-1.5">
                         {estates.map((e, i) => (
-                          <span key={e.recno ?? i} className="text-xs text-brand-700 bg-brand-50 rounded-full px-2 py-0.5">
+                          <span key={e.recno ?? i} className="text-xs text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 rounded-full px-2 py-0.5">
                             🏠 {e.address ?? `Eiendom ${e.recno}`}
                           </span>
                         ))}

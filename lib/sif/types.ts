@@ -518,6 +518,53 @@ export interface SifCreateDocumentResult {
 }
 
 // ============================================================
+// DocumentService — Document returned inside GetCases (IncludeDocuments)
+// ============================================================
+
+export interface SifDocumentInCase {
+  Recno: number;
+  DocumentNumber?: string;
+  Title?: string;
+  Category?: string;
+  CategoryDescription?: string;
+  Status?: string;
+  StatusDescription?: string;
+  DocumentDate?: string;
+  ResponsiblePersonName?: string;
+  URL?: string;
+}
+
+// ============================================================
+// DocumentService — UpdateDocument
+// ============================================================
+
+export interface SifUpdateDocumentInput {
+  /** Identifies the document to update */
+  Recno?: number;
+  DocumentNumber?: string;
+  Title?: string;
+  Category?: string;
+  Status?: string;
+  DocumentDate?: string;
+  AccessCode?: string;
+  ResponsiblePersonRecno?: number;
+  Contacts?: SifDocumentContact[];
+  Files?: SifFileInput[];
+  AdditionalFields?: SifAdditionalField[];
+  AdditionalListFields?: SifAdditionalListField[];
+  ADContextUser?: string;
+}
+
+export interface SifUpdateDocumentResult {
+  Successful: boolean;
+  Recno?: number;
+  DocumentNumber?: string;
+  URL?: string;
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
 // DocumentService — DispatchDocuments
 // ============================================================
 
