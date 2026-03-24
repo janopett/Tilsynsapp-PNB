@@ -27,7 +27,7 @@ Webapplikasjon for gjennomføring og arkivering av byggetilsyn i kommunen. Inspe
 | Registrering av funn | Registrer status per sjekkpunkt (ok / avvik / ikke kontrollert) med kommentar |
 | Vedlegg | Last opp bilder og dokumenter til et tilsyn |
 | PDF-rapport | Generer profesjonell tilsynsrapport med underskrift og kart |
-| Arkivering | Send ferdig tilsyn til kommunens arkivsystem (Public 360°) med ett klikk |
+| Arkivering | Send ferdig tilsyn til kommunens arkivsystem (Public 360°) — opprett nytt dokument eller oppdater et eksisterende på saken |
 | Dashboard | Oversikt over aktive og arkiverte tilsyn med filtrering og statusinformasjon |
 | Kartplukking | Velg koordinater for tilsynsstedet via interaktivt kart |
 | Mørkt/lyst tema | Automatisk systemtema med manuell overstyring (lys/mørk/system) |
@@ -37,6 +37,7 @@ Webapplikasjon for gjennomføring og arkivering av byggetilsyn i kommunen. Inspe
 - Sakssøk og oppslag av eiendom og parter direkte fra PNB
 - Synkronisering av deltakere og kontakter til 360°
 - Automatisk oppretting av dokument og opplasting av filer til saken
+- **Dokumentoppslag ved arkivering** — hent eksisterende dokumenter på saken og velg mellom å opprette nytt dokument eller oppdatere et eksisterende (legger til ny versjon av rapport/vedlegg)
 - Støtter to autentiseringsmoduser:
   - **AuthKey** – enkel nøkkelbasert tilgang
   - **OAuth2 Client Credentials (combined_daemon)** – Azure AD-basert enterprise-autentisering
@@ -162,6 +163,12 @@ app/
 │   │   ├── inspection-config/  # Konfigurerbare lister
 │   │   └── archivals/      # Arkiveringslogg
 │   └── sif/                # SIF-integrasjonsendepunkter
+│       ├── case-lookup/    # Oppslag av enkelt sak
+│       ├── case-search/    # Sakssøk (tittel/nummer)
+│       ├── case-documents/ # Hent dokumenter på en sak
+│       ├── case-contacts/  # Parter på en sak
+│       ├── case-stages/    # Behandlingstrinn
+│       └── …               # Ytterligere SIF-endepunkter
 ├── dashboard/              # Autentiserte sider
 │   ├── inspections/[id]/   # Tilsynsdetaljer og sjekkliste
 │   ├── inspections/new/    # Nytt tilsyn
@@ -171,9 +178,13 @@ app/
 lib/
 ├── sif/                    # SIF API-klient og tjenester
 │   ├── client.ts           # Kjernelogikk for RPC-kall
-│   ├── archival.ts         # Fullstendig arkiveringsflyt
+│   ├── archival.ts         # Fullstendig arkiveringsflyt (create + update)
 │   ├── auth.ts             # AuthKey / OAuth2-håndtering
-│   └── *-service.ts        # Case, Contact, Document, File, Estate
+│   ├── case-service.ts     # GetCases, søk
+│   ├── document-service.ts # CreateDocument, UpdateDocument, DispatchDocuments, GetCases(IncludeDocuments)
+│   ├── file-service.ts     # FileService/Upload
+│   ├── contact-service.ts  # SynchronizeContactPerson
+│   └── estate-service.ts   # GetEstates
 ├── pdf/                    # PDF-rapportgenerering
 ├── checklist/              # Filtermotor for sjekkpunkter
 ├── audit-log.ts            # Logging av admin-handlinger

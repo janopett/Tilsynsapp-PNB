@@ -47,7 +47,7 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når tilsynet
 | Funksjon | Verdi |
 |----------|-------|
 | Automatisk PDF-rapport | Ferdig formatert tilsynsrapport genereres uten manuelt arbeid |
-| Arkivering med ett klikk | Rapporten sendes direkte til riktig sak i Public 360° |
+| Arkivering med ett klikk | Rapporten sendes direkte til riktig sak i Public 360° — opprett nytt dokument eller oppdater et eksisterende |
 | Sporbarhet | Alle tilsyn, avvik og arkiveringer er loggede og søkbare |
 | Brukeradministrasjon | Enkel styring av tilganger via admin-panel |
 | Audit-logg | Alle admin-handlinger logges automatisk (ISO 27001 A.12.4.1) |
@@ -100,7 +100,7 @@ Applikasjonen er bygget på moderne, vedlikeholdsvennlig teknologi:
 |--------|--------|
 | ✅ Produksjonsklar | Tilsynsgjennomføring og sjekklister |
 | ✅ Produksjonsklar | PDF-rapportgenerering |
-| ✅ Produksjonsklar | Arkivering til Public 360° (SIF-integrasjon) |
+| ✅ Produksjonsklar | Arkivering til Public 360° — opprett nytt eller oppdater eksisterende dokument |
 | ✅ Produksjonsklar | Bruker- og tilgangsadministrasjon |
 | ✅ Produksjonsklar | Audit-logging (ISO 27001) |
 | 🔄 Konfigurerbart | Tilpasning av sjekkpunkter og lister per kommune |
