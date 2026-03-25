@@ -234,17 +234,11 @@ export async function updateInspectionDocumentInSif(
     RelationType: f.relationType ?? (idx === 0 ? "H" : "V"),
   }));
 
+  // UpdateDocument only supports Files + optional metadata.
+  // Contacts are NOT supported — they remain unchanged from the original CreateDocument.
   const payload: SifUpdateDocumentInput = {
     DocumentNumber: documentNumber,
     Files: sifFiles,
-    ...(contacts?.length
-      ? {
-          Contacts: contacts.map((c) => ({
-            Role: c.role,
-            ExternalId: c.recno ? `recno:${c.recno}` : undefined,
-          })),
-        }
-      : {}),
     ...(additionalFields?.length
       ? {
           AdditionalFields: additionalFields.map((f) => ({
@@ -261,11 +255,6 @@ export async function updateInspectionDocumentInSif(
         }
       : {}),
   };
-
-  console.info("[SIF] DocumentService/UpdateDocument payload (debug)", {
-    correlationId,
-    json: JSON.stringify({ parameter: payload }),
-  });
 
   console.info("[SIF] DocumentService/UpdateDocument", {
     correlationId,
