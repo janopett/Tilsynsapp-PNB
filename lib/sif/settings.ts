@@ -91,6 +91,17 @@ function rowToSettings(row: SifSettingsRow): SifSettings {
   };
 }
 
+// ── In-process settings cache ──────────────────────────────────────────────
+// Avoids repeated Supabase DB roundtrips within the same server process.
+// TTL: 60 s — short enough to pick up admin changes within a minute.
+const CACHE_TTL_MS = 60_000;
+let _settingsCache: { value: SifSettings; expiresAt: number } | null = null;
+
+/** Invalidate the in-process settings cache (call after saving new settings). */
+export function invalidateSifSettingsCache(): void {
+  _settingsCache = null;
+}
+
 /**
  * Load SIF settings from the database.
  * Returns null if no row exists yet (not configured).
@@ -114,11 +125,20 @@ export async function loadSifSettings(): Promise<SifSettings | null> {
 /**
  * Load SIF settings, falling back to environment variables when the DB row
  * does not exist or is incomplete.
+ *
+ * Results are cached in-process for CACHE_TTL_MS to avoid repeated DB
+ * roundtrips. The cache is invalidated when settings are saved via the admin
+ * API (call invalidateSifSettingsCache() there).
  */
 export async function loadSifSettingsWithEnvFallback(): Promise<SifSettings> {
+  const now = Date.now();
+  if (_settingsCache && now < _settingsCache.expiresAt) {
+    return _settingsCache.value;
+  }
+
   const db = await loadSifSettings();
 
-  return {
+  const value: SifSettings = {
     baseUrl: db?.baseUrl || process.env.SIF_BASE_URL || "",
     rpcPath:
       db?.rpcPath ||
@@ -161,6 +181,9 @@ export async function loadSifSettingsWithEnvFallback(): Promise<SifSettings> {
     docAccessCode: db?.docAccessCode ?? "",
     autoDispatch: db?.autoDispatch ?? false,
   };
+
+  _settingsCache = { value, expiresAt: now + CACHE_TTL_MS };
+  return value;
 }
 
 /**
