@@ -19,18 +19,6 @@ export interface SifClientConfig {
   authConfig?: SifAuthConfig;
 }
 
-export function getSifClientConfig(): SifClientConfig {
-  const baseUrl = process.env.SIF_BASE_URL;
-  if (!baseUrl) {
-    throw new Error("SIF_BASE_URL environment variable is not set.");
-  }
-  return {
-    baseUrl: baseUrl.replace(/\/$/, ""),
-    rpcPath: process.env.SIF_RPC_PATH ?? "/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC",
-    timeoutMs: Number(process.env.SIF_TIMEOUT_MS ?? "30000"),
-  };
-}
-
 /**
  * Build a SIF RPC URL.
  * Pattern: {baseUrl}{rpcPath}/{service}/{method}

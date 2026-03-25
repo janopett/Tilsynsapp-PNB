@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit-log";
 import { createServiceClient } from "@/lib/supabase/server";
-import { loadSifSettings, sanitizeForClient } from "@/lib/sif/settings";
+import { loadSifSettings, sanitizeForClient, invalidateSifSettingsCache } from "@/lib/sif/settings";
 import type { SifAuthMode } from "@/lib/sif/auth";
 
 // ── GET /api/sif/settings ─────────────────────────────────────────────────────
@@ -109,6 +109,8 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     );
   }
+
+  invalidateSifSettingsCache();
 
   await writeAuditLog({
     adminId: auth.user.id,
