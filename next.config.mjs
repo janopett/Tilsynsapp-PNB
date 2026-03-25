@@ -41,13 +41,13 @@ const nextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js inline scripts + Vercel Speed Insights
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com",
-              "style-src 'self' 'unsafe-inline'",
-              // Supabase storage for images/attachments
-              `img-src 'self' data: blob: https://*.supabase.co`,
-              // Supabase API + own API
-              `connect-src 'self' https://*.supabase.co wss://*.supabase.co`,
+              // Next.js inline scripts + Vercel Speed Insights + Leaflet via unpkg
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://unpkg.com",
+              "style-src 'self' 'unsafe-inline' https://unpkg.com",
+              // Supabase storage for images/attachments + OpenStreetMap tiles for map picker
+              `img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org`,
+              // Supabase API + own API + Nominatim geocoding for map picker
+              `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org`,
               "font-src 'self'",
               "frame-ancestors 'none'",
               "base-uri 'self'",

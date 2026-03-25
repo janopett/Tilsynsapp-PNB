@@ -12,6 +12,7 @@ interface CaseDocument {
   Title?: string;
   DocumentDate?: string;
   StatusDescription?: string;
+  URL?: string;
 }
 
 interface Props {
@@ -35,6 +36,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);
   const [selectedDocNumber, setSelectedDocNumber] = useState<string | null>(null);
+  const [selectedDocUrl, setSelectedDocUrl] = useState<string | null>(null);
   const fetchedForCase = useRef<string>("");
   const [result, setResult] = useState<{
     status: ArchivalStatus;
@@ -71,6 +73,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     setDocsError(null);
     setDocuments(null);
     setSelectedDocNumber(null);
+    setSelectedDocUrl(null);
     try {
       const res = await authFetch(`/api/sif/case-documents?caseNumber=${encodeURIComponent(cn.trim())}`);
       const data = await res.json();
@@ -146,7 +149,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       setResult({
         status: "success",
         message: `Arkivert som dokument ${a.sif_document_number ?? a.sif_document_recno ?? "(ukjent)"}${dispatchNote}`,
-        url: a.sif_document_url,
+        url: a.sif_document_url ?? selectedDocUrl ?? undefined,
         documentNumber: a.sif_document_number,
       });
       onArchived();
@@ -305,7 +308,12 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               ) : (
                 <select
                   value={selectedDocNumber ?? ""}
-                  onChange={(e) => setSelectedDocNumber(e.target.value || null)}
+                  onChange={(e) => {
+                    const val = e.target.value || null;
+                    const doc = documents?.find((d) => (d.DocumentNumber ?? String(d.Recno)) === val);
+                    setSelectedDocNumber(val);
+                    setSelectedDocUrl(doc?.URL ?? null);
+                  }}
                   className="input text-sm"
                 >
                   <option value="">— Velg dokument —</option>
