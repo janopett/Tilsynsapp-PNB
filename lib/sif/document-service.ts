@@ -237,30 +237,12 @@ export async function updateInspectionDocumentInSif(
   const payload: SifUpdateDocumentInput = {
     DocumentNumber: documentNumber,
     Files: sifFiles,
-    ...(contacts?.length
-      ? {
-          Contacts: contacts.map((c) => ({
-            Role: c.role,
-            ExternalId: c.recno ? `recno:${c.recno}` : undefined,
-          })),
-        }
-      : {}),
-    ...(additionalFields?.length
-      ? {
-          AdditionalFields: additionalFields.map((f) => ({
-            Name: f.name,
-            Value: f.value,
-          })),
-        }
-      : {}),
-    ...(stageRecno
-      ? {
-          AdditionalListFields: [
-            { Name: stageName ?? "Behandlingstrinn", Value: stageRecno },
-          ],
-        }
-      : {}),
   };
+
+  console.info("[SIF] DocumentService/UpdateDocument payload (debug)", {
+    correlationId,
+    json: JSON.stringify({ parameter: payload }),
+  });
 
   console.info("[SIF] DocumentService/UpdateDocument", {
     correlationId,
