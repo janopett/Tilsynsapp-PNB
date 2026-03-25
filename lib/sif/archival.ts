@@ -300,10 +300,13 @@ export async function archiveInspectionToSif(
     let dispatched: boolean | undefined;
     let dispatchError: string | undefined;
 
-    if (settings.autoDispatch && sifDocument.recno) {
+    if (settings.autoDispatch && (sifDocument.recno || sifDocument.documentNumber)) {
       try {
+        const docIdentifier = sifDocument.recno
+          ? { recno: sifDocument.recno }
+          : { documentNumber: sifDocument.documentNumber };
         const dispatchResult = await dispatchDocumentsInSif(
-          [{ recno: sifDocument.recno }],
+          [docIdentifier],
           correlationId
         );
         dispatched = dispatchResult.Successful;
