@@ -702,6 +702,9 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("checklist");
+  // Keep ArchivePanel in the DOM once it has been opened so the document list
+  // stays cached across tab switches (avoids re-fetching from 360° every time).
+  const [archivePanelMounted, setArchivePanelMounted] = useState(false);
   const [activeCategory, setActiveCategory] = useState<CheckpointCategory | "all">("all");
   const [caseContacts, setCaseContacts] = useState<SifContact[]>([]);
   const [showEdit, setShowEdit] = useState(false);
@@ -1004,7 +1007,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         {TABS.map((tab) => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => { setActiveTab(tab); if (tab === "archive") setArchivePanelMounted(true); }}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === tab
                 ? "bg-white dark:bg-slate-800 shadow text-gray-900 dark:text-slate-100"
@@ -1078,7 +1081,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
                 ↑ {t.inspection.scrollToTop}
               </button>
               <button
-                onClick={() => setActiveTab("archive")}
+                onClick={() => { setActiveTab("archive"); setArchivePanelMounted(true); }}
                 className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition"
               >
                 {t.inspection.tabArchive} →
@@ -1133,9 +1136,11 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         </div>
       )}
 
-      {/* Archive tab */}
-      {activeTab === "archive" && (
-        <ArchivePanel inspection={inspection} onArchived={fetchInspection} onMarkCompleted={fetchInspection} />
+      {/* Archive tab — kept in DOM once opened so the document list stays cached */}
+      {archivePanelMounted && (
+        <div className={activeTab !== "archive" ? "hidden" : ""}>
+          <ArchivePanel inspection={inspection} onArchived={fetchInspection} onMarkCompleted={fetchInspection} />
+        </div>
       )}
 
       {/* Edit modal */}
