@@ -66,9 +66,9 @@ export interface ArchivalContext {
   sifStageRecno?: number;
   /**
    * If set, update this existing document instead of creating a new one.
-   * The new files will be added as new versions on the existing document.
+   * DocumentNumber is used as the identifier for UpdateDocument in SIF.
    */
-  existingDocumentRecno?: number;
+  existingDocumentNumber?: string;
 }
 
 /**
@@ -259,9 +259,9 @@ export async function archiveInspectionToSif(
     }
 
     // Step 6: Create or update document
-    const sifDocument = ctx.existingDocumentRecno
+    const sifDocument = ctx.existingDocumentNumber
       ? await updateInspectionDocumentInSif({
-          documentRecno: ctx.existingDocumentRecno,
+          documentNumber: ctx.existingDocumentNumber,
           files: docFiles,
           contacts: docContacts.length > 0 ? docContacts : undefined,
           additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
