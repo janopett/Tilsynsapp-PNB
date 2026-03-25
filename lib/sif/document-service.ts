@@ -13,8 +13,8 @@ import type {
   SifDispatchDocumentsInput,
   SifDispatchDocumentsResult,
   SifFileInput,
-  SifGetCasesQuery,
-  SifGetCasesResult,
+  SifGetDocumentsQuery,
+  SifGetDocumentsResult,
   SifDocumentInCase,
 } from "./types";
 import type { SifDocument, SifUploadedFileReference } from "@/types";
@@ -165,38 +165,35 @@ export async function createInspectionDocumentInSif(
 }
 
 /**
- * Fetch all documents on a case via CaseService/GetCases with IncludeDocuments.
- * Returns an abbreviated list suitable for display in a picker.
- * Recno values match directly what UpdateDocument expects.
+ * Fetch all documents on a case via DocumentService/GetDocuments.
+ * Returns a list suitable for display in a picker — Recno values match
+ * directly what UpdateDocument expects.
  */
 export async function fetchCaseDocumentsFromSif(
   caseNumber: string,
   correlationId?: string
 ): Promise<SifDocumentInCase[]> {
-  const query: SifGetCasesQuery = {
+  const query: SifGetDocumentsQuery = {
     CaseNumber: caseNumber,
-    MaxReturnedCases: 1,
-    IncludeDocuments: true,
+    MaxReturnedDocuments: 100,
+    SortCriterion: "RecnoDescending",
   };
 
-  console.info("[SIF] CaseService/GetCases (IncludeDocuments)", { correlationId, caseNumber });
+  console.info("[SIF] DocumentService/GetDocuments", { correlationId, caseNumber });
 
-  const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
-    "CaseService",
-    "GetCases",
+  const result = await sifRpcCall<SifGetDocumentsQuery, SifGetDocumentsResult>(
+    "DocumentService",
+    "GetDocuments",
     query,
     correlationId
   );
 
-  if (!result.Successful || !result.Cases?.length) return [];
-
-  const rawDocs = result.Cases[0].Documents;
-  if (!Array.isArray(rawDocs) || rawDocs.length === 0) return [];
+  if (!result.Successful || !result.Documents?.length) return [];
 
   const settings = await loadSifSettingsWithEnvFallback();
   const baseUrl = settings.baseUrl.replace(/\/$/, "");
 
-  return (rawDocs as SifDocumentInCase[]).map((d) => ({
+  return result.Documents.map((d) => ({
     ...d,
     URL: d.URL
       ? d.URL.startsWith("/") ? `${baseUrl}${d.URL}` : d.URL
