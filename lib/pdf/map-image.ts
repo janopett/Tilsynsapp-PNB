@@ -4,11 +4,19 @@
  */
 export async function fetchStaticMapImage(
   latitude: number,
-  longitude: number
+  longitude: number,
+  options?: {
+    /** Map zoom level. 15 = neighbourhood, 17 = street/building level. Default: 15 */
+    zoom?: number;
+    /** Image width in pixels. Default: 600 */
+    width?: number;
+    /** Image height in pixels. Default: 400 */
+    height?: number;
+  }
 ): Promise<Buffer | null> {
-  const zoom = 15;
-  const width = 600;
-  const height = 400;
+  const zoom = options?.zoom ?? 15;
+  const width = options?.width ?? 600;
+  const height = options?.height ?? 400;
 
   // staticmap.openstreetmap.de is a free community static map service (no API key required).
   const url =
@@ -29,7 +37,7 @@ export async function fetchStaticMapImage(
       return null;
     }
     const buf = Buffer.from(await res.arrayBuffer());
-    console.info("[MapImage] Static map fetched", { latitude, longitude, bytes: buf.length });
+    console.info("[MapImage] Static map fetched", { latitude, longitude, zoom, bytes: buf.length });
     return buf;
   } catch (err) {
     console.warn("[MapImage] Static map fetch error (non-fatal)", {

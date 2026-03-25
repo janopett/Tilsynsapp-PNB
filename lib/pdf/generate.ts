@@ -17,6 +17,7 @@ import {
   CATEGORY_ORDER,
   groupByCategory,
 } from "@/lib/checklist/filter-engine";
+import { fetchStaticMapImage } from "./map-image";
 
 const STATUS_LABELS: Record<string, string> = {
   ok: "OK",
@@ -200,6 +201,30 @@ export async function generateInspectionPdf(
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const grouped = groupByCategory(merged);
 
+  // Pre-fetch static map images for every checkpoint that has coordinates.
+  // All fetches run in parallel (Promise.allSettled) so they don't block each other.
+  // Zoom 17 = building/street level — matches the detail shown in the map picker.
+  const checkpointsWithCoords = merged.filter(
+    (item) => item.answer?.latitude && item.answer?.longitude
+  );
+  const mapFetchResults = await Promise.allSettled(
+    checkpointsWithCoords.map((item) =>
+      fetchStaticMapImage(item.answer!.latitude!, item.answer!.longitude!, {
+        zoom: 17,
+        width: 600,
+        height: 360,
+      })
+    )
+  );
+  const checkpointMapImages = new Map<string, Buffer | null>();
+  for (let i = 0; i < checkpointsWithCoords.length; i++) {
+    const r = mapFetchResults[i];
+    checkpointMapImages.set(
+      checkpointsWithCoords[i].definition.id,
+      r.status === "fulfilled" ? r.value : null
+    );
+  }
+
   const pdfAttachmentsToMerge: Buffer[] = [];
 
   for (const category of CATEGORY_ORDER) {
@@ -228,9 +253,12 @@ export async function generateInspectionPdf(
 
       y = ensurePageSpace(doc, y, 18);
 
-      const coordText =
-        item.answer?.latitude && item.answer?.longitude
-          ? `${item.answer.latitude.toFixed(6)}, ${item.answer.longitude.toFixed(6)}`
+      const hasCoords = !!(item.answer?.latitude && item.answer?.longitude);
+      const mapBuf = hasCoords ? (checkpointMapImages.get(item.definition.id) ?? null) : null;
+      // Fallback: show coordinate text only when map image could not be fetched
+      const coordFallbackText =
+        hasCoords && !mapBuf
+          ? `${item.answer!.latitude!.toFixed(6)}, ${item.answer!.longitude!.toFixed(6)}`
           : null;
 
       const rowData: [string, string][] = [
@@ -241,7 +269,7 @@ export async function generateInspectionPdf(
       if (item.answer?.responsible_contact_name) {
         rowData.push(["Ansvarlig", item.answer.responsible_contact_name]);
       }
-      if (coordText) rowData.push(["Koordinater", coordText]);
+      if (coordFallbackText) rowData.push(["Koordinater", coordFallbackText]);
       if (checkpointPdfs.length > 0) {
         rowData.push(["Vedlegg (PDF)", checkpointPdfs.map((p) => p.fileName).join(", ")]);
       }
@@ -286,6 +314,21 @@ export async function generateInspectionPdf(
       doc.line(L, tableEnd, pageWidth - L, tableEnd);
 
       y = tableEnd + 4;
+
+      // Embed static map image when coordinates exist (zoom 17 = street level)
+      // Width/height ratio matches the 600×360 px fetch (5:3)
+      if (mapBuf) {
+        const MAP_W = 110; // mm
+        const MAP_H = 66;  // mm  (600/360 × 110 ≈ 66)
+        y = ensurePageSpace(doc, y, MAP_H + 2);
+        try {
+          const dataUri = `data:image/png;base64,${mapBuf.toString("base64")}`;
+          doc.addImage(dataUri, "PNG", L, y, MAP_W, MAP_H);
+          y += MAP_H + 4;
+        } catch (err) {
+          console.warn("[PDF] Could not embed map image for checkpoint", item.definition.id, err);
+        }
+      }
 
       // Embed inline images
       for (const img of checkpointImages) {
