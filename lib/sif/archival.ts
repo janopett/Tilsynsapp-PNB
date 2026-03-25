@@ -259,12 +259,13 @@ export async function archiveInspectionToSif(
     }
 
     // Step 6: Create or update document.
-    // UpdateDocument only reliably supports DocumentNumber + Files.
-    // Metadata (stage, contacts, additionalFields) is already set on the existing document.
+    // UpdateDocument: contacts are passed but stageRecno (AdditionalListFields) is excluded —
+    // AdditionalListFields.Value as a number causes "Incorrect JSON format" in UpdateDocument.
     const sifDocument = ctx.existingDocumentNumber
       ? await updateInspectionDocumentInSif({
           documentNumber: ctx.existingDocumentNumber,
           files: docFiles,
+          contacts: docContacts.length > 0 ? docContacts : undefined,
           correlationId,
         })
       : await createInspectionDocumentInSif({
