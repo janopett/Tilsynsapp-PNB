@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
 import { createClient } from "@/lib/supabase/client";
@@ -55,7 +55,15 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       : null
   );
 
-  async function fetchDocuments(cn: string, force = false) {
+  function sortDocuments(docs: CaseDocument[]): CaseDocument[] {
+    return [...docs].sort((a, b) => {
+      const numA = parseInt(a.DocumentNumber?.split("-").pop() ?? "0", 10);
+      const numB = parseInt(b.DocumentNumber?.split("-").pop() ?? "0", 10);
+      return numA - numB;
+    });
+  }
+
+  const fetchDocuments = useCallback(async (cn: string, force = false) => {
     if (!cn.trim()) return;
     if (!force && fetchedForCase.current === cn.trim()) return;
     fetchedForCase.current = cn.trim();
@@ -67,14 +75,19 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       const res = await authFetch(`/api/sif/case-documents?caseNumber=${encodeURIComponent(cn.trim())}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Feil ved henting av dokumenter");
-      setDocuments(data.documents ?? []);
+      setDocuments(sortDocuments(data.documents ?? []));
     } catch (err) {
       setDocsError(err instanceof Error ? err.message : "Ukjent feil");
       fetchedForCase.current = "";
     } finally {
       setDocsLoading(false);
     }
-  }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-fetch documents in the background as soon as a case number is available
+  useEffect(() => {
+    if (caseNumber.trim()) fetchDocuments(caseNumber);
+  }, [caseNumber, fetchDocuments]);
 
   function switchToUpdateMode() {
     setDocMode("update");

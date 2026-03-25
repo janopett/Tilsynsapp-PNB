@@ -175,8 +175,8 @@ export async function fetchCaseDocumentsFromSif(
 ): Promise<SifDocumentInCase[]> {
   const query: SifGetDocumentsQuery = {
     CaseNumber: caseNumber,
-    MaxReturnedDocuments: 100,
-    SortCriterion: "RecnoDescending",
+    MaxReturnedDocuments: 200,
+    SortCriterion: "RecnoAscending",
   };
 
   console.info("[SIF] DocumentService/GetDocuments", { correlationId, caseNumber });
