@@ -237,8 +237,10 @@ export async function updateInspectionDocumentInSif(
   const payload: SifUpdateDocumentInput = {
     DocumentNumber: documentNumber,
     Files: sifFiles,
+    // SyncDocumentContacts: true is required by the SIF API when including Contacts in UpdateDocument.
     ...(contacts?.length
       ? {
+          SyncDocumentContacts: true,
           Contacts: contacts.map((c) => ({
             Role: c.role,
             ExternalId: c.recno ? `recno:${c.recno}` : undefined,
@@ -261,11 +263,6 @@ export async function updateInspectionDocumentInSif(
         }
       : {}),
   };
-
-  console.info("[SIF] DocumentService/UpdateDocument payload (debug)", {
-    correlationId,
-    json: JSON.stringify({ parameter: payload }),
-  });
 
   console.info("[SIF] DocumentService/UpdateDocument", {
     correlationId,

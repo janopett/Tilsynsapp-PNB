@@ -573,7 +573,10 @@ export interface SifUpdateDocumentInput {
   DocumentDate?: string;
   AccessCode?: string;
   ResponsiblePersonRecno?: number;
+  /** Must be true when including Contacts to replace existing contacts on the document. */
+  SyncDocumentContacts?: boolean;
   Contacts?: SifDocumentContact[];
+  UnregisteredContacts?: SifUnregisteredContact[];
   Files?: SifFileInput[];
   AdditionalFields?: SifAdditionalField[];
   AdditionalListFields?: SifAdditionalListField[];
