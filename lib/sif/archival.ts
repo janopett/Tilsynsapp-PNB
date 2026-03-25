@@ -258,15 +258,13 @@ export async function archiveInspectionToSif(
       stageName = caseStages.find((s) => s.Recno === ctx.sifStageRecno)?.Title;
     }
 
-    // Step 6: Create or update document
+    // Step 6: Create or update document.
+    // UpdateDocument only reliably supports DocumentNumber + Files.
+    // Metadata (stage, contacts, additionalFields) is already set on the existing document.
     const sifDocument = ctx.existingDocumentNumber
       ? await updateInspectionDocumentInSif({
           documentNumber: ctx.existingDocumentNumber,
           files: docFiles,
-          contacts: docContacts.length > 0 ? docContacts : undefined,
-          additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
-          stageRecno: ctx.sifStageRecno,
-          stageName,
           correlationId,
         })
       : await createInspectionDocumentInSif({
