@@ -210,9 +210,9 @@ export async function generateInspectionPdf(
   const mapFetchResults = await Promise.allSettled(
     checkpointsWithCoords.map((item) =>
       fetchStaticMapImage(item.answer!.latitude!, item.answer!.longitude!, {
-        zoom: 17,
+        radiusLat: 0.0018, // ~200 m → street/building level
         width: 600,
-        height: 360,
+        height: 300,
       })
     )
   );
@@ -315,16 +315,31 @@ export async function generateInspectionPdf(
 
       y = tableEnd + 4;
 
-      // Embed static map image when coordinates exist (zoom 17 = street level)
-      // Width/height ratio matches the 600×360 px fetch (5:3)
+      // Embed Kartverket WMS map image when coordinates exist (600×300 px → 2:1 ratio)
       if (mapBuf) {
         const MAP_W = 110; // mm
-        const MAP_H = 66;  // mm  (600/360 × 110 ≈ 66)
+        const MAP_H = 55;  // mm  (600/300 × ratio → 2:1)
         y = ensurePageSpace(doc, y, MAP_H + 2);
         try {
           const dataUri = `data:image/png;base64,${mapBuf.toString("base64")}`;
-          doc.addImage(dataUri, "PNG", L, y, MAP_W, MAP_H);
-          y += MAP_H + 4;
+          const imageY = y;
+          doc.addImage(dataUri, "PNG", L, imageY, MAP_W, MAP_H);
+
+          // Draw a red pin marker at the centre of the map (= the recorded coordinate)
+          const cx = L + MAP_W / 2;
+          const cy = imageY + MAP_H / 2;
+          doc.setFillColor(220, 38, 38);   // red outer circle
+          doc.circle(cx, cy, 2.8, "F");
+          doc.setFillColor(255, 255, 255); // white inner dot
+          doc.circle(cx, cy, 1.1, "F");
+
+          // Small copyright notice
+          doc.setFontSize(6);
+          doc.setTextColor(80, 80, 80);
+          doc.text("© Kartverket", L + MAP_W - 1, imageY + MAP_H - 1.5, { align: "right" });
+          doc.setTextColor(0, 0, 0);
+
+          y = imageY + MAP_H + 4;
         } catch (err) {
           console.warn("[PDF] Could not embed map image for checkpoint", item.definition.id, err);
         }
