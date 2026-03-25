@@ -234,19 +234,11 @@ export async function updateInspectionDocumentInSif(
     RelationType: f.relationType ?? (idx === 0 ? "H" : "V"),
   }));
 
+  // Contacts are not supported in UpdateDocument — they remain unchanged on the existing document.
+  // DispatchDocuments (called after this) will send to the contacts already on the document.
   const payload: SifUpdateDocumentInput = {
     DocumentNumber: documentNumber,
     Files: sifFiles,
-    // SyncDocumentContacts: true is required by the SIF API when including Contacts in UpdateDocument.
-    ...(contacts?.length
-      ? {
-          SyncDocumentContacts: true,
-          Contacts: contacts.map((c) => ({
-            Role: c.role,
-            ExternalId: c.recno ? `recno:${c.recno}` : undefined,
-          })),
-        }
-      : {}),
     ...(additionalFields?.length
       ? {
           AdditionalFields: additionalFields.map((f) => ({
