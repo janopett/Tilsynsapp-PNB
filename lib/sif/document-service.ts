@@ -234,11 +234,21 @@ export async function updateInspectionDocumentInSif(
     RelationType: f.relationType ?? (idx === 0 ? "H" : "V"),
   }));
 
-  // Contacts are not supported in UpdateDocument — they remain unchanged on the existing document.
-  // DispatchDocuments (called after this) will send to the contacts already on the document.
+  // SyncDocumentContacts: true replaces all existing contacts on the document.
+  // Required when Contacts is included — otherwise 360° keeps the old contacts untouched.
+  // Contact format mirrors CreateDocument: Role + ExternalId as "recno:XXXX".
   const payload: SifUpdateDocumentInput = {
     DocumentNumber: documentNumber,
     Files: sifFiles,
+    ...(contacts?.length
+      ? {
+          SyncDocumentContacts: true,
+          Contacts: contacts.map((c) => ({
+            Role: c.role,
+            ExternalId: c.recno ? `recno:${c.recno}` : undefined,
+          })),
+        }
+      : {}),
     ...(additionalFields?.length
       ? {
           AdditionalFields: additionalFields.map((f) => ({
@@ -247,13 +257,8 @@ export async function updateInspectionDocumentInSif(
           })),
         }
       : {}),
-    ...(stageRecno
-      ? {
-          AdditionalListFields: [
-            { Name: stageName ?? "Behandlingstrinn", Value: stageRecno },
-          ],
-        }
-      : {}),
+    // Note: AdditionalListFields (stageRecno) is excluded — UpdateDocument requires
+    // Value as a string, but stage recno is a number, causing "Incorrect JSON format".
   };
 
   console.info("[SIF] DocumentService/UpdateDocument", {
