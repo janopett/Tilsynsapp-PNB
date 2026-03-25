@@ -44,8 +44,8 @@ const nextConfig = {
               // Next.js inline scripts + Vercel Speed Insights + Leaflet via unpkg
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://unpkg.com",
               "style-src 'self' 'unsafe-inline' https://unpkg.com",
-              // Supabase storage for images/attachments + OpenStreetMap tiles for map picker
-              `img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com`,
+              // Supabase storage + OSM tiles for map picker + Kartverket WMS for report maps
+              `img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com https://openwms.statkart.no`,
               // Supabase API + own API + Nominatim geocoding for map picker
               `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org`,
               "font-src 'self'",
