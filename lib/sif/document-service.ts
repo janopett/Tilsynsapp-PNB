@@ -202,7 +202,8 @@ export async function fetchCaseDocumentsFromSif(
 }
 
 export interface UpdateInspectionDocumentInput {
-  documentRecno: number;
+  /** DocumentNumber is the required identifier for UpdateDocument in SIF (not Recno). */
+  documentNumber: string;
   files: Array<{
     title: string;
     format: string;
@@ -224,7 +225,7 @@ export interface UpdateInspectionDocumentInput {
 export async function updateInspectionDocumentInSif(
   input: UpdateInspectionDocumentInput
 ): Promise<SifDocument> {
-  const { documentRecno, files, contacts, additionalFields, stageRecno, stageName, correlationId } = input;
+  const { documentNumber, files, contacts, additionalFields, stageRecno, stageName, correlationId } = input;
 
   const sifFiles: SifFileInput[] = files.map((f, idx) => ({
     Title: f.title,
@@ -234,7 +235,7 @@ export async function updateInspectionDocumentInSif(
   }));
 
   const payload: SifUpdateDocumentInput = {
-    Recno: documentRecno,
+    DocumentNumber: documentNumber,
     Files: sifFiles,
     ...(contacts?.length
       ? {
@@ -263,7 +264,7 @@ export async function updateInspectionDocumentInSif(
 
   console.info("[SIF] DocumentService/UpdateDocument", {
     correlationId,
-    documentRecno,
+    documentNumber,
     fileCount: files.length,
   });
 
@@ -284,8 +285,7 @@ export async function updateInspectionDocumentInSif(
 
   console.info("[SIF] Document updated", {
     correlationId,
-    recno: result.Recno ?? documentRecno,
-    documentNumber: result.DocumentNumber,
+    documentNumber: result.DocumentNumber ?? documentNumber,
   });
 
   const settings = await loadSifSettingsWithEnvFallback();
@@ -294,8 +294,8 @@ export async function updateInspectionDocumentInSif(
   const docUrl = rawUrl.startsWith("/") ? `${baseUrl}${rawUrl}` : rawUrl;
 
   return {
-    recno: result.Recno ?? documentRecno,
-    documentNumber: result.DocumentNumber,
+    recno: result.Recno ?? 0,
+    documentNumber: result.DocumentNumber ?? documentNumber,
     url: docUrl || undefined,
     raw: result,
   };

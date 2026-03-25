@@ -34,7 +34,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   const [documents, setDocuments] = useState<CaseDocument[] | null>(null);
   const [docsLoading, setDocsLoading] = useState(false);
   const [docsError, setDocsError] = useState<string | null>(null);
-  const [selectedDocRecno, setSelectedDocRecno] = useState<number | null>(null);
+  const [selectedDocNumber, setSelectedDocNumber] = useState<string | null>(null);
   const fetchedForCase = useRef<string>("");
   const [result, setResult] = useState<{
     status: ArchivalStatus;
@@ -70,7 +70,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     setDocsLoading(true);
     setDocsError(null);
     setDocuments(null);
-    setSelectedDocRecno(null);
+    setSelectedDocNumber(null);
     try {
       const res = await authFetch(`/api/sif/case-documents?caseNumber=${encodeURIComponent(cn.trim())}`);
       const data = await res.json();
@@ -114,7 +114,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       alert("Angi saksnummer, eksternt ID eller UID.");
       return;
     }
-    if (docMode === "update" && !selectedDocRecno) {
+    if (docMode === "update" && !selectedDocNumber) {
       alert("Velg et eksisterende dokument å oppdatere.");
       return;
     }
@@ -129,8 +129,8 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         caseNumber: caseNumber.trim() || undefined,
         externalId: externalId.trim() || undefined,
         uid: uid.trim() || undefined,
-        existingDocumentRecno:
-          docMode === "update" && selectedDocRecno ? selectedDocRecno : undefined,
+        existingDocumentNumber:
+          docMode === "update" && selectedDocNumber ? selectedDocNumber : undefined,
       }),
     });
 
@@ -304,13 +304,13 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                 </p>
               ) : (
                 <select
-                  value={selectedDocRecno ?? ""}
-                  onChange={(e) => setSelectedDocRecno(e.target.value ? Number(e.target.value) : null)}
+                  value={selectedDocNumber ?? ""}
+                  onChange={(e) => setSelectedDocNumber(e.target.value || null)}
                   className="input text-sm"
                 >
                   <option value="">— Velg dokument —</option>
                   {documents.map((d) => (
-                    <option key={d.Recno} value={d.Recno}>
+                    <option key={d.Recno} value={d.DocumentNumber ?? d.Recno}>
                       {[d.DocumentNumber, d.Title].filter(Boolean).join(" - ")}
                     </option>
                   ))}
@@ -354,7 +354,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
 
         <button
           onClick={handleArchive}
-          disabled={loading || (docMode === "update" && !selectedDocRecno)}
+          disabled={loading || (docMode === "update" && !selectedDocNumber)}
           aria-busy={loading}
           className="mt-5 w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl
                      transition disabled:opacity-50 flex items-center justify-center gap-2
