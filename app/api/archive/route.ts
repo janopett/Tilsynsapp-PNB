@@ -50,9 +50,9 @@ export async function POST(req: NextRequest) {
     attachments: attachRes.data ?? [],
   };
 
-  // Download attachment files from Supabase Storage before PDF generation
-  const attachmentFiles = (
-    await Promise.all(
+  // Download attachment files and fetch static map image in parallel (independent operations)
+  const [attachmentFiles, staticMapBuf] = await Promise.all([
+    Promise.all(
       inspection.attachments.map(async (att) => {
         try {
           const { data: fileData } = await supabase.storage
@@ -70,42 +70,33 @@ export async function POST(req: NextRequest) {
           return null;
         }
       })
-    )
-  ).filter((f): f is NonNullable<typeof f> => f !== null);
+    ).then((results) => results.filter((f): f is NonNullable<typeof f> => f !== null)),
+    inspection.latitude && inspection.longitude
+      ? fetchStaticMapImage(inspection.latitude, inspection.longitude)
+      : Promise.resolve(null),
+  ]);
 
-  // Generate map image if inspection has main coordinates
   const extraAttachments: Array<{ fileName: string; fileData: Buffer; mimeType: string }> = [];
-  if (inspection.latitude && inspection.longitude) {
-    const mapBuf = await fetchStaticMapImage(inspection.latitude, inspection.longitude);
-    if (mapBuf) {
-      const date = inspection.inspection_date ?? new Date().toISOString().slice(0, 10);
-      extraAttachments.push({
-        fileName: `Kart_${date}.png`,
-        fileData: mapBuf,
-        mimeType: "image/png",
-      });
-    }
+  if (staticMapBuf) {
+    const date = inspection.inspection_date ?? new Date().toISOString().slice(0, 10);
+    extraAttachments.push({ fileName: `Kart_${date}.png`, fileData: staticMapBuf, mimeType: "image/png" });
   }
 
-  // Generate PDF (async — embeds images inline, merges PDF attachments)
-  const pdfBuffer = await generateInspectionPdf(inspection, attachmentFiles, checkpointMapImages);
-  const pdfFileName = buildPdfFileName(inspection);
+  // Sync values that don't depend on PDF generation
   const jsonBuffer = generateInspectionJson(inspection);
   const jsonFileName = buildJsonFileName(inspection);
+  const measureTypeName = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id)?.name;
 
-  // Persist initial "pending" archival record
-  const { data: archival } = await serviceClient
-    .from("inspection_archivals")
-    .insert({
-      inspection_id: inspectionId,
-      status: "pending",
-      sif_case_number: caseNumber,
-    })
-    .select()
-    .single();
-
-  const measureTypeName =
-    MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id)?.name;
+  // Generate PDF and insert pending archival record in parallel (independent operations)
+  const [pdfBuffer, { data: archival }] = await Promise.all([
+    generateInspectionPdf(inspection, attachmentFiles, checkpointMapImages),
+    serviceClient
+      .from("inspection_archivals")
+      .insert({ inspection_id: inspectionId, status: "pending", sif_case_number: caseNumber })
+      .select()
+      .single(),
+  ]);
+  const pdfFileName = buildPdfFileName(inspection);
 
   // Run archival
   const result = await archiveInspectionToSif({

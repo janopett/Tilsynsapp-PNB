@@ -36,7 +36,7 @@ export async function fetchStaticMapImage(
   try {
     const res = await fetch(url, {
       headers: { "User-Agent": "Tilsynsapp-PNB/1.0" },
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(4_000),
     });
     if (!res.ok) {
       console.warn("[MapImage] Kartverket WMS fetch failed", { status: res.status });
