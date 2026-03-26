@@ -69,6 +69,11 @@ export interface ArchivalContext {
    * DocumentNumber is used as the identifier for UpdateDocument in SIF.
    */
   existingDocumentNumber?: string;
+  /**
+   * Pre-fetched SIF case (skips findCaseInSif when provided).
+   * Set this when the case was looked up in parallel before archival started.
+   */
+  prefetchedCase?: import("@/types").SifCase;
 }
 
 /**
@@ -99,15 +104,18 @@ export async function archiveInspectionToSif(
   };
 
   try {
-    // Step 1: Load settings + find case in parallel (independent calls)
+    // Step 1: Load settings + find case in parallel (independent calls).
+    // If the case was pre-fetched in route.ts (parallel with DB + PDF), skip the lookup.
     const [settings, sifCase] = await Promise.all([
       loadSifSettingsWithEnvFallback(),
-      findCaseInSif({
-        caseNumber: ctx.caseNumber,
-        externalId: ctx.externalId,
-        uid: ctx.uid,
-        correlationId,
-      }),
+      ctx.prefetchedCase
+        ? Promise.resolve(ctx.prefetchedCase)
+        : findCaseInSif({
+            caseNumber: ctx.caseNumber,
+            externalId: ctx.externalId,
+            uid: ctx.uid,
+            correlationId,
+          }),
     ]);
 
     // Step 2 + 3: Upload files
