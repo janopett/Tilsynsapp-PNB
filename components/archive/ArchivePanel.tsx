@@ -5,6 +5,7 @@ import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
+import { captureMapImage } from "@/lib/pdf/map-capture";
 
 interface CaseDocument {
   Recno: number;
@@ -124,6 +125,19 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     setLoading(true);
     setResult(null);
 
+    // Capture map images client-side for all checkpoint answers that have coordinates.
+    // This avoids server-side dependency on external map services.
+    const checkpointMapImages: Record<string, string> = {};
+    const answersWithCoords = inspection.answers.filter(
+      (a) => a.latitude && a.longitude && a.checkpoint_definition_id
+    );
+    await Promise.allSettled(
+      answersWithCoords.map(async (a) => {
+        const img = await captureMapImage(a.latitude!, a.longitude!);
+        if (img) checkpointMapImages[a.checkpoint_definition_id!] = img;
+      })
+    );
+
     const res = await authFetch("/api/archive", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -134,6 +148,9 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         uid: uid.trim() || undefined,
         existingDocumentNumber:
           docMode === "update" && selectedDocNumber ? selectedDocNumber : undefined,
+        checkpointMapImages: Object.keys(checkpointMapImages).length > 0
+          ? checkpointMapImages
+          : undefined,
       }),
     });
 

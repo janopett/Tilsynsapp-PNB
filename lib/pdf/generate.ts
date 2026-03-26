@@ -17,7 +17,6 @@ import {
   CATEGORY_ORDER,
   groupByCategory,
 } from "@/lib/checklist/filter-engine";
-import { fetchStaticMapImage } from "./map-image";
 
 const STATUS_LABELS: Record<string, string> = {
   ok: "OK",
@@ -64,7 +63,9 @@ function ensurePageSpace(doc: jsPDF, y: number, needed: number): number {
  */
 export async function generateInspectionPdf(
   inspection: InspectionWithAnswers,
-  attachments?: AttachmentForPdf[]
+  attachments?: AttachmentForPdf[],
+  /** Base64 PNG data URLs keyed by checkpoint_definition_id, captured client-side. */
+  checkpointMapImages?: Record<string, string>
 ): Promise<Buffer> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const measureType = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
@@ -201,30 +202,6 @@ export async function generateInspectionPdf(
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const grouped = groupByCategory(merged);
 
-  // Pre-fetch static map images for every checkpoint that has coordinates.
-  // All fetches run in parallel (Promise.allSettled) so they don't block each other.
-  // Zoom 17 = building/street level — matches the detail shown in the map picker.
-  const checkpointsWithCoords = merged.filter(
-    (item) => item.answer?.latitude && item.answer?.longitude
-  );
-  const mapFetchResults = await Promise.allSettled(
-    checkpointsWithCoords.map((item) =>
-      fetchStaticMapImage(item.answer!.latitude!, item.answer!.longitude!, {
-        radiusLat: 0.0018, // ~200 m → street/building level
-        width: 600,
-        height: 300,
-      })
-    )
-  );
-  const checkpointMapImages = new Map<string, Buffer | null>();
-  for (let i = 0; i < checkpointsWithCoords.length; i++) {
-    const r = mapFetchResults[i];
-    checkpointMapImages.set(
-      checkpointsWithCoords[i].definition.id,
-      r.status === "fulfilled" ? r.value : null
-    );
-  }
-
   const pdfAttachmentsToMerge: Buffer[] = [];
 
   for (const category of CATEGORY_ORDER) {
@@ -254,10 +231,12 @@ export async function generateInspectionPdf(
       y = ensurePageSpace(doc, y, 18);
 
       const hasCoords = !!(item.answer?.latitude && item.answer?.longitude);
-      const mapBuf = hasCoords ? (checkpointMapImages.get(item.definition.id) ?? null) : null;
-      // Fallback: show coordinate text only when map image could not be fetched
+      const mapDataUri = hasCoords
+        ? (checkpointMapImages?.[item.definition.id] ?? null)
+        : null;
+      // Fallback: show coordinate text when no map image was provided
       const coordFallbackText =
-        hasCoords && !mapBuf
+        hasCoords && !mapDataUri
           ? `${item.answer!.latitude!.toFixed(6)}, ${item.answer!.longitude!.toFixed(6)}`
           : null;
 
@@ -315,29 +294,14 @@ export async function generateInspectionPdf(
 
       y = tableEnd + 4;
 
-      // Embed Kartverket WMS map image when coordinates exist (600×300 px → 2:1 ratio)
-      if (mapBuf) {
+      // Embed client-captured OSM map image when available (768×768 px canvas → square)
+      if (mapDataUri) {
         const MAP_W = 110; // mm
-        const MAP_H = 55;  // mm  (600/300 × ratio → 2:1)
+        const MAP_H = 110; // mm  (square canvas from captureMapImage)
         y = ensurePageSpace(doc, y, MAP_H + 2);
         try {
-          const dataUri = `data:image/png;base64,${mapBuf.toString("base64")}`;
           const imageY = y;
-          doc.addImage(dataUri, "PNG", L, imageY, MAP_W, MAP_H);
-
-          // Draw a red pin marker at the centre of the map (= the recorded coordinate)
-          const cx = L + MAP_W / 2;
-          const cy = imageY + MAP_H / 2;
-          doc.setFillColor(220, 38, 38);   // red outer circle
-          doc.circle(cx, cy, 2.8, "F");
-          doc.setFillColor(255, 255, 255); // white inner dot
-          doc.circle(cx, cy, 1.1, "F");
-
-          // Small copyright notice
-          doc.setFontSize(6);
-          doc.setTextColor(80, 80, 80);
-          doc.text("© Kartverket", L + MAP_W - 1, imageY + MAP_H - 1.5, { align: "right" });
-          doc.setTextColor(0, 0, 0);
+          doc.addImage(mapDataUri, "PNG", L, imageY, MAP_W, MAP_H);
 
           y = imageY + MAP_H + 4;
         } catch (err) {
