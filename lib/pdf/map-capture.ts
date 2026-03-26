@@ -54,7 +54,7 @@ function loadTile(z: number, x: number, y: number): Promise<HTMLImageElement | n
 export async function captureMapImage(
   lat: number,
   lng: number,
-  zoom = 19,
+  zoom = 20,
   grid = 3
 ): Promise<string | null> {
   if (typeof document === "undefined") return null; // guard against SSR
