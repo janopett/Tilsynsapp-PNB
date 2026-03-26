@@ -22,18 +22,23 @@ function lat2tileFrac(lat: number, zoom: number): number {
   );
 }
 
+/** OSM tile subdomains — mirrors what Leaflet uses for load balancing. */
+const TILE_SUBDOMAINS = ["a", "b", "c"] as const;
+
 /**
  * Load a single OSM tile as an HTMLImageElement.
  * Uses crossOrigin="anonymous" so the canvas is not tainted.
  * Resolves with null on error (missing / CORS / network failure).
  */
 function loadTile(z: number, x: number, y: number): Promise<HTMLImageElement | null> {
+  // Cycle through subdomains exactly as Leaflet does — also distributes CDN load.
+  const sub = TILE_SUBDOMAINS[Math.abs(x + y) % TILE_SUBDOMAINS.length];
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
-    img.src = `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
+    img.src = `https://${sub}.tile.openstreetmap.org/${z}/${x}/${y}.png`;
   });
 }
 
