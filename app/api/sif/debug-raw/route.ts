@@ -69,8 +69,16 @@ export async function GET(req: NextRequest) {
         MaxReturnedDocuments: 10,
         SortCriterion: "RecnoDescending",
       });
+    } else if (service === "files") {
+      // GetFilesWithMetadata for a case — returns all files with their StatusCode.
+      // Use this to discover which StatusCode corresponds to "godkjent" in the 360° instance.
+      raw = await sifRpcCall("FileService", "GetFilesWithMetadata", {
+        CaseNumber: caseNumber,
+        MaxReturnedFiles: 50,
+        SortCriterion: "RecnoDescending",
+      });
     } else {
-      return NextResponse.json({ error: "service must be 'estates', 'contacts', 'cases', or 'documents'" }, { status: 400 });
+      return NextResponse.json({ error: "service must be 'estates', 'contacts', 'cases', 'documents', or 'files'" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true, raw });
