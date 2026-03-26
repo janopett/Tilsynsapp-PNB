@@ -149,7 +149,22 @@ export async function archiveInspectionToSif(
       );
     }
 
-    const uploadedRefs = await uploadFilesToSif(filesToUpload);
+    // Upload files and sync external participants in parallel (independent operations)
+    const extParticipants = ctx.externalParticipants ?? [];
+    const [uploadedRefs, extSyncResults] = await Promise.all([
+      uploadFilesToSif(filesToUpload),
+      Promise.allSettled(
+        extParticipants.map((ep) =>
+          synchronizeContactPerson({
+            externalId: ep.id,
+            firstName: ep.firstName,
+            lastName: ep.lastName,
+            enterprise: ep.companyRecno ? `recno:${ep.companyRecno}` : ep.company,
+            title: ep.role,
+          })
+        )
+      ),
+    ]);
 
     // Step 4: Build document title
     const gnrBnr =
@@ -214,23 +229,6 @@ export async function archiveInspectionToSif(
       if (p.recno === resolvedApplicantRecno) continue; // already added as mottaker
       docContacts.push({ role: settings.roleCopyRecipient, recno: p.recno });
     }
-    // External participants: sync each into 360° via SynchronizeContactPerson to get a personal Recno.
-    // Enterprise: "recno:XXXX" if companyRecno is known, otherwise plain company name string.
-    // Title field carries the person's role (e.g. "Brannvernleder").
-    // On failure, falls back to noting in AdditionalFields.
-    const extParticipants = ctx.externalParticipants ?? [];
-    const extSyncResults = await Promise.allSettled(
-      extParticipants.map((ep) =>
-        synchronizeContactPerson({
-          externalId: ep.id,
-          firstName: ep.firstName,
-          lastName: ep.lastName,
-          enterprise: ep.companyRecno ? `recno:${ep.companyRecno}` : ep.company,
-          title: ep.role,
-        })
-      )
-    );
-
     const extNoteFields: Array<{ name: string; value: string }> = [];
     for (let i = 0; i < extParticipants.length; i++) {
       const r = extSyncResults[i];
