@@ -501,6 +501,7 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
     tilsynsinfo: {
       tilsynsforer: inspection.inspector_name ?? null,
       soeker: inspection.applicant_name ?? null,
+      soeker_recno: inspection.applicant_recno ?? null,
       tiltakstype: measureType?.name ?? inspection.measure_type_id,
       tilsynsomrade: inspection.tilsynsomrade ?? null,
       tilsynstype: inspection.tilsynstype ?? null,
@@ -511,8 +512,11 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
     deltakere: inspection.participants ?? [],
     eksterne_deltakere: (inspection.external_participants ?? []).map((ep) => ({
       navn: ep.name,
+      fornavn: ep.firstName ?? null,
+      etternavn: ep.lastName ?? null,
       rolle: ep.role ?? null,
       foretak: ep.company ?? null,
+      foretak_recno: ep.companyRecno ?? null,
     })),
     eiendommer: inspection.estates ?? [],
     sjekkpunkter: merged.map((item) => ({
@@ -521,9 +525,11 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
       kategori: CATEGORY_LABELS[item.definition.category],
       alvorlighet: item.definition.severity,
       lovhjemmel: item.definition.legal_reference ?? null,
+      lovhjemmel_url: item.definition.legal_reference_url ?? null,
       status: item.answer?.status ?? "not_checked",
       kommentar: item.answer?.comment ?? null,
       ansvarlig: item.answer?.responsible_contact_name ?? null,
+      ansvarlig_recno: item.answer?.responsible_contact_recno ?? null,
       koordinater:
         item.answer?.latitude && item.answer?.longitude
           ? { lat: item.answer.latitude, lng: item.answer.longitude }
@@ -540,6 +546,7 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
         kategori: CATEGORY_LABELS[item.definition.category],
         kommentar: item.answer?.comment ?? null,
         ansvarlig: item.answer?.responsible_contact_name ?? null,
+        ansvarlig_recno: item.answer?.responsible_contact_recno ?? null,
         koordinater:
           item.answer?.latitude && item.answer?.longitude
             ? { lat: item.answer.latitude, lng: item.answer.longitude }
