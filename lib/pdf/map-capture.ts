@@ -123,7 +123,9 @@ export async function captureMapImage(
   ctx.fillText("© OpenStreetMap contributors", canvasPx - 146, canvasPx - 5);
 
   try {
-    return canvas.toDataURL("image/png");
+    // JPEG is ~5–10× smaller than PNG for photographic tile content, significantly
+    // reducing the POST payload size and PDF embedding time.
+    return canvas.toDataURL("image/jpeg", 0.82);
   } catch {
     // Canvas tainted (CORS) — return null so the fallback text is shown
     return null;

@@ -301,7 +301,8 @@ export async function generateInspectionPdf(
         y = ensurePageSpace(doc, y, MAP_H + 2);
         try {
           const imageY = y;
-          doc.addImage(mapDataUri, "PNG", L, imageY, MAP_W, MAP_H);
+          const mapFormat = mapDataUri.startsWith("data:image/jpeg") ? "JPEG" : "PNG";
+          doc.addImage(mapDataUri, mapFormat, L, imageY, MAP_W, MAP_H);
 
           y = imageY + MAP_H + 4;
         } catch (err) {

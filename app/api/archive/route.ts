@@ -3,10 +3,11 @@ import { z } from "zod";
 import { requireUser } from "@/lib/api-auth";
 import { createServiceClient } from "@/lib/supabase/server";
 import { archiveInspectionToSif } from "@/lib/sif/archival";
+import { findCaseInSif } from "@/lib/sif/case-service";
 import { generateInspectionPdf, buildPdfFileName, generateInspectionJson, buildJsonFileName, type AttachmentForPdf } from "@/lib/pdf/generate";
 import { fetchStaticMapImage } from "@/lib/pdf/map-image";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
-import type { InspectionWithAnswers, ArchiveInspectionResponse } from "@/types";
+import type { InspectionWithAnswers, ArchiveInspectionResponse, SifCase } from "@/types";
 
 const ArchiveRequestSchema = z.object({
   inspectionId: z.string().uuid(),
@@ -33,11 +34,22 @@ export async function POST(req: NextRequest) {
 
   const { inspectionId, caseNumber, externalId, uid, additionalFields, existingDocumentNumber, checkpointMapImages } = parsed.data;
 
-  // Load inspection with answers
-  const [inspRes, answersRes, attachRes] = await Promise.all([
-    supabase.from("inspections").select("*").eq("id", inspectionId).eq("user_id", user.id).single(),
-    supabase.from("inspection_answers").select("*").eq("inspection_id", inspectionId),
-    supabase.from("attachments").select("*").eq("inspection_id", inspectionId),
+  // Start SIF case lookup in parallel with DB queries — findCaseInSif only needs the case number
+  // from the request body, not any DB data, so it can run immediately. On failure we fall back to
+  // null and let archiveInspectionToSif handle the error (which records it in the DB).
+  const earlyLookupPromise: Promise<SifCase | null> =
+    caseNumber || externalId || uid
+      ? findCaseInSif({ caseNumber, externalId, uid }).catch(() => null)
+      : Promise.resolve(null);
+
+  // Load inspection with answers (parallel with case lookup)
+  const [[inspRes, answersRes, attachRes], prefetchedCase] = await Promise.all([
+    Promise.all([
+      supabase.from("inspections").select("*").eq("id", inspectionId).eq("user_id", user.id).single(),
+      supabase.from("inspection_answers").select("*").eq("inspection_id", inspectionId),
+      supabase.from("attachments").select("*").eq("inspection_id", inspectionId),
+    ]),
+    earlyLookupPromise,
   ]);
 
   if (inspRes.error || !inspRes.data) {
@@ -134,6 +146,7 @@ export async function POST(req: NextRequest) {
     additionalFields,
     sifStageRecno: inspection.sif_stage_recno ?? undefined,
     existingDocumentNumber,
+    prefetchedCase: prefetchedCase ?? undefined,
   });
 
   // Update archival record and (if successful) inspection status in parallel.
