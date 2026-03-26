@@ -222,6 +222,23 @@ export default function SifTestPage() {
     setLookupLoading(false);
   }
 
+  // IncludeReferringCases test
+  const [refCaseNumber, setRefCaseNumber] = useState("");
+  const [refCasesResult, setRefCasesResult] = useState<RawDebugResult | null>(null);
+  const [refCasesLoading, setRefCasesLoading] = useState(false);
+
+  async function lookupReferringCases(e: React.FormEvent) {
+    e.preventDefault();
+    if (!refCaseNumber.trim()) return;
+    setRefCasesLoading(true);
+    setRefCasesResult(null);
+    const cn = encodeURIComponent(refCaseNumber.trim());
+    const res = await authFetch(`/api/sif/debug-raw?caseNumber=${cn}&service=cases`);
+    const data = await res.json();
+    setRefCasesResult(data);
+    setRefCasesLoading(false);
+  }
+
   async function testConnection() {
     setVersionLoading(true);
     setVersionResult(null);
@@ -342,6 +359,61 @@ export default function SifTestPage() {
                 <span className="font-semibold">Feil:</span> {caseLookupResult.error}
               </div>
             )}
+          </div>
+        )}
+      </div>
+
+      {/* IncludeReferringCases test */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+        <h2 className="text-base font-semibold mb-1">Test: IncludeReferringCases (GetCases)</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+          Kaller{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">CaseService/GetCases</code>{" "}
+          med <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">IncludeReferringCases: true</code>{" "}
+          og viser råsvaret. Bruk dette for å undersøke om saken har refererte saker, og hva{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">ReferringCases</code>-feltet inneholder.
+        </p>
+        <form onSubmit={lookupReferringCases} className="flex gap-3 mb-4">
+          <input
+            type="text"
+            value={refCaseNumber}
+            onChange={(e) => setRefCaseNumber(e.target.value)}
+            placeholder="F.eks. ULOV-25/00008"
+            className="input flex-1"
+          />
+          <button
+            type="submit"
+            disabled={refCasesLoading || !refCaseNumber.trim()}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {refCasesLoading ? "Henter…" : "Hent sak"}
+          </button>
+        </form>
+
+        {refCasesResult && (
+          <div className="space-y-4">
+            {/* ReferringCases highlighted */}
+            {refCasesResult.ok && (refCasesResult.raw as { Cases?: Array<{ ReferringCases?: unknown }> })?.Cases?.[0] && (
+              <div>
+                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                  ReferringCases (fra Cases[0])
+                </p>
+                <CopyableJson
+                  data={(refCasesResult.raw as { Cases: Array<{ ReferringCases?: unknown }> }).Cases[0].ReferringCases ?? null}
+                  ok={true}
+                />
+              </div>
+            )}
+            {/* Full raw response */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                Fullstendig råsvar fra GetCases
+              </p>
+              <CopyableJson
+                data={refCasesResult.ok ? refCasesResult.raw : refCasesResult.error}
+                ok={refCasesResult.ok}
+              />
+            </div>
           </div>
         )}
       </div>
