@@ -265,7 +265,9 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
             placeholder="Tilsynsrapport - {{propertyAddress}} - {{date}}"
             className={inp}
           />
-          <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">Variabler: {"{{propertyAddress}}"}, {"{{date}}"}, {"{{caseNumber}}"}</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+            Variabler: {"{{propertyAddress}}"}, {"{{caseNumber}}"}, {"{{title}}"}, {"{{date}}"}, {"{{year}}"}, {"{{inspectorName}}"}, {"{{applicantName}}"}, {"{{gnrBnr}}"}, {"{{measureType}}"}, {"{{inspectionId}}"}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <input
