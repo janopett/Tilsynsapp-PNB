@@ -435,13 +435,14 @@ export default function SifTestPage() {
         )}
       </div>
 
-      {/* GetFilesWithMetadata test */}
+      {/* Files-in-documents test */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
-        <h2 className="text-base font-semibold mb-1">Test: GetFilesWithMetadata</h2>
+        <h2 className="text-base font-semibold mb-1">Test: Filer i sak (via GetDocuments)</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-          Henter alle filer fra en sak via{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">FileService/GetFilesWithMetadata</code>{" "}
-          og viser råsvaret.
+          Henter dokumenter med tilhørende filer via{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">DocumentService/GetDocuments</code>{" "}
+          med <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">IncludeFiles: true</code>.{" "}
+          (<code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">FileService/GetFilesWithMetadata</code> er blokkert på dette endepunktet.)
         </p>
         <form onSubmit={lookupFiles} className="flex gap-3 mb-4">
           <input
