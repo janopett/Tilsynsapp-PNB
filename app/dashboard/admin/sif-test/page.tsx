@@ -222,6 +222,23 @@ export default function SifTestPage() {
     setLookupLoading(false);
   }
 
+  // GetFilesWithMetadata test
+  const [filesCaseNumber, setFilesCaseNumber] = useState("");
+  const [filesResult, setFilesResult] = useState<RawDebugResult | null>(null);
+  const [filesLoading, setFilesLoading] = useState(false);
+
+  async function lookupFiles(e: React.FormEvent) {
+    e.preventDefault();
+    if (!filesCaseNumber.trim()) return;
+    setFilesLoading(true);
+    setFilesResult(null);
+    const cn = encodeURIComponent(filesCaseNumber.trim());
+    const res = await authFetch(`/api/sif/debug-raw?caseNumber=${cn}&service=files`);
+    const data = await res.json();
+    setFilesResult(data);
+    setFilesLoading(false);
+  }
+
   // IncludeReferringCases test
   const [refCaseNumber, setRefCaseNumber] = useState("");
   const [refCasesResult, setRefCasesResult] = useState<RawDebugResult | null>(null);
@@ -416,6 +433,102 @@ export default function SifTestPage() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* GetFilesWithMetadata test */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+        <h2 className="text-base font-semibold mb-1">Test: GetFilesWithMetadata</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+          Henter alle filer fra en sak via{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">FileService/GetFilesWithMetadata</code>.
+          Viser filene gruppert per <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">StatusCode</code>{" "}
+          — bruk dette for å finne ut hvilken kode som tilsvarer «godkjent» i systemet.
+          API-et støtter ikke StatusCode-filter på spørringstidspunktet, men vi kan filtrere i klienten når vi kjenner koden.
+        </p>
+        <form onSubmit={lookupFiles} className="flex gap-3 mb-4">
+          <input
+            type="text"
+            value={filesCaseNumber}
+            onChange={(e) => setFilesCaseNumber(e.target.value)}
+            placeholder="F.eks. BYGG-25/00388"
+            className="input flex-1"
+          />
+          <button
+            type="submit"
+            disabled={filesLoading || !filesCaseNumber.trim()}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {filesLoading ? "Henter…" : "Hent filer"}
+          </button>
+        </form>
+
+        {filesResult && (() => {
+          if (!filesResult.ok) {
+            return <CopyableJson data={filesResult.error} ok={false} />;
+          }
+          const files = (filesResult.raw as { Files?: Array<{ StatusCode?: string; StatusDescription?: string; Title?: string; Format?: string; DocumentNumber?: string; Recno?: number; URL?: string }> })?.Files ?? [];
+          if (files.length === 0) {
+            return <p className="text-sm text-gray-500 dark:text-slate-400">Ingen filer funnet.</p>;
+          }
+
+          // Group by StatusCode
+          const byStatus = files.reduce<Record<string, typeof files>>((acc, f) => {
+            const key = f.StatusCode ?? "(ingen kode)";
+            (acc[key] ??= []).push(f);
+            return acc;
+          }, {});
+
+          return (
+            <div className="space-y-4">
+              {/* Status summary */}
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(byStatus).map(([code, items]) => (
+                  <span
+                    key={code}
+                    className="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-700"
+                  >
+                    <code>{code}</code>
+                    <span className="text-brand-400">·</span>
+                    {items[0].StatusDescription ?? ""}
+                    <span className="text-brand-400">·</span>
+                    {items.length} fil{items.length !== 1 ? "er" : ""}
+                  </span>
+                ))}
+              </div>
+
+              {/* Files per status group */}
+              {Object.entries(byStatus).map(([code, items]) => (
+                <div key={code}>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    StatusCode: <code className="font-mono normal-case">{code}</code>
+                    {items[0].StatusDescription ? ` – ${items[0].StatusDescription}` : ""}
+                  </p>
+                  <ul className="space-y-1">
+                    {items.map((f, i) => (
+                      <li key={i} className="text-xs flex items-center gap-2 py-1 border-b border-gray-100 dark:border-slate-700 last:border-0">
+                        <span className="font-medium text-gray-700 dark:text-slate-300 truncate flex-1">{f.Title ?? "(uten tittel)"}</span>
+                        <span className="text-gray-400 dark:text-slate-500 shrink-0 font-mono">.{f.Format}</span>
+                        {f.DocumentNumber && (
+                          <span className="text-gray-400 dark:text-slate-500 shrink-0">{f.DocumentNumber}</span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+
+              {/* Full raw response */}
+              <details className="mt-2">
+                <summary className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide cursor-pointer select-none">
+                  Fullstendig råsvar
+                </summary>
+                <div className="mt-2">
+                  <CopyableJson data={filesResult.raw} ok={true} />
+                </div>
+              </details>
+            </div>
+          );
+        })()}
       </div>
 
       {/* SynchronizeContactPerson test */}
