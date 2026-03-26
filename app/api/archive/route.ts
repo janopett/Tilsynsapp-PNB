@@ -15,6 +15,8 @@ const ArchiveRequestSchema = z.object({
   uid: z.string().optional(),
   additionalFields: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
   existingDocumentNumber: z.string().min(1).optional(),
+  /** Base64 PNG data URLs keyed by checkpoint_definition_id, captured client-side. */
+  checkpointMapImages: z.record(z.string(), z.string().startsWith("data:image/")).optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -29,7 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid request" } satisfies ArchiveInspectionResponse, { status: 400 });
   }
 
-  const { inspectionId, caseNumber, externalId, uid, additionalFields, existingDocumentNumber } = parsed.data;
+  const { inspectionId, caseNumber, externalId, uid, additionalFields, existingDocumentNumber, checkpointMapImages } = parsed.data;
 
   // Load inspection with answers
   const [inspRes, answersRes, attachRes] = await Promise.all([
@@ -86,7 +88,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Generate PDF (async — embeds images inline, merges PDF attachments)
-  const pdfBuffer = await generateInspectionPdf(inspection, attachmentFiles);
+  const pdfBuffer = await generateInspectionPdf(inspection, attachmentFiles, checkpointMapImages);
   const pdfFileName = buildPdfFileName(inspection);
   const jsonBuffer = generateInspectionJson(inspection);
   const jsonFileName = buildJsonFileName(inspection);
