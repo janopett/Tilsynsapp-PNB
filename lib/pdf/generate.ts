@@ -1,8 +1,15 @@
 // ============================================================
 // PDF Report Generator
-// Generates a tilsynsrapport PDF using jsPDF + autoTable
-// Images are embedded inline per checkpoint; PDF attachments
-// are merged as additional pages using pdf-lib.
+//
+// Generates a structured inspection report PDF using jsPDF + jspdf-autotable.
+// Inline images (JPEG/PNG) are embedded directly below each checkpoint entry.
+// PDF attachments are appended as additional pages using pdf-lib.
+//
+// Key exports:
+//   generateInspectionPdf()   — main PDF generator, returns Buffer
+//   generateInspectionJson()  — structured JSON export, returns Buffer
+//   buildPdfFileName()        — derives a safe filename from inspection data
+//   buildJsonFileName()       — derives a safe filename for JSON export
 // ============================================================
 
 import jsPDF from "jspdf";
@@ -18,6 +25,7 @@ import {
   groupByCategory,
 } from "@/lib/checklist/filter-engine";
 
+/** Norwegian status labels used in the PDF checklist table. */
 const STATUS_LABELS: Record<string, string> = {
   ok: "OK",
   deviation: "Avvik",
@@ -46,6 +54,7 @@ const MAX_IMAGE_HEIGHT = 90;
 const PAGE_MARGIN_BOTTOM = 22;
 const L = 14; // left margin
 
+/** Add a new page if the remaining vertical space is insufficient for `needed` mm. */
 function ensurePageSpace(doc: jsPDF, y: number, needed: number): number {
   const pageHeight = doc.internal.pageSize.getHeight();
   if (y + needed > pageHeight - PAGE_MARGIN_BOTTOM) {
@@ -53,6 +62,34 @@ function ensurePageSpace(doc: jsPDF, y: number, needed: number): number {
     return 22;
   }
   return y;
+}
+
+/**
+ * Embed an inline image (JPEG or PNG) into the PDF at the current Y position.
+ * Scales the image to fit within MAX_IMAGE_WIDTH × MAX_IMAGE_HEIGHT while preserving
+ * the aspect ratio. Adds a new page automatically when needed.
+ *
+ * @returns Updated Y position after the image (y + imgH + 4 mm gap).
+ */
+function embedInlineImage(doc: jsPDF, img: AttachmentForPdf, startY: number): number {
+  const format = img.mimeType === "image/png" ? "PNG" : "JPEG";
+  const b64 = img.fileData.toString("base64");
+  const dataUri = `data:${img.mimeType};base64,${b64}`;
+  const props = doc.getImageProperties(dataUri);
+  const aspectRatio = props.width / props.height;
+
+  // Scale down to MAX_IMAGE_WIDTH mm (px → mm: 1px = 0.264583 mm at 96 dpi)
+  let imgW = Math.min(MAX_IMAGE_WIDTH, props.width * 0.264583);
+  let imgH = imgW / aspectRatio;
+  // Clamp height and adjust width proportionally
+  if (imgH > MAX_IMAGE_HEIGHT) {
+    imgH = MAX_IMAGE_HEIGHT;
+    imgW = imgH * aspectRatio;
+  }
+
+  const y = ensurePageSpace(doc, startY, imgH + 4);
+  doc.addImage(dataUri, format, L, y, imgW, imgH);
+  return y + imgH + 4;
 }
 
 /**
@@ -310,20 +347,10 @@ export async function generateInspectionPdf(
         }
       }
 
-      // Embed inline images
+      // Embed inline images for this checkpoint
       for (const img of checkpointImages) {
         try {
-          const format = img.mimeType === "image/png" ? "PNG" : "JPEG";
-          const b64 = img.fileData.toString("base64");
-          const dataUri = `data:${img.mimeType};base64,${b64}`;
-          const props = doc.getImageProperties(dataUri);
-          const aspectRatio = props.width / props.height;
-          let imgW = Math.min(MAX_IMAGE_WIDTH, props.width * 0.264583);
-          let imgH = imgW / aspectRatio;
-          if (imgH > MAX_IMAGE_HEIGHT) { imgH = MAX_IMAGE_HEIGHT; imgW = imgH * aspectRatio; }
-          y = ensurePageSpace(doc, y, imgH + 4);
-          doc.addImage(dataUri, format, L, y, imgW, imgH);
-          y += imgH + 4;
+          y = embedInlineImage(doc, img, y);
         } catch (err) {
           console.warn(`Could not embed image ${img.fileName}:`, err);
         }
@@ -351,17 +378,7 @@ export async function generateInspectionPdf(
 
     for (const img of freeImages) {
       try {
-        const format = img.mimeType === "image/png" ? "PNG" : "JPEG";
-        const b64 = img.fileData.toString("base64");
-        const dataUri = `data:${img.mimeType};base64,${b64}`;
-        const props = doc.getImageProperties(dataUri);
-        const aspectRatio = props.width / props.height;
-        let imgW = Math.min(MAX_IMAGE_WIDTH, props.width * 0.264583);
-        let imgH = imgW / aspectRatio;
-        if (imgH > MAX_IMAGE_HEIGHT) { imgH = MAX_IMAGE_HEIGHT; imgW = imgH * aspectRatio; }
-        y = ensurePageSpace(doc, y, imgH + 4);
-        doc.addImage(dataUri, format, L, y, imgW, imgH);
-        y += imgH + 4;
+        y = embedInlineImage(doc, img, y);
       } catch (err) {
         console.warn(`Could not embed image ${img.fileName}:`, err);
       }

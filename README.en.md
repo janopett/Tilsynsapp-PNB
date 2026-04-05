@@ -1,6 +1,6 @@
 # Tilsynsapp-PNB
 
-Web application for conducting and archiving building inspections in Norwegian municipalities. Inspectors fill in structured checklists, generate inspection reports, and send them directly to the municipality's records management system (Plan & Building / Public 360°) via the SIF API integration.
+Web application for conducting and archiving building inspections in Norwegian municipalities. Inspectors fill in structured checklists, generate inspection reports, and send them directly to the municipality's records management system (Plan & Building / Public 360°) via the SIF API.
 
 ---
 
@@ -12,7 +12,11 @@ Web application for conducting and archiving building inspections in Norwegian m
 - [Environment variables](#environment-variables)
 - [Database migrations](#database-migrations)
 - [Architecture](#architecture)
+- [SIF integration](#sif-integration)
+- [Archival flow](#archival-flow)
 - [Admin functionality](#admin-functionality)
+- [Accessibility](#accessibility-wcag-21-aa)
+- [Security](#security)
 
 ---
 
@@ -23,24 +27,26 @@ Web application for conducting and archiving building inspections in Norwegian m
 | Feature | Description |
 |---------|-------------|
 | New inspection | Multi-step form with case reference, property data, and measure type |
-| Structured checklist | 100+ checkpoints organised by category (formal conditions, technical standard, etc.), dynamically filtered by measure type and property attributes |
-| Finding registration | Record status per checkpoint (ok / deviation / not checked) with free-text comment |
-| Attachments | Upload images and documents to an inspection |
-| PDF report | Generate a professional inspection report with signature and map |
-| Archiving | Submit a completed inspection to the municipal records system (Public 360°) — create a new document or update an existing one on the case |
-| Dashboard | Overview of active and archived inspections with filtering and status information |
-| Map picker | Select coordinates for the inspection site via an interactive map |
+| Structured checklist | 100+ checkpoints organised by category (formal conditions, placement, construction, fire safety, etc.), dynamically filtered by measure type and property attributes |
+| Finding registration | Record status per checkpoint (ok / deviation / not checked) with free-text comment, responsible contact, and GPS coordinates |
+| Attachments | Upload photos and documents to individual checkpoints or to the inspection as a whole |
+| PDF report | Generate a professional inspection report with case metadata, checklist findings, deviation summary, inline images, and map |
+| Archiving | Send a completed inspection to the municipal records system (Public 360°) — create a new document or update an existing one |
+| Dashboard | Overview of active and archived inspections with filtering by status, date, and property |
+| Map picker | Select coordinates for the inspection site via an interactive OpenStreetMap map |
 | Dark/light theme | Automatic system theme with manual override (light / dark / system) |
 
 ### SIF integration (Plan & Building / Public 360°)
 
 - Case search and lookup of property and parties directly from PNB
-- Synchronisation of participants and contacts to 360°
-- Automatic document creation and file upload to the case
-- **Document lookup during archiving** — fetch existing documents on the case and choose between creating a new document or updating an existing one (adds a new version of the report/attachments)
+- Auto-load case stages (behandlingstrinn) based on case number
+- Synchronisation of external participants (e.g. fire safety officer) into 360° as contact persons
+- Automatic document creation with uploaded PDF report, JSON metadata export, and attachments
+- **Update existing document** — fetch documents already on the case and add a new version
+- Automatic dispatch (auto-dispatch) of documents to recipients after archiving
 - Supports two authentication modes:
-  - **AuthKey** — simple key-based access
-  - **OAuth2 Client Credentials (combined_daemon)** — Azure AD-based enterprise authentication
+  - **AuthKey** — simple key-based access (GUID header)
+  - **OAuth2 Client Credentials (combined_daemon)** — Azure AD enterprise authentication
 
 ---
 
@@ -48,13 +54,14 @@ Web application for conducting and archiving building inspections in Norwegian m
 
 | Layer | Choice |
 |-------|--------|
-| Framework | Next.js 14 (App Router, TypeScript) |
-| Styling | Tailwind CSS |
+| Framework | Next.js 14 (App Router, TypeScript strict mode) |
+| Styling | Tailwind CSS with dark mode |
 | Database | Supabase (PostgreSQL) |
 | Authentication | Supabase Auth (email + password, JWT, cookie sessions) |
 | File storage | Supabase Storage |
-| PDF generation | jsPDF + jspdf-autotable |
-| External integration | SIF API – Public 360° (SOAP/RPC over HTTPS) |
+| PDF generation | jsPDF + jspdf-autotable + pdf-lib (attachment merging) |
+| Map tiles | OpenStreetMap (client-side Leaflet) + Kartverket WMS (server-side static map) |
+| External integration | SIF API – Public 360° (RPC over HTTPS) |
 | Deployment | Vercel |
 | Testing | Jest |
 
@@ -65,7 +72,7 @@ Web application for conducting and archiving building inspections in Norwegian m
 ### Prerequisites
 
 - Node.js 18+
-- A Supabase project (or local Supabase)
+- A Supabase project (or local Supabase via `supabase start`)
 
 ### Installation
 
@@ -86,39 +93,39 @@ npm run start         # Start production server
 npm run lint          # ESLint
 npm run test          # Run tests
 npm run test:watch    # Tests in watch mode
-npm run test:coverage # Test coverage
-npm run db:generate   # Generate Supabase TypeScript types
-npm run set-admin     # Grant admin access to a user
+npm run test:coverage # Test coverage report
+npm run db:generate   # Generate Supabase TypeScript types from schema
+npm run set-admin     # Grant admin access to a user (by email)
 ```
 
 ---
 
 ## Environment variables
 
-Copy `.env.example` to `.env.local` and fill in the values:
+Copy `.env.example` to `.env.local` and fill in the values.
 
 ### Supabase
 
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL to the Supabase project |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key (server only) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key (safe to expose to browser) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key — server only, never expose to browser |
 
 ### SIF / Public 360°
 
 | Variable | Description |
 |----------|-------------|
 | `SIF_BASE_URL` | Base URL of the 360° instance, e.g. `https://customer.public360online.com` |
-| `SIF_RPC_PATH` | API path, typically `/rpc/v2` |
+| `SIF_RPC_PATH` | RPC path, typically `/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC` |
 | `SIF_AUTH_MODE` | `authkey` or `combined_daemon` |
 | `SIF_AUTHKEY` | API key (GUID) for authkey mode |
 | `SIF_BEARER_TOKEN_URL` | Azure AD token endpoint (combined_daemon) |
-| `SIF_CLIENT_ID` | OAuth2 client ID |
+| `SIF_CLIENT_ID` | OAuth2 client ID sent as `ClientID` header |
 | `SIF_CLIENT_SECRET` | OAuth2 client secret |
-| `SIF_CLIENT_ID_OAUTH` | OAuth2 application ID |
-| `SIF_SCOPE` | OAuth2 scope, e.g. `api://…/.default` |
-| `SIF_TIMEOUT_MS` | API call timeout in ms (default `30000`) |
+| `SIF_CLIENT_ID_OAUTH` | OAuth2 application ID used for token requests |
+| `SIF_SCOPE` | OAuth2 scope, e.g. `api://.../.default` |
+| `SIF_TIMEOUT_MS` | API call timeout in milliseconds (default: `30000`) |
 
 ### Other
 
@@ -126,29 +133,32 @@ Copy `.env.example` to `.env.local` and fill in the values:
 |----------|-------------|
 | `NEXT_PUBLIC_APP_URL` | Production URL (used by Vercel) |
 
-> SIF settings can also be configured via the admin interface (`/dashboard/admin/sif-config`) and are then stored in the database.
+> SIF settings can also be configured via the admin interface (`/dashboard/admin/sif-config`). Settings stored in the database take precedence over environment variables. An in-process cache (60 s TTL) prevents repeated DB round-trips on every RPC call.
 
 ---
 
 ## Database migrations
 
-Migrations are located in `supabase/migrations/` and run via the Supabase CLI:
+Migrations are in `supabase/migrations/` and run via the Supabase CLI:
 
 ```bash
-supabase db push          # Apply migrations to remote
-supabase db reset         # Reset local database
+supabase db push          # Apply migrations to remote project
+supabase db reset         # Reset local database and re-apply all migrations
 ```
 
 ### Migration history
 
 | File | Contents |
 |------|----------|
-| `001_initial.sql` | Core tables: inspections, answers, attachments, list_items |
-| `002_sif_settings.sql` | SIF configuration table |
-| `013_auto_dispatch.sql` | Automatic dispatch |
-| `015_checkpoint_definitions.sql` | Dynamic checkpoint library |
+| `001_initial.sql` | Core tables: `inspections`, `inspection_answers`, `attachments`, `list_items` |
+| `002_sif_settings.sql` | SIF configuration table (`sif_settings`) |
+| `005_external_participants.sql` | External participants (people not in the PNB case) |
+| `010_sif_stage.sql` | Case stage field on inspections |
+| `013_auto_dispatch.sql` | Auto-dispatch flag in SIF settings |
+| `015_checkpoint_definitions.sql` | Dynamic checkpoint library in the database |
+| `017_applicant_recno.sql` | Applicant 360° recno stored on inspection |
 | `020_audit_log.sql` | Audit log for admin actions (ISO 27001 A.12.4.1) |
-| … | (20 migrations in total) |
+| … | (19 migrations in total) |
 
 ---
 
@@ -156,90 +166,226 @@ supabase db reset         # Reset local database
 
 ```
 app/
-├── api/                    # API routes (Next.js Route Handlers)
-│   ├── admin/              # Admin endpoints (require admin role)
-│   │   ├── users/          # User administration
-│   │   ├── checkpoints/    # Checkpoint definitions
-│   │   ├── inspection-config/  # Configurable lists
-│   │   └── archivals/      # Archival log
-│   └── sif/                # SIF integration endpoints
-│       ├── case-lookup/    # Single case lookup
-│       ├── case-search/    # Case search (title/number)
-│       ├── case-documents/ # Fetch documents on a case
-│       ├── case-contacts/  # Parties on a case
-│       ├── case-stages/    # Case stages
-│       └── …               # Additional SIF endpoints
-├── dashboard/              # Authenticated pages
-│   ├── inspections/[id]/   # Inspection details and checklist
-│   ├── inspections/new/    # New inspection
-│   └── admin/              # Administration pages
-└── login/                  # Login page
+├── api/                        # Next.js Route Handlers (server-side)
+│   ├── archive/                # POST /api/archive — full archival orchestration
+│   │   └── preview/            # POST /api/archive/preview — preview without archiving
+│   ├── inspections/            # CRUD for inspections + answers + attachments
+│   ├── admin/                  # Admin endpoints (require is_admin = true)
+│   │   ├── users/              # User management
+│   │   ├── checkpoints/        # Checkpoint definitions
+│   │   ├── inspection-config/  # Configurable dropdown lists
+│   │   └── archivals/          # Archival log
+│   └── sif/                    # SIF proxy endpoints (20+)
+│       ├── case-lookup/        # Single case lookup (caseNumber / uid / externalId)
+│       ├── case-search/        # Search cases by partial number or title
+│       ├── case-contacts/      # Parties on a case
+│       ├── case-stages/        # Case stages (behandlingstrinn)
+│       ├── case-documents/     # Documents already on a case
+│       ├── case-estates/       # Properties linked to a case
+│       ├── enterprise-search/  # Company search (GetEnterprises)
+│       ├── code-tables/        # Archive codes, categories, statuses
+│       ├── settings/           # Read current SIF config
+│       ├── health/             # Connectivity check
+│       └── debug-raw/          # Raw RPC call for testing
+├── dashboard/                  # Authenticated pages
+│   ├── inspections/[id]/       # Inspection workspace (checklist, attachments, archive)
+│   ├── inspections/new/        # New inspection form
+│   └── admin/                  # Administration pages
+│       ├── checkpoints/        # Checkpoint editor
+│       ├── users/              # User management
+│       ├── sif-config/         # SIF settings form
+│       ├── sif-test/           # SIF connection tester
+│       └── archivals/          # Archival audit log
+└── login/                      # Login page
 
 lib/
-├── sif/                    # SIF API client and services
-│   ├── client.ts           # Core RPC call logic
-│   ├── archival.ts         # Full archival flow (create + update)
-│   ├── auth.ts             # AuthKey / OAuth2 handling
-│   ├── case-service.ts     # GetCases, search
-│   ├── document-service.ts # CreateDocument, UpdateDocument, DispatchDocuments, GetCases(IncludeDocuments)
-│   ├── file-service.ts     # FileService/Upload
-│   ├── contact-service.ts  # SynchronizeContactPerson
-│   └── estate-service.ts   # GetEstates
-├── pdf/                    # PDF report generation
-├── checklist/              # Checkpoint filter engine
-├── audit-log.ts            # Admin action logging
-└── api-auth.ts             # JWT guards (requireUser / requireAdmin)
+├── sif/                        # SIF API client and services
+│   ├── client.ts               # Low-level RPC dispatcher (auth, retry, error mapping)
+│   ├── auth.ts                 # AuthKey / OAuth2 token management (with caching)
+│   ├── settings.ts             # Load + cache SIF config from DB or env vars
+│   ├── archival.ts             # Archival orchestrator (case → upload → document)
+│   ├── case-service.ts         # GetCases (lookup + search)
+│   ├── contact-service.ts      # SynchronizeContactPerson, GetEnterprises
+│   ├── document-service.ts     # CreateDocument, UpdateDocument, GetDocuments, DispatchDocuments
+│   ├── file-service.ts         # FileService/Upload (single + batch)
+│   ├── errors.ts               # Typed domain errors (SifCaseNotFoundError, etc.)
+│   ├── types.ts                # Full SIF API type definitions (~1000 lines)
+│   └── extensions/             # Higher-level utilities (not integrated into app)
+│       ├── referred-cases.ts   # Fetch referring cases and their approved documents
+│       ├── file-download.ts    # Download files from 360° via SIF auth
+│       ├── user-service.ts     # UserService/GetUsers
+│       └── search-service.ts   # SearchService/Search + document/case search
+├── pdf/
+│   ├── generate.ts             # PDF report generator (jsPDF) + JSON export
+│   ├── map-image.ts            # Fetch static map from Kartverket WMS
+│   └── map-capture.ts          # Client-side OSM tile capture (canvas → JPEG)
+├── checklist/
+│   └── filter-engine.ts        # Checkpoint filtering, grouping, summary calculation
+├── i18n/                       # Norwegian/English translations
+├── supabase/                   # Supabase server/browser client factories
+├── api-auth.ts                 # JWT guards: requireUser() / requireAdmin()
+├── audit-log.ts                # Structured admin action logging
+└── legal-reference.ts          # Lovdata URL builder from legal reference strings
 
-supabase/migrations/        # PostgreSQL schema changes
-data/seed/                  # Checkpoint and measure type definitions
+config/
+└── sif-mapping.ts              # Document archive codes, contact roles, title template
+
+data/seed/
+├── checkpoint-definitions.ts   # 100+ checkpoint definitions with legal references
+└── measure-types.ts            # 10 building measure types (enebolig, tilbygg, etc.)
+
+types/
+└── index.ts                    # Core domain types (Inspection, CheckpointDefinition, etc.)
 ```
+
+---
+
+## SIF integration
+
+### Authentication
+
+Two modes are supported, configured via `SIF_AUTH_MODE`:
+
+**`authkey`** — the API key (GUID) is appended as a query parameter:
+```
+POST https://customer.public360online.com/Biz/v2/api/call/SI.Data.RPC/CaseService/GetCases?authkey=<guid>
+```
+
+**`combined_daemon`** — OAuth2 Client Credentials Grant (Azure AD):
+- Fetches a bearer token from the configured token endpoint
+- Token is cached in-process with a 60-second buffer before expiry
+- Sends `Authorization: Bearer <token>` + optional `ClientID` header
+
+### Rate limiting and retry
+
+The RPC client (`lib/sif/client.ts`) automatically retries on HTTP 429 with exponential backoff:
+- Retry 1: 2 s
+- Retry 2: 4 s
+- Retry 3: 8 s
+- Respects `Retry-After` header if present
+
+### SIF mapping configuration
+
+`config/sif-mapping.ts` contains the document archive codes that must be configured for each 360° installation. Replace the placeholder values before deployment:
+
+```ts
+inspectionReport: {
+  archive: "recno:2",       // TODO: Replace with correct archive recno
+  category: "recno:111",    // TODO: Replace with correct category
+  status: "J",              // J = Journalført
+  titleTemplate: "{{title}} - Tilsynsrapport - {{date}}",
+  mainFileRelationType: "H",      // H = main document
+  attachmentRelationType: "V",    // V = attachment
+},
+contactRoles: {
+  applicantRecipientRole: "Mottaker",
+  copyRecipientRole: "Kopi til",
+},
+```
+
+Find the correct values using `SupportService/GetCodeTableRows` or the 360° admin portal. All values can also be overridden at runtime via the admin UI (`/dashboard/admin/sif-config`).
+
+### Title template variables
+
+The document title in 360° is generated from a configurable template. Available variables:
+
+| Variable | Description |
+|----------|-------------|
+| `{{propertyAddress}}` | Property address from the inspection |
+| `{{caseNumber}}` | Case number from PNB |
+| `{{title}}` | Case title from PNB |
+| `{{date}}` | Inspection date (DD.MM.YYYY) |
+| `{{year}}` | Inspection year (YYYY) |
+| `{{inspectorName}}` | Name of the inspector |
+| `{{applicantName}}` | Applicant (søker) name |
+| `{{gnrBnr}}` | Land register number (gnr/bnr) |
+| `{{measureType}}` | Measure type (tiltakstype) |
+| `{{inspectionId}}` | Internal inspection UUID |
+
+Example: `{{title}} - Tilsynsrapport - {{date}}`
+
+---
+
+## Archival flow
+
+The archival endpoint (`POST /api/archive`) orchestrates the following steps, optimised with parallel execution:
+
+```
+1. (parallel)
+   ├── Start SIF case lookup (findCaseInSif) — needs only request body data
+   ├── Load inspection + answers + attachments from DB
+   └── (after DB load, parallel)
+       ├── Download attachment files from Supabase Storage
+       └── Fetch static map image from Kartverket WMS
+
+2. (parallel)
+   ├── Generate PDF report (jsPDF + inline images)
+   └── Insert pending archival record in DB
+
+3. archiveInspectionToSif() — (parallel)
+   ├── Upload files to SIF (PDF + JSON + attachments)
+   └── Sync external participants via SynchronizeContactPerson
+
+4. Create (or update) document in 360° via DocumentService/CreateDocument
+
+5. (optional) Auto-dispatch document to recipients
+
+6. (parallel)
+   ├── Update archival record in DB (success / failed)
+   └── Update inspection status to "archived"
+```
+
+The pre-fetched SIF case (step 1) is passed directly to `archiveInspectionToSif()` to skip a redundant lookup.
 
 ---
 
 ## Admin functionality
 
-Admin users get access to a dedicated administration interface at `/dashboard/admin/`:
+Admin users have access to `/dashboard/admin/`:
 
 | Page | Function |
 |------|----------|
-| Users | Create users, grant/revoke admin access, update names |
-| Checkpoints | View and manage checkpoint definitions |
-| Inspection configuration | Configure inspection area, type, and background |
-| SIF configuration | Configure SIF endpoint, authentication, and archive mappings |
-| SIF test | Test and debug SIF connection |
-| Archival log | Overview of all archival attempts with status and error messages |
+| Users | Create users, grant/revoke admin access, update display names |
+| Checkpoints | View, edit, activate/deactivate checkpoint definitions |
+| Inspection configuration | Configure dropdown lists (inspection area, type, background) |
+| SIF configuration | Configure SIF endpoint, authentication, archive mapping, and title template |
+| SIF test | Test SIF connectivity and inspect raw RPC responses |
+| Archival log | All archival attempts with status, document numbers, and error messages |
 
 ### Audit logging
 
-All admin actions are automatically logged to the `audit_logs` table in accordance with ISO 27001 A.12.4.1:
+All admin actions are automatically logged to the `audit_logs` table (ISO 27001 A.12.4.1):
 
 | Action | Trigger |
 |--------|---------|
 | `user.create` | New user created |
 | `user.set_admin` | Admin access granted or revoked |
-| `user.update_name` | Name updated |
-| `checkpoint.create/update/deactivate/delete` | Checkpoint changed |
-| `inspection_config.create/delete` | List item added or removed |
-| `sif_settings.update` | SIF settings saved (sensitive fields excluded) |
+| `user.update_name` | Display name updated |
+| `checkpoint.create/update/deactivate/delete` | Checkpoint definition changed |
+| `inspection_config.create/delete` | Dropdown list item added or removed |
+| `sif_settings.update` | SIF settings saved (sensitive fields excluded from log) |
 
 ---
 
 ## Accessibility (WCAG 2.1 AA)
 
 - **Skip-to-content link** — keyboard focus jumps directly to main content (WCAG 2.4.1)
-- **Colour contrast** — all text elements meet the 4.5:1 requirement in both light and dark theme
+- **Colour contrast** — all text meets the 4.5:1 ratio in both light and dark themes
 - **Visible focus indicators** — `focus-visible` rings on all interactive elements
-- **ARIA attributes** — `aria-expanded`, `aria-haspopup`, `aria-pressed`, `aria-live`, `role="dialog"` and `role="alert"` used throughout
+- **ARIA attributes** — `aria-expanded`, `aria-haspopup`, `aria-pressed`, `aria-live`, `role="dialog"`, `role="alert"` used throughout
 - **Semantic HTML** — `<nav aria-label>`, `role="menu"`, `role="listbox"`, `role="group"` on relevant elements
 - **Keyboard navigation** — dropdowns and modals close with the Escape key
-- **Attachment buttons** — remove button visible on hover *and* keyboard focus
-- **Screen reader support** — `aria-label` on all icon buttons, `aria-hidden` on decorative elements
+- **Screen reader support** — `aria-label` on all icon-only buttons, `aria-hidden` on decorative elements
+
+---
 
 ## Security
 
-- **RLS (Row Level Security)** on all Supabase tables
-- **JWT validation** on all API routes via `requireUser()` / `requireAdmin()`
-- **Admin role** stored in `app_metadata.is_admin` — can only be set server-side
+- **Row Level Security (RLS)** on all Supabase tables — users can only access their own data
+- **JWT validation** on every API route via `requireUser()` / `requireAdmin()`
+- **Admin role** stored in `app_metadata.is_admin` — can only be set server-side via the service role key
+- **Secrets never logged** — authkey, client_secret, and bearer tokens are masked in all log output
 - **CSP headers** configured in `next.config.mjs`
 - **HSTS**, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`
-- Sensitive fields (authkey, client_secret) are never logged in the audit log
+- **SIF credentials** stored encrypted in Supabase DB — never exposed to the browser
+- **Audit log** captures all privileged actions with user ID and timestamp
