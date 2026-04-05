@@ -1,5 +1,15 @@
 // ============================================================
-// SIF DocumentService - Create document on case
+// SIF DocumentService
+//
+// Wraps the 360° DocumentService RPC endpoints:
+//   CreateDocument  — create a new document on an existing case
+//   UpdateDocument  — add new file versions to an existing document
+//   GetDocuments    — fetch documents on a case (for the update picker)
+//   DispatchDocuments — trigger dispatch/sending of a document
+//
+// All write operations wrap the payload in {"parameter": ...} per SIF spec.
+// Contacts are identified via ExternalId in "recno:XXXX" format when only
+// the internal 360° recno is known.
 // ============================================================
 
 import { sifRpcCall } from "./client";
@@ -18,6 +28,17 @@ import type {
   SifDocumentInCase,
 } from "./types";
 import type { SifDocument, SifUploadedFileReference } from "@/types";
+
+/**
+ * Resolve a potentially relative SIF URL to an absolute URL using the configured base URL.
+ * SIF returns relative paths like "/Cases/Document/123" — prepend the base URL when needed.
+ */
+async function resolveUrl(rawUrl: string | undefined): Promise<string | undefined> {
+  if (!rawUrl) return undefined;
+  if (!rawUrl.startsWith("/")) return rawUrl;
+  const settings = await loadSifSettingsWithEnvFallback();
+  return `${settings.baseUrl.replace(/\/$/, "")}${rawUrl}`;
+}
 
 export interface CreateInspectionDocumentInput {
   /** The case number (saksnummer) to attach the document to */
@@ -150,16 +171,11 @@ export async function createInspectionDocumentInSif(
     url: result.URL,
   });
 
-  const settings = await loadSifSettingsWithEnvFallback();
-  const baseUrl = settings.baseUrl.replace(/\/$/, "");
-  const rawUrl = result.URL ?? "";
-  const docUrl = rawUrl.startsWith("/") ? `${baseUrl}${rawUrl}` : rawUrl;
-
   return {
     recno: result.Recno ?? 0,
     documentNumber: result.DocumentNumber,
     title,
-    url: docUrl || undefined,
+    url: await resolveUrl(result.URL) || undefined,
     raw: result,
   };
 }
@@ -193,10 +209,11 @@ export async function fetchCaseDocumentsFromSif(
   const settings = await loadSifSettingsWithEnvFallback();
   const baseUrl = settings.baseUrl.replace(/\/$/, "");
 
+  // Resolve relative URLs to absolute — SIF returns paths like "/Cases/Document/123"
   return result.Documents.map((d) => ({
     ...d,
     URL: d.URL
-      ? d.URL.startsWith("/") ? `${baseUrl}${d.URL}` : d.URL
+      ? (d.URL.startsWith("/") ? `${baseUrl}${d.URL}` : d.URL)
       : undefined,
   }));
 }
@@ -287,15 +304,10 @@ export async function updateInspectionDocumentInSif(
     documentNumber: result.DocumentNumber ?? documentNumber,
   });
 
-  const settings = await loadSifSettingsWithEnvFallback();
-  const baseUrl = settings.baseUrl.replace(/\/$/, "");
-  const rawUrl = result.URL ?? "";
-  const docUrl = rawUrl.startsWith("/") ? `${baseUrl}${rawUrl}` : rawUrl;
-
   return {
     recno: result.Recno ?? 0,
     documentNumber: result.DocumentNumber ?? documentNumber,
-    url: docUrl || undefined,
+    url: await resolveUrl(result.URL) || undefined,
     raw: result,
   };
 }

@@ -36,20 +36,20 @@ The inspector works in a browser on PC, tablet, or mobile. When the inspection i
 
 | Feature | Value |
 |---------|-------|
-| Structured checklist | 100+ standardised checkpoints, automatically filtered by measure type |
-| Deviation registration | Mark findings with a comment directly on the checkpoint |
-| Attachments | Upload photos and documents from the inspection site |
+| Structured checklist | 100+ standardised checkpoints, automatically filtered by measure type and property attributes |
+| Deviation registration | Mark findings with a comment, responsible contact, and GPS coordinates directly on the checkpoint |
+| Attachments | Upload photos and documents from the inspection site, linked to individual checkpoints |
 | Map integration | Pin the inspection location geographically with one tap |
-| Case search | Look up the case from PNB directly in the app — no manual copying |
+| Case search | Look up the case from PNB directly in the app — no manual copying or switching between systems |
 
 ### For the organisation
 
 | Feature | Value |
 |---------|-------|
-| Automatic PDF report | Fully formatted inspection report generated without manual effort |
+| Automatic PDF report | Fully formatted inspection report generated without manual effort — includes case metadata, checklist, deviation summary, photos, and map |
 | Archive with one click | Report sent directly to the correct case in Public 360° — create a new document or update an existing one |
 | Traceability | All inspections, deviations, and archival events are logged and searchable |
-| User management | Simple access control via admin panel |
+| User management | Simple access control via admin panel — no IT department involvement needed |
 | Audit log | All admin actions logged automatically (ISO 27001 A.12.4.1) |
 
 ---
@@ -58,39 +58,48 @@ The inspector works in a browser on PC, tablet, or mobile. When the inspection i
 
 The application is built to live **inside** the municipality's existing infrastructure — not alongside it:
 
-- **Public 360° / Løsøre** — Cases, parties, property, and documents are fetched and stored directly via the SIF API
-- **Municipal login** — Supports Azure AD via OAuth2 (same login as the rest of the municipality's systems)
-- **Browser-based** — No installation required, works on all devices
+- **Public 360° / Plan & Building** — Cases, parties, property, and documents are fetched and stored directly via the SIF API. No duplicate data entry.
+- **Municipal login** — Supports Azure AD via OAuth2 (same single sign-on as the rest of the municipality's systems)
+- **Browser-based** — No installation required, works on all devices (PC, tablet, mobile)
 
 ---
 
 ## Benefits
 
 ### Time savings per inspection
-- Eliminates duplicate effort rewriting the report after the visit
-- Automatic archiving replaces manual document handling
-- Case search directly in the app — no need to switch between systems
+- Eliminates the duplicate effort of rewriting the report after the visit
+- Automatic archiving replaces manual document handling in 360°
+- Case search directly in the app — no need to switch between systems or copy case numbers
 
 ### Quality and compliance
-- Standardised checklists ensure nothing is missed
-- Legal references are linked to checkpoints (technical regulations, Planning and Building Act)
-- Complete traceability from inspection to archive
+- Standardised checklists ensure nothing is missed — 100+ checkpoints with legal references (technical regulations, Planning and Building Act)
+- Responsible contact can be recorded per deviation for clear accountability
+- Complete traceability from inspection to archived document in 360°
 
 ### Scalability
-- Checkpoints and lists can be configured without development work
-- New measure types added via admin panel
-- Role-based access — separates inspector and administrator
+- Checkpoints and dropdown lists can be configured without development work via the admin panel
+- New measure types, inspection areas, and types added through the UI
+- Role-based access — separates inspector and administrator responsibilities
 
 ---
 
 ## Technical platform
 
-The application is built on modern, maintainable technology:
+The application is built on modern, maintainable technology with no single points of failure:
 
-- **Web application** (Next.js / React) — works in all browsers, no app installation
-- **Database host**: Supabase (PostgreSQL) with full encryption and access control (RLS)
-- **Hosting**: Vercel — automatic scaling, no server administration
-- **Security**: HTTPS, HSTS, CSP headers, audit logging, role-based access
+- **Web application** (Next.js / React) — works in all modern browsers, no app installation
+- **Database**: Supabase (PostgreSQL) with full encryption and row-level access control (RLS)
+- **File storage**: Supabase Storage — inspection attachments stored securely with access control
+- **Hosting**: Vercel — automatic scaling, zero server administration, global CDN
+- **Security**: HTTPS everywhere, HSTS, CSP headers, audit logging, role-based access, secrets never exposed to browser
+
+### Performance
+
+The archival flow is optimised for speed through parallel execution:
+- SIF case lookup starts immediately alongside database queries
+- PDF generation runs in parallel with the pending archival record insert
+- File uploads and participant synchronisation run concurrently
+- Map image fetch (Kartverket WMS) runs in parallel with attachment downloads
 
 ---
 
@@ -98,12 +107,14 @@ The application is built on modern, maintainable technology:
 
 | Status | Area |
 |--------|------|
-| ✅ Production-ready | Inspection workflow and checklists |
-| ✅ Production-ready | PDF report generation |
+| ✅ Production-ready | Inspection workflow and structured checklists |
+| ✅ Production-ready | PDF report generation with inline images and deviation summary |
 | ✅ Production-ready | Archiving to Public 360° — create new or update existing document |
+| ✅ Production-ready | Auto-dispatch of archived documents to recipients |
 | ✅ Production-ready | User and access administration |
-| ✅ Production-ready | Audit logging (ISO 27001) |
-| 🔄 Configurable | Customisation of checkpoints and lists per municipality |
+| ✅ Production-ready | Audit logging (ISO 27001 A.12.4.1) |
+| 🔄 Configurable | Checkpoint library and dropdown lists customisable per municipality |
+| 🔄 Configurable | SIF archive codes, contact roles, and title template set per installation |
 
 ---
 

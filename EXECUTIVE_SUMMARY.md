@@ -1,6 +1,6 @@
 # Tilsynsapp-PNB — Executive Summary
 
-**Et digitalt verktøy for effektiv byggetilsyns­gjennomføring og automatisk arkivering**
+**Et digitalt verktøy for effektiv byggetilsynsgjennomføring og automatisk arkivering**
 
 ---
 
@@ -36,20 +36,20 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når tilsynet
 
 | Funksjon | Verdi |
 |----------|-------|
-| Strukturert sjekkliste | 100+ standardiserte sjekkpunkter, automatisk filtrert etter tiltakstype |
-| Avviksregistrering | Marker funn med kommentar direkte på sjekkpunktet |
-| Vedlegg | Last opp bilder og dokumenter fra tilsynsstedet |
+| Strukturert sjekkliste | 100+ standardiserte sjekkpunkter, automatisk filtrert etter tiltakstype og eiendomsegenskaper |
+| Avviksregistrering | Marker funn med kommentar, ansvarlig kontakt og GPS-koordinater direkte på sjekkpunktet |
+| Vedlegg | Last opp bilder og dokumenter fra tilsynsstedet, koblet til enkeltpunkter |
 | Karttilknytning | Plasser tilsynet geografisk med ett trykk |
-| Sakssøk | Søk opp saken fra PNB direkte i appen — ingen manuell kopiering |
+| Sakssøk | Søk opp saken fra PNB direkte i appen — ingen manuell kopiering eller systembytte |
 
 ### For organisasjonen
 
 | Funksjon | Verdi |
 |----------|-------|
-| Automatisk PDF-rapport | Ferdig formatert tilsynsrapport genereres uten manuelt arbeid |
+| Automatisk PDF-rapport | Ferdig formatert tilsynsrapport genereres uten manuelt arbeid — inkluderer saksopplysninger, sjekkliste, avviksoppsummering, bilder og kart |
 | Arkivering med ett klikk | Rapporten sendes direkte til riktig sak i Public 360° — opprett nytt dokument eller oppdater et eksisterende |
 | Sporbarhet | Alle tilsyn, avvik og arkiveringer er loggede og søkbare |
-| Brukeradministrasjon | Enkel styring av tilganger via admin-panel |
+| Brukeradministrasjon | Enkel tilgangsstyring via admin-panel — ingen IT-avdeling nødvendig |
 | Audit-logg | Alle admin-handlinger logges automatisk (ISO 27001 A.12.4.1) |
 
 ---
@@ -58,9 +58,9 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når tilsynet
 
 Appen er bygget for å leve **inne i** kommunens eksisterende infrastruktur — ikke ved siden av den:
 
-- **Public 360° / Løsøre** — Saker, parter, eiendom og dokumenter hentes og lagres direkte via SIF-API
-- **Kommunal innlogging** — Støtter Azure AD via OAuth2 (samme innlogging som resten av kommunens systemer)
-- **Nettleserbasert** — Ingen installasjon, fungerer på alle enheter
+- **Public 360° / Plan & Bygg** — Saker, parter, eiendom og dokumenter hentes og lagres direkte via SIF-API. Ingen dobbeltregistrering.
+- **Kommunal innlogging** — Støtter Azure AD via OAuth2 (samme single sign-on som resten av kommunens systemer)
+- **Nettleserbasert** — Ingen installasjon, fungerer på alle enheter (PC, nettbrett, mobil)
 
 ---
 
@@ -68,29 +68,38 @@ Appen er bygget for å leve **inne i** kommunens eksisterende infrastruktur — 
 
 ### Tidsbesparelse per tilsyn
 - Eliminerer dobbeltarbeid med omskriving av rapport etter besøk
-- Automatisk arkivering erstatter manuell dokumenthåndtering
-- Sakssøk direkte i appen — slipper å bytte mellom systemer
+- Automatisk arkivering erstatter manuell dokumenthåndtering i 360°
+- Sakssøk direkte i appen — slipper å bytte mellom systemer eller kopiere saksnumre
 
 ### Kvalitet og etterlevelse
-- Standardiserte sjekklister sikrer at ingenting glemmes
-- Lovhenvisninger er koblet til sjekkpunktene (teknisk forskrift, plan- og bygningsloven)
-- Komplett sporbarhet fra tilsyn til arkiv
+- Standardiserte sjekklister sikrer at ingenting glemmes — 100+ sjekkpunkter med lovhenvisninger (teknisk forskrift, plan- og bygningsloven)
+- Ansvarlig kontakt kan registreres per avvik for tydelig ansvarsplassering
+- Komplett sporbarhet fra tilsyn til arkivert dokument i 360°
 
 ### Skalerbarhet
-- Sjekkpunkter og lister kan konfigureres uten utvikling
-- Nye tiltakstyper legges til via admin-panel
+- Sjekkpunkter og dropdown-lister konfigureres uten utviklingsarbeid via admin-panel
+- Nye tiltakstyper, tilsynsområder og -typer legges til via brukergrensesnittet
 - Rollestyrt tilgang — skiller mellom inspektør og administrator
 
 ---
 
 ## Teknisk plattform
 
-Applikasjonen er bygget på moderne, vedlikeholdsvennlig teknologi:
+Applikasjonen er bygget på moderne, vedlikeholdsvennlig teknologi uten enkeltpunkter for svikt:
 
-- **Webapplikasjon** (Next.js / React) — fungerer i alle nettlesere, ingen app-installasjon
-- **Databasevert**: Supabase (PostgreSQL) med full kryptering og tilgangskontroll (RLS)
-- **Hosting**: Vercel — automatisk skalering, ingen serveradministrasjon
-- **Sikkerhet**: HTTPS, HSTS, CSP-headers, audit-logging, rollebasert tilgang
+- **Webapplikasjon** (Next.js / React) — fungerer i alle moderne nettlesere, ingen app-installasjon
+- **Database**: Supabase (PostgreSQL) med full kryptering og rad-nivå tilgangskontroll (RLS)
+- **Fillagring**: Supabase Storage — vedlegg lagres sikkert med tilgangskontroll
+- **Hosting**: Vercel — automatisk skalering, ingen serveradministrasjon, globalt CDN
+- **Sikkerhet**: HTTPS overalt, HSTS, CSP-headers, audit-logging, rollebasert tilgang, hemmeligheter eksponeres aldri til nettleseren
+
+### Ytelse
+
+Arkiveringsflyten er optimalisert for hastighet gjennom parallell kjøring:
+- SIF-saksoppslag starter umiddelbart parallelt med databasespørringer
+- PDF-generering kjøres parallelt med innsetting av ventende arkiveringspost
+- Filopplasting og deltaker-synkronisering kjøres parallelt
+- Kartbilde-henting (Kartverket WMS) kjøres parallelt med nedlasting av vedlegg
 
 ---
 
@@ -98,12 +107,14 @@ Applikasjonen er bygget på moderne, vedlikeholdsvennlig teknologi:
 
 | Status | Område |
 |--------|--------|
-| ✅ Produksjonsklar | Tilsynsgjennomføring og sjekklister |
-| ✅ Produksjonsklar | PDF-rapportgenerering |
+| ✅ Produksjonsklar | Tilsynsgjennomføring og strukturerte sjekklister |
+| ✅ Produksjonsklar | PDF-rapportgenerering med innebygde bilder og avviksoppsummering |
 | ✅ Produksjonsklar | Arkivering til Public 360° — opprett nytt eller oppdater eksisterende dokument |
+| ✅ Produksjonsklar | Automatisk utsending av arkiverte dokumenter til mottakere |
 | ✅ Produksjonsklar | Bruker- og tilgangsadministrasjon |
-| ✅ Produksjonsklar | Audit-logging (ISO 27001) |
-| 🔄 Konfigurerbart | Tilpasning av sjekkpunkter og lister per kommune |
+| ✅ Produksjonsklar | Audit-logging (ISO 27001 A.12.4.1) |
+| 🔄 Konfigurerbart | Sjekkpunkt-bibliotek og dropdown-lister tilpasset per kommune |
+| 🔄 Konfigurerbart | SIF-arkivkoder, kontaktroller og tittelmal settes per installasjon |
 
 ---
 
