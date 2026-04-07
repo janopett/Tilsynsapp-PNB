@@ -17,10 +17,15 @@ export type MeasureTypeId =
   | "paabygg"
   | "enebolig"
   | "tomannsbolig"
+  | "leilighetsbygg"
+  | "fritidsbolig"
+  | "naeringsbygg"
   | "bruksendring"
   | "fasadeendring"
   | "terrasse_balkong"
   | "stoettemur"
+  | "uthus_anneks"
+  | "naust"
   | "riving";
 
 export interface MeasureType {
@@ -46,7 +51,8 @@ export type PropertyTag =
   | "har_ansvarlige_foretak"
   | "har_dispensasjon"
   | "har_radon_tiltak"
-  | "krever_lydkrav";
+  | "krever_lydkrav"
+  | "i_fareomrade";
 
 export interface PropertyQuestion {
   tag: PropertyTag;
