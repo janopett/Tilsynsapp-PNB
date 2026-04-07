@@ -32,6 +32,24 @@ export const MEASURE_TYPES: MeasureType[] = [
     icon: "🏘️",
   },
   {
+    id: "leilighetsbygg",
+    name: "Leilighetsbygg",
+    description: "Boligblokk, flermannsbolig eller annet bygg med tre eller flere boenheter",
+    icon: "🏬",
+  },
+  {
+    id: "fritidsbolig",
+    name: "Fritidsbolig / Hytte",
+    description: "Fritidsbolig, hytte eller sommerhus",
+    icon: "🏕️",
+  },
+  {
+    id: "naeringsbygg",
+    name: "Næringsbygg / Yrkesbygg",
+    description: "Næringsbygg, kontor, butikk, verksted eller annet yrkesbygg",
+    icon: "🏭",
+  },
+  {
     id: "bruksendring",
     name: "Bruksendring",
     description: "Endring av bruk av eksisterende bygning",
@@ -54,6 +72,18 @@ export const MEASURE_TYPES: MeasureType[] = [
     name: "Støttemur",
     description: "Støttemur eller forstøtningsmur",
     icon: "🧱",
+  },
+  {
+    id: "uthus_anneks",
+    name: "Uthus / Anneks",
+    description: "Uthus, bod, anneks eller annet frittliggende tilleggsbygg",
+    icon: "🛖",
+  },
+  {
+    id: "naust",
+    name: "Naust / Båthus",
+    description: "Naust, båthus eller sjøbod",
+    icon: "⛵",
   },
   {
     id: "riving",
@@ -123,5 +153,10 @@ export const PROPERTY_QUESTIONS: PropertyQuestion[] = [
     tag: "krever_lydkrav",
     label: "Stilles det lydkrav mellom boenheter?",
     description: "Lydkrav etter TEK17 kap. 13 – gjelder tomannsbolig, rekkehus og bruksendring til bolig",
+  },
+  {
+    tag: "i_fareomrade",
+    label: "Ligger tiltaket i fareområde?",
+    description: "Område med risiko for flom, skred (snø, jord, stein), stormflo eller erosjon",
   },
 ];
