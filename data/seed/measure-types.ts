@@ -95,11 +95,6 @@ export const MEASURE_TYPES: MeasureType[] = [
 
 export const PROPERTY_QUESTIONS: PropertyQuestion[] = [
   {
-    tag: "soeknadspliktig",
-    label: "Er tiltaket søknadspliktig?",
-    description: "Tiltaket krever byggesøknad jf. plan- og bygningsloven",
-  },
-  {
     tag: "naer_nabogrense",
     label: "Ligger tiltaket nær nabogrense?",
     description: "Innenfor 4 meter fra nabogrense",
@@ -130,16 +125,6 @@ export const PROPERTY_QUESTIONS: PropertyQuestion[] = [
     description: "Tilkobling til vann og avløp, eller overvannshåndtering",
   },
   {
-    tag: "krever_tilgjengelighet",
-    label: "Krever tiltaket tilgjengelighet?",
-    description: "Byggverk med krav til universell utforming",
-  },
-  {
-    tag: "har_ansvarlige_foretak",
-    label: "Har tiltaket ansvarlige foretak?",
-    description: "Søknad med ansvarsrett – ansvarlig søker, prosjekterende, utførende",
-  },
-  {
     tag: "har_dispensasjon",
     label: "Er det dispensasjon i saken?",
     description: "Dispensasjon fra plan eller byggesaksbestemmelser",
@@ -148,11 +133,6 @@ export const PROPERTY_QUESTIONS: PropertyQuestion[] = [
     tag: "har_radon_tiltak",
     label: "Krever tiltaket radon-tiltak?",
     description: "Radonsperre og/eller ventilasjonstiltak etter TEK17 § 13-5",
-  },
-  {
-    tag: "krever_lydkrav",
-    label: "Stilles det lydkrav mellom boenheter?",
-    description: "Lydkrav etter TEK17 kap. 13 – gjelder tomannsbolig, rekkehus og bruksendring til bolig",
   },
   {
     tag: "i_fareomrade",
