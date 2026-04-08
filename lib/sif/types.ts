@@ -1000,6 +1000,36 @@ export interface SifGetVersionResult {
 }
 
 // ============================================================
+// CaseService — CreateCase
+// ============================================================
+
+export interface SifCreateCaseInput {
+  Title: string;
+  UnofficialTitle?: string;
+  ADContextUser?: string;
+  Notes?: string;
+  Status?: string;
+  AccessCode?: string;
+  Paragraph?: string;
+  CategoryCode?: string;
+  SubArchive?: string;
+  ExternalId?: SifExternalId;
+  ImportedCaseNumber?: string;
+  ArchiveCodes?: SifArchiveCode[];
+  Contacts?: SifDocumentContact[];
+  UnregisteredContacts?: SifUnregisteredContact[];
+  Estates?: Array<{
+    Recno?: number;
+    ExternalId?: string;
+    Role?: string;
+  }>;
+  AdditionalFields?: SifAdditionalField[];
+  AdditionalListFields?: SifAdditionalListField[];
+  DefaultValueSet?: string;
+  Permissions?: SifPermission[];
+}
+
+// ============================================================
 // Internal request builder types
 // ============================================================
 

@@ -14,6 +14,8 @@ import type {
   SifGetCasesResult,
   SifCaseResult,
   SifCaseStage as RawSifCaseStage,
+  SifCreateCaseInput,
+  SifMutateCaseResult,
 } from "./types";
 import type { SifCase, SifCaseStage } from "@/types";
 
@@ -132,6 +134,121 @@ export async function searchCasesInSif(query: string, maxResults = 10): Promise<
   }
 
   return results.slice(0, maxResults);
+}
+
+// ============================================================
+// getCasesList — hent paginert saksliste fra SIF
+// ============================================================
+
+export interface GetCasesListOptions {
+  page?: number;
+  maxResults?: number;
+  search?: string;
+  status?: string;
+  sortDescending?: boolean;
+  correlationId?: string;
+}
+
+export interface GetCasesListResult {
+  cases: SifCase[];
+  totalCount?: number;
+  totalPages?: number;
+}
+
+export async function getCasesList(
+  options: GetCasesListOptions = {}
+): Promise<GetCasesListResult> {
+  const {
+    page = 1,
+    maxResults = 50,
+    search,
+    sortDescending = true,
+    correlationId,
+  } = options;
+
+  const settings = await loadSifSettingsWithEnvFallback();
+  const baseUrl = settings.baseUrl.replace(/\/$/, "");
+
+  const query: SifGetCasesQuery = {
+    MaxReturnedCases: maxResults,
+    Page: page,
+    SortCriterion: sortDescending ? "RecnoDescending" : "RecnoAscending",
+    IncludeCaseEstates: true,
+    IncludeCaseContacts: false,
+    IncludeStages: false,
+  };
+
+  if (search?.trim()) {
+    // SIF støtter wildcard-søk med % på CaseNumber og Title
+    query.Title = `%${search.trim()}%`;
+  }
+
+  console.info("[SIF] CaseService/GetCases (list)", { correlationId, query });
+
+  const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
+    "CaseService",
+    "GetCases",
+    query,
+    correlationId
+  );
+
+  if (!result.Successful) {
+    console.warn("[SIF] getCasesList ikke vellykket", result.ErrorMessage);
+    return { cases: [] };
+  }
+
+  const cases = (result.Cases ?? []).map((c) => mapToSifCase(c, baseUrl));
+  return {
+    cases,
+    totalCount: result.TotalCount,
+    totalPages: result.TotalPageCount,
+  };
+}
+
+// ============================================================
+// getCasesListByNumber — søk på saksnummer-mønster
+// ============================================================
+
+export async function getCasesListByNumber(
+  caseNumberPattern: string,
+  maxResults = 50
+): Promise<SifCase[]> {
+  const settings = await loadSifSettingsWithEnvFallback();
+  const baseUrl = settings.baseUrl.replace(/\/$/, "");
+
+  const result = await sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
+    "CaseService",
+    "GetCases",
+    {
+      CaseNumber: `%${caseNumberPattern}%`,
+      MaxReturnedCases: maxResults,
+      SortCriterion: "RecnoDescending",
+    }
+  );
+
+  if (!result.Successful) return [];
+  return (result.Cases ?? []).map((c) => mapToSifCase(c, baseUrl));
+}
+
+// ============================================================
+// createCaseInSif — opprett ny sak i Plan & Build via SIF
+// ============================================================
+
+export async function createCaseInSif(
+  input: SifCreateCaseInput,
+  correlationId?: string
+): Promise<SifMutateCaseResult> {
+  console.info("[SIF] CaseService/CreateCase", { correlationId, title: input.Title });
+
+  const result = await sifRpcCall<SifCreateCaseInput, SifMutateCaseResult>(
+    "CaseService",
+    "CreateCase",
+    input,
+    correlationId,
+    true // wrap in { parameter: ... }
+  );
+
+  return result;
 }
 
 function mapStage(s: RawSifCaseStage): SifCaseStage {
