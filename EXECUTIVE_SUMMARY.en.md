@@ -67,9 +67,37 @@ The application is built to live **inside** the municipality's existing infrastr
 ## Benefits
 
 ### Time savings per inspection
-- Eliminates the duplicate effort of rewriting the report after the visit
-- Automatic archiving replaces manual document handling in 360°
-- Case search directly in the app — no need to switch between systems or copy case numbers
+
+**Example: inspection of a new single-family house with 3 deviations**
+
+#### The current process
+
+| Step | Description | Time |
+|------|-------------|------|
+| Preparation | Look up the case in PNB, note down case number, address, applicant, and measure type to bring to the site | 10 min |
+| On site | Carry out the inspection with running notes on a phone or paper; take photos on a phone | 60 min |
+| Write report | Open the Word document in PNB, go through notes and photos, write the report, insert photos from the phone | 60 min |
+| Archiving | Finalise and dispatch the document in PNB | 10 min |
+| **Total** | | **140 min** |
+
+#### With Tilsynsapp-PNB
+
+| Step | Description | Time |
+|------|-------------|------|
+| Preparation | Look up the case in the app — address, applicant, property, and measure type are fetched automatically from PNB | 2 min |
+| On site | Carry out the inspection using a structured checklist, record deviations with comments, take photos linked directly to each checkpoint | 60 min |
+| Report and archiving | Press "Generate report", press "Archive" — PDF sent directly to the correct case in PNB | 2 min |
+| **Total** | | **64 min** |
+
+#### Result
+
+| | Today | With the app | Saved |
+|-|-------|--------------|-------|
+| The inspection itself (unchanged) | 60 min | 60 min | — |
+| Preparation and follow-up work | 80 min | 4 min | **76 min** |
+| **Total per inspection** | **140 min** | **64 min** | **76 min (54 %)** |
+
+A case officer conducting **2 inspections per week** saves around **2.5 hours per week** — equivalent to approximately **100 hours, or 2.5 working weeks, per year**.
 
 ### Quality and compliance
 - Standardised checklists ensure nothing is missed — 100+ checkpoints with legal references (technical regulations, Planning and Building Act)
