@@ -67,9 +67,37 @@ Appen er bygget for å leve **inne i** kommunens eksisterende infrastruktur — 
 ## Gevinster
 
 ### Tidsbesparelse per tilsyn
-- Eliminerer dobbeltarbeid med omskriving av rapport etter besøk
-- Automatisk arkivering erstatter manuell dokumenthåndtering i 360°
-- Sakssøk direkte i appen — slipper å bytte mellom systemer eller kopiere saksnumre
+
+**Eksempel: tilsyn på ny enebolig med 3 avvik**
+
+#### Slik gjøres det i dag
+
+| Steg | Beskrivelse | Tid |
+|------|-------------|-----|
+| Forberedelse | Søk opp saken i PNB, noter saksnummer, adresse, søker og tiltakstype for å ha med til stedet | 10 min |
+| På stedet | Gjennomfør tilsynet med løpende notater på mobil eller papir; ta bilder på telefon | 60 min |
+| Skriv rapport | Åpne Word-dokumentet i PNB, gå gjennom notater og bilder, skriv rapport, sett inn bilder fra telefon | 60 min |
+| Arkivering | Ferdigstill og ekspeder dokumentet i PNB | 10 min |
+| **Totalt** | | **140 min** |
+
+#### Med Tilsynsapp-PNB
+
+| Steg | Beskrivelse | Tid |
+|------|-------------|-----|
+| Forberedelse | Søk opp saken i appen — adresse, søker, eiendom og tiltakstype hentes automatisk fra PNB | 2 min |
+| På stedet | Gjennomfør tilsynet med strukturert sjekkliste, registrer avvik med kommentar, ta bilder direkte koblet til hvert sjekkpunkt | 60 min |
+| Rapport og arkivering | Trykk «Generer rapport», trykk «Arkiver» — PDF sendes direkte til riktig sak i PNB | 2 min |
+| **Totalt** | | **64 min** |
+
+#### Resultat
+
+| | I dag | Med appen | Spart |
+|-|-------|-----------|-------|
+| Selve tilsynet (uendret) | 60 min | 60 min | — |
+| Forberedelse og etterarbeid | 80 min | 4 min | **76 min** |
+| **Totalt per tilsyn** | **140 min** | **64 min** | **76 min (54 %)** |
+
+En saksbehandler med **2 tilsyn per uke** sparer rundt **2,5 time per uke** — tilsvarende cirka **100 timer, eller 2,5 arbeidsuke, per år**.
 
 ### Kvalitet og etterlevelse
 - Standardiserte sjekklister sikrer at ingenting glemmes — 100+ sjekkpunkter med lovhenvisninger (teknisk forskrift, plan- og bygningsloven)
