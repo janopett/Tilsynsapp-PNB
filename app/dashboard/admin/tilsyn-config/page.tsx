@@ -11,7 +11,7 @@ interface ListItem {
 }
 
 interface CategorySectionProps {
-  category: "tilsynsomrade" | "tilsynstype" | "bakgrunn";
+  category: "bakgrunn";
   title: string;
 }
 
@@ -110,15 +110,14 @@ export default function TilsynConfigPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="mb-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Tilsynskonfigurering</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Befaringskonfigurering</h1>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-          Administrer listene for tilsynsområde og tilsynstype.
+          Befaringsområde og tiltakstype hentes automatisk fra PNB-kodetabeller.
+          Her administrerer du kun listen for bakgrunn.
         </p>
       </div>
 
-      <CategorySection category="tilsynsomrade" title="Tilsynsområde" />
-      <CategorySection category="tilsynstype" title="Tilsynstype" />
-      <CategorySection category="bakgrunn" title="Bakgrunn for tilsynet" />
+      <CategorySection category="bakgrunn" title="Bakgrunn for befaringen" />
     </div>
   );
 }

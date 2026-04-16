@@ -93,6 +93,16 @@ export interface CheckpointDefinition {
   legal_reference?: string;
   /** Optional explicit URL — overrides auto-generated Lovdata link */
   legal_reference_url?: string;
+  /**
+   * Befaringsomrade values (from "eBy Supervision area" codetable) this
+   * checkpoint applies to. Empty array = applies to all areas.
+   */
+  applies_to_omrade?: string[];
+  /**
+   * Tiltakstype codes (from "eBy Measure type" codetable) this
+   * checkpoint applies to. Empty array = applies to all types.
+   */
+  applies_to_type_codes?: string[];
 }
 
 // ============================================================
@@ -136,9 +146,15 @@ export interface Inspection {
   sif_stage_recno?: number | null;
 
   // Inspection classification
+  /** @deprecated bruk befaringsomrade (string[]) */
   tilsynsomrade?: string | null;
+  /** @deprecated bruk tiltakstype (string[]) */
   tilsynstype?: string | null;
   bakgrunn?: string[] | null;
+
+  // Ny multi-select klassifisering (fra PNB-kodetabeller)
+  befaringsomrade?: string[] | null;   // fra "eBy Supervision area"
+  tiltakstype?: string[] | null;       // fra "eBy Measure type"
 
   // Classification
   measure_type_id: MeasureTypeId;
@@ -168,9 +184,13 @@ export interface InspectionCreate {
   latitude?: number;
   longitude?: number;
   sif_stage_recno?: number;
+  /** @deprecated bruk befaringsomrade */
   tilsynsomrade?: string;
+  /** @deprecated bruk tiltakstype */
   tilsynstype?: string;
   bakgrunn?: string[];
+  befaringsomrade?: string[];   // fra "eBy Supervision area"
+  tiltakstype?: string[];       // fra "eBy Measure type"
 }
 
 // ============================================================

@@ -1,6 +1,6 @@
 # Tilsynsapp-PNB
 
-Web application for conducting and archiving building inspections in Norwegian municipalities. Inspectors fill in structured checklists, generate inspection reports, and send them directly to the municipality's records management system (Plan & Building / Public 360°) via the SIF API.
+Web application for conducting and archiving building site visits (befaringer) in Norwegian municipalities. Inspectors fill in structured checklists, generate site visit reports, and send them directly to the municipality's records management system (Plan & Building / Public 360°) via the SIF API.
 
 ---
 
@@ -26,14 +26,15 @@ Web application for conducting and archiving building inspections in Norwegian m
 
 | Feature | Description |
 |---------|-------------|
-| New inspection | Multi-step form with case reference, property data, and measure type |
-| Structured checklist | 100+ checkpoints organised by category (formal conditions, placement, construction, fire safety, etc.), dynamically filtered by measure type and property attributes |
+| New site visit | Multi-step form with case reference, property data, and measure type |
+| Survey area & measure type | Multi-select classification pulled directly from PNB code tables «eBy Supervision area» and «eBy Measure type» — used to filter which checkpoints are shown |
+| Structured checklist | 100+ checkpoints organised by category, dynamically filtered by measure type, property attributes, survey area, and measure type from PNB |
 | Finding registration | Record status per checkpoint (ok / deviation / not checked) with free-text comment, responsible contact, and GPS coordinates |
-| Attachments | Upload photos and documents to individual checkpoints or to the inspection as a whole |
-| PDF report | Generate a professional inspection report with case metadata, checklist findings, deviation summary, inline images, and map |
-| Archiving | Send a completed inspection to the municipal records system (Public 360°) — create a new document or update an existing one |
-| Dashboard | Overview of active and archived inspections with filtering by status, date, and property |
-| Map picker | Select coordinates for the inspection site via an interactive OpenStreetMap map |
+| Attachments | Upload photos and documents to individual checkpoints or to the site visit as a whole |
+| PDF report | Generate a professional site visit report with case metadata, checklist findings, deviation summary, inline images, and map |
+| Archiving | Send a completed site visit to the municipal records system (Public 360°) — create a new document or update an existing one |
+| Dashboard | Overview of active and archived site visits with filtering by status, date, and property |
+| Map picker | Select coordinates for the site visit location via an interactive OpenStreetMap map |
 | Dark/light theme | Automatic system theme with manual override (light / dark / system) |
 
 ### SIF integration (Plan & Building / Public 360°)
@@ -156,9 +157,10 @@ supabase db reset         # Reset local database and re-apply all migrations
 | `010_sif_stage.sql` | Case stage field on inspections |
 | `013_auto_dispatch.sql` | Auto-dispatch flag in SIF settings |
 | `015_checkpoint_definitions.sql` | Dynamic checkpoint library in the database |
-| `017_applicant_recno.sql` | Applicant 360° recno stored on inspection |
+| `017_applicant_recno.sql` | Applicant 360° recno stored on site visit |
 | `020_audit_log.sql` | Audit log for admin actions (ISO 27001 A.12.4.1) |
-| … | (19 migrations in total) |
+| `021_befaring_rename.sql` | New fields `befaringsomrade text[]` and `tiltakstype text[]` on `inspections`; `applies_to_omrade` and `applies_to_type_codes` on `checkpoint_definitions` |
+| … | (21 migrations in total) |
 
 ---
 
@@ -169,11 +171,12 @@ app/
 ├── api/                        # Next.js Route Handlers (server-side)
 │   ├── archive/                # POST /api/archive — full archival orchestration
 │   │   └── preview/            # POST /api/archive/preview — preview without archiving
-│   ├── inspections/            # CRUD for inspections + answers + attachments
+│   ├── inspections/            # CRUD for site visits + answers + attachments
+│   ├── inspection-codetables/  # GET — fetch survey area / measure type from PNB code table
 │   ├── admin/                  # Admin endpoints (require is_admin = true)
 │   │   ├── users/              # User management
 │   │   ├── checkpoints/        # Checkpoint definitions
-│   │   ├── inspection-config/  # Configurable dropdown lists
+│   │   ├── inspection-config/  # Configurable lists (background reasons)
 │   │   └── archivals/          # Archival log
 │   └── sif/                    # SIF proxy endpoints (20+)
 │       ├── case-lookup/        # Single case lookup (caseNumber / uid / externalId)
@@ -183,18 +186,19 @@ app/
 │       ├── case-documents/     # Documents already on a case
 │       ├── case-estates/       # Properties linked to a case
 │       ├── enterprise-search/  # Company search (GetEnterprises)
-│       ├── code-tables/        # Archive codes, categories, statuses
+│       ├── code-tables/        # Archive codes, categories, statuses (admin only)
 │       ├── settings/           # Read current SIF config
 │       ├── health/             # Connectivity check
 │       └── debug-raw/          # Raw RPC call for testing
 ├── dashboard/                  # Authenticated pages
-│   ├── inspections/[id]/       # Inspection workspace (checklist, attachments, archive)
-│   ├── inspections/new/        # New inspection form
+│   ├── inspections/[id]/       # Site visit workspace (checklist, attachments, archive)
+│   ├── inspections/new/        # New site visit form
 │   └── admin/                  # Administration pages
-│       ├── checkpoints/        # Checkpoint editor
+│       ├── checkpoints/        # Checkpoint editor (inc. codetable filter config)
 │       ├── users/              # User management
 │       ├── sif-config/         # SIF settings form
 │       ├── sif-test/           # SIF connection tester
+│       ├── tilsyn-config/      # Site visit config (background-reason list)
 │       └── archivals/          # Archival audit log
 └── login/                      # Login page
 
@@ -332,7 +336,7 @@ The archival endpoint (`POST /api/archive`) orchestrates the following steps, op
 
 6. (parallel)
    ├── Update archival record in DB (success / failed)
-   └── Update inspection status to "archived"
+   └── Update site visit status to "archived"
 ```
 
 The pre-fetched SIF case (step 1) is passed directly to `archiveInspectionToSif()` to skip a redundant lookup.
@@ -346,8 +350,8 @@ Admin users have access to `/dashboard/admin/`:
 | Page | Function |
 |------|----------|
 | Users | Create users, grant/revoke admin access, update display names |
-| Checkpoints | View, edit, activate/deactivate checkpoint definitions |
-| Inspection configuration | Configure dropdown lists (inspection area, type, background) |
+| Checkpoints | View, edit, activate/deactivate checkpoint definitions; configure `applies_to_omrade` and `applies_to_type_codes` for code-table-based filtering |
+| Site visit configuration | Configure the background-reason list (survey area and measure type are fetched from PNB code tables) |
 | SIF configuration | Configure SIF endpoint, authentication, archive mapping, and title template |
 | SIF test | Test SIF connectivity and inspect raw RPC responses |
 | Archival log | All archival attempts with status, document numbers, and error messages |

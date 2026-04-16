@@ -23,9 +23,9 @@ const CreateInspectionSchema = z.object({
   latitude: z.number().optional(),
   longitude: z.number().optional(),
   sif_stage_recno: z.number().optional(),
-  tilsynsomrade: z.string().optional(),
-  tilsynstype: z.string().optional(),
   bakgrunn: z.array(z.string()).default([]),
+  befaringsomrade: z.array(z.string()).default([]),
+  tiltakstype: z.array(z.string()).default([]),
 });
 
 export async function POST(req: NextRequest) {

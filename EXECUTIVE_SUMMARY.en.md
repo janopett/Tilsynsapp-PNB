@@ -1,15 +1,15 @@
 # Tilsynsapp-PNB — Executive Summary
 
-**A digital tool for efficient building inspection and automatic archiving**
+**A digital tool for efficient building site visits and automatic archiving**
 
 ---
 
 ## The problem we solve
 
-Traditional building inspection is paper-based and time-consuming:
+Traditional building site visits are paper-based and time-consuming:
 
 - Inspectors use manual checklists and handwritten notes in the field
-- Inspection reports are written up from scratch after each visit
+- Site visit reports are written up from scratch after each visit
 - Documents are manually archived in the municipality's case management system
 - Risk of findings going missing, wrong document numbers being used, or archiving being forgotten
 
@@ -19,14 +19,14 @@ This creates extra work for inspectors, delays in case processing, and potential
 
 ## The solution
 
-**Tilsynsapp-PNB** is a web application that digitalises the entire inspection process — from preparation to archiving — in one seamless workflow.
+**Tilsynsapp-PNB** is a web application that digitalises the entire site visit process — from preparation to archiving — in one seamless workflow.
 
 ```
-Preparation  →  Field inspection  →  Report generation  →  Archive in 360°
-  (5 min)        (on site)            (automatic)           (one click)
+Preparation  →  Field visit  →  Report generation  →  Archive in 360°
+  (5 min)       (on site)        (automatic)           (one click)
 ```
 
-The inspector works in a browser on PC, tablet, or mobile. When the inspection is complete, the report is generated automatically and archived directly in the municipality's Plan & Building system (Public 360°).
+The inspector works in a browser on PC, tablet, or mobile. When the site visit is complete, the report is generated automatically and archived directly in the municipality's Plan & Building system (Public 360°).
 
 ---
 
@@ -36,19 +36,20 @@ The inspector works in a browser on PC, tablet, or mobile. When the inspection i
 
 | Feature | Value |
 |---------|-------|
-| Structured checklist | 100+ standardised checkpoints, automatically filtered by measure type and property attributes |
+| Structured checklist | 100+ standardised checkpoints, filtered by measure type, property attributes, survey area, and measure type from PNB |
+| Survey area & measure type | Multi-select classification pulled from PNB code tables — controls which checkpoints are displayed |
 | Deviation registration | Mark findings with a comment, responsible contact, and GPS coordinates directly on the checkpoint |
-| Attachments | Upload photos and documents from the inspection site, linked to individual checkpoints |
-| Map integration | Pin the inspection location geographically with one tap |
+| Attachments | Upload photos and documents from the site visit, linked to individual checkpoints |
+| Map integration | Pin the site visit location geographically with one tap |
 | Case search | Look up the case from PNB directly in the app — no manual copying or switching between systems |
 
 ### For the organisation
 
 | Feature | Value |
 |---------|-------|
-| Automatic PDF report | Fully formatted inspection report generated without manual effort — includes case metadata, checklist, deviation summary, photos, and map |
+| Automatic PDF report | Fully formatted site visit report generated without manual effort — includes case metadata, checklist, deviation summary, photos, and map |
 | Archive with one click | Report sent directly to the correct case in Public 360° — create a new document or update an existing one |
-| Traceability | All inspections, deviations, and archival events are logged and searchable |
+| Traceability | All site visits, deviations, and archival events are logged and searchable |
 | User management | Simple access control via admin panel — no IT department involvement needed |
 | Audit log | All admin actions logged automatically (ISO 27001 A.12.4.1) |
 

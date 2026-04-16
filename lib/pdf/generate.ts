@@ -176,13 +176,13 @@ export async function generateInspectionPdf(
     ["Saksnummer", inspection.case_number ?? "–"],
     ["Gnr/Bnr", [inspection.gnr, inspection.bnr].filter(Boolean).join("/") || "–"],
     ["Søker", inspection.applicant_name ?? "–"],
-    ["Tilsynsmann", inspection.inspector_name ?? "–"],
+    ["Befaringsleder", inspection.inspector_name ?? "–"],
     ["Dato", inspection.inspection_date ?? ""],
-    ["Tiltakstype", measureType?.name ?? inspection.measure_type_id],
+    ["Tiltakstype (internt)", measureType?.name ?? inspection.measure_type_id],
   ];
 
-  if (inspection.tilsynsomrade) metaRows.push(["Tilsynsområde", inspection.tilsynsomrade]);
-  if (inspection.tilsynstype) metaRows.push(["Tilsynstype", inspection.tilsynstype]);
+  if (inspection.befaringsomrade?.length) metaRows.push(["Befaringsområde", inspection.befaringsomrade.join(", ")]);
+  if (inspection.tiltakstype?.length) metaRows.push(["Tiltakstype", inspection.tiltakstype.join(", ")]);
   if (inspection.bakgrunn?.length) metaRows.push(["Bakgrunn", inspection.bakgrunn.join(", ")]);
   if (inspection.latitude && inspection.longitude) {
     metaRows.push(["Koordinater", `${inspection.latitude.toFixed(6)}, ${inspection.longitude.toFixed(6)}`]);
@@ -516,13 +516,13 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
           ? { lat: inspection.latitude, lng: inspection.longitude }
           : null,
     },
-    tilsynsinfo: {
-      tilsynsforer: inspection.inspector_name ?? null,
+    befaringsinfo: {
+      befaringsleder: inspection.inspector_name ?? null,
       soeker: inspection.applicant_name ?? null,
       soeker_recno: inspection.applicant_recno ?? null,
-      tiltakstype: measureType?.name ?? inspection.measure_type_id,
-      tilsynsomrade: inspection.tilsynsomrade ?? null,
-      tilsynstype: inspection.tilsynstype ?? null,
+      tiltakstype_intern: measureType?.name ?? inspection.measure_type_id,
+      befaringsomrade: inspection.befaringsomrade?.length ? inspection.befaringsomrade : null,
+      tiltakstype: inspection.tiltakstype?.length ? inspection.tiltakstype : null,
       bakgrunn: inspection.bakgrunn?.length ? inspection.bakgrunn : null,
       merknader: inspection.notes ?? null,
     },
