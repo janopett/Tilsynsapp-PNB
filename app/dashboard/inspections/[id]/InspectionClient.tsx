@@ -60,11 +60,11 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [propertyAddress, setPropertyAddress] = useState(inspection.property_address);
 
   // Configurable lists
-  const [tilsynsomradeItems, setTilsynsomradeItems] = useState<{ label: string; en_label: string | null }[]>([]);
-  const [tilsynstypeItems, setTilsynstypeItems] = useState<{ label: string; en_label: string | null }[]>([]);
+  const [befaringsomradeItems, setBefaringsomradeItems] = useState<{ code: string; description: string }[]>([]);
+  const [tiltakstypeItems, setTiltakstypeItems] = useState<{ code: string; description: string }[]>([]);
   const [bakgrunnItems, setBakgrunnItems] = useState<{ label: string; en_label: string | null }[]>([]);
-  const [tilsynsomrade, setTilsynsomrade] = useState(inspection.tilsynsomrade ?? "");
-  const [tilsynstype, setTilsynstype] = useState(inspection.tilsynstype ?? "");
+  const [befaringsomrade, setBefaringsomrade] = useState<string[]>(inspection.befaringsomrade ?? []);
+  const [tiltakstype, setTiltakstype] = useState<string[]>(inspection.tiltakstype ?? []);
   const [selectedBakgrunn, setSelectedBakgrunn] = useState<string[]>(inspection.bakgrunn ?? []);
 
   useEffect(() => {
@@ -73,12 +73,12 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
       if (!session) return;
       const headers = { Authorization: `Bearer ${session.access_token}` };
       Promise.all([
-        fetch("/api/inspection-config?category=tilsynsomrade", { headers }).then((r) => r.json()),
-        fetch("/api/inspection-config?category=tilsynstype", { headers }).then((r) => r.json()),
+        fetch("/api/inspection-codetables?type=supervision-area", { headers }).then((r) => r.json()),
+        fetch("/api/inspection-codetables?type=measure-type", { headers }).then((r) => r.json()),
         fetch("/api/inspection-config?category=bakgrunn", { headers }).then((r) => r.json()),
       ]).then(([a, b, c]) => {
-        setTilsynsomradeItems(a.items ?? []);
-        setTilsynstypeItems(b.items ?? []);
+        setBefaringsomradeItems(a.items ?? []);
+        setTiltakstypeItems(b.items ?? []);
         setBakgrunnItems(c.items ?? []);
       });
     });
@@ -229,8 +229,8 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         estates: selectedEstates,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
-        tilsynsomrade: tilsynsomrade || null,
-        tilsynstype: tilsynstype || null,
+        befaringsomrade,
+        tiltakstype,
         bakgrunn: selectedBakgrunn,
         sif_stage_recno: selectedStageRecno ?? null,
       })
@@ -540,41 +540,59 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
             </div>
           )}
 
-          {/* Tilsynsområde + Tilsynstype */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Befaringsområde (multi-select fra PNB-kodetabell) */}
+          {befaringsomradeItems.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.tilsynsomrade}</label>
-              <select
-                value={tilsynsomrade}
-                onChange={(e) => setTilsynsomrade(e.target.value)}
-                className="input"
-              >
-                <option value="">— Velg —</option>
-                {tilsynsomradeItems.map((item) => (
-                  <option key={item.label} value={item.label}>
-                    {locale === "en" && item.en_label ? item.en_label : item.label}
-                  </option>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t.inspection.befaringsomrade}</label>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {befaringsomradeItems.map((item) => (
+                  <label key={item.code} className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={befaringsomrade.includes(item.code)}
+                      onChange={() =>
+                        setBefaringsomrade((prev) =>
+                          prev.includes(item.code)
+                            ? prev.filter((v) => v !== item.code)
+                            : [...prev, item.code]
+                        )
+                      }
+                      className="w-4 h-4 accent-brand-600 flex-shrink-0"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-slate-300">{item.description}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.tilsynstype}</label>
-              <select
-                value={tilsynstype}
-                onChange={(e) => setTilsynstype(e.target.value)}
-                className="input"
-              >
-                <option value="">— Velg —</option>
-                {tilsynstypeItems.map((item) => (
-                  <option key={item.label} value={item.label}>
-                    {locale === "en" && item.en_label ? item.en_label : item.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+          )}
 
-          {/* Bakgrunn for tilsynet */}
+          {/* Tiltakstype (multi-select fra PNB-kodetabell) */}
+          {tiltakstypeItems.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t.inspection.tiltakstype}</label>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {tiltakstypeItems.map((item) => (
+                  <label key={item.code} className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={tiltakstype.includes(item.code)}
+                      onChange={() =>
+                        setTiltakstype((prev) =>
+                          prev.includes(item.code)
+                            ? prev.filter((v) => v !== item.code)
+                            : [...prev, item.code]
+                        )
+                      }
+                      className="w-4 h-4 accent-brand-600 flex-shrink-0"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-slate-300">{item.description}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bakgrunn for befaringen */}
           {bakgrunnItems.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
@@ -876,7 +894,9 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
   const relevantCheckpoints = filterCheckpoints(
     inspection.measure_type_id,
     inspection.selected_tags,
-    checkpointDefs
+    checkpointDefs,
+    inspection.befaringsomrade ?? [],
+    inspection.tiltakstype ?? []
   );
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const summary = calculateSummary(merged);

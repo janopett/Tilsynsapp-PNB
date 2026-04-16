@@ -77,7 +77,7 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                       { href: "/dashboard/admin/sif-config", label: t.nav.sifConfig },
                       { href: "/dashboard/admin/sif-test", label: t.nav.sifTest },
                       { href: "/dashboard/admin/arkiveringslogg", label: t.nav.archivalLog },
-                      { href: "/dashboard/admin/tilsyn-config", label: "Tilsynskonfigurering" },
+                      { href: "/dashboard/admin/tilsyn-config", label: "Befaringskonfigurering" },
                       { href: "/dashboard/admin/checkpoints", label: "Sjekkpunkter" },
                     ].map((item) => (
                       <Link

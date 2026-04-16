@@ -102,7 +102,7 @@ export default async function ReportPage({ params }: Props) {
           href={`/dashboard/inspections/${params.id}`}
           className="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 text-sm"
         >
-          ← Tilbake til tilsyn
+          ← Tilbake til befaring
         </Link>
         <PrintButton />
       </div>
@@ -122,7 +122,7 @@ export default async function ReportPage({ params }: Props) {
             ["Saksnummer", inspection.case_number ?? "-"],
             ["Gnr/Bnr", [inspection.gnr, inspection.bnr].filter(Boolean).join("/") || "-"],
             ["Søker", inspection.applicant_name ?? "-"],
-            ["Tilsynsmann", inspection.inspector_name ?? "-"],
+            ["Befaringsleder", inspection.inspector_name ?? "-"],
             ["Dato", new Date(inspection.inspection_date).toLocaleDateString("nb-NO")],
             ["Tiltakstype", measureType?.name ?? inspection.measure_type_id],
           ].map(([label, value]) => (
@@ -202,7 +202,7 @@ export default async function ReportPage({ params }: Props) {
         {summary.deviations > 0 && (
           <div className="mt-6 border-t-2 border-red-200 pt-4">
             <h2 className="text-base font-bold text-red-800 mb-3">
-              Avvik funnet under tilsyn ({summary.deviations})
+              Avvik funnet under befaring ({summary.deviations})
             </h2>
             {summary.deviation_items.map((item) => (
               <div key={item.definition.id} className="mb-3 pl-4 border-l-4 border-red-400">

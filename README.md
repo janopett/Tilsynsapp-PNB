@@ -1,6 +1,6 @@
 # Tilsynsapp-PNB
 
-Webapplikasjon for gjennomføring og arkivering av byggetilsyn i kommunen. Inspektører fyller ut strukturerte sjekklister, genererer tilsynsrapporter og sender disse direkte til kommunens arkivsystem (Plan & Bygg / Public 360°) via SIF-API-integrasjon.
+Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspektører fyller ut strukturerte sjekklister, genererer befaringsrapporter og sender disse direkte til kommunens arkivsystem (Plan & Bygg / Public 360°) via SIF-API-integrasjon.
 
 ---
 
@@ -26,14 +26,15 @@ Webapplikasjon for gjennomføring og arkivering av byggetilsyn i kommunen. Inspe
 
 | Funksjon | Beskrivelse |
 |----------|-------------|
-| Nytt tilsyn | Flertrinns skjema med saksreferanse, eiendomsdata og tiltakstype |
-| Strukturert sjekkliste | 100+ sjekkpunkter fordelt på kategorier (formelle forhold, plassering, konstruksjon, brann m.fl.), dynamisk filtrert etter tiltakstype og eiendomsegenskaper |
+| Ny befaring | Flertrinns skjema med saksreferanse, eiendomsdata og tiltakstype |
+| Befaringsområde og tiltakstype | Multi-select klassifisering hentet direkte fra PNB-kodetabellene «eBy Supervision area» og «eBy Measure type» — brukes til å filtrere hvilke sjekkpunkter som vises |
+| Strukturert sjekkliste | 100+ sjekkpunkter fordelt på kategorier, dynamisk filtrert etter tiltakstype, eiendomsegenskaper, befaringsområde og tiltakstype fra PNB |
 | Registrering av funn | Registrer status per sjekkpunkt (ok / avvik / ikke kontrollert) med kommentar, ansvarlig kontakt og GPS-koordinater |
-| Vedlegg | Last opp bilder og dokumenter til enkeltpunkter eller tilsynet generelt |
-| PDF-rapport | Generer profesjonell tilsynsrapport med saksopplysninger, sjekkliste, avviksoppsummering, innebygde bilder og kart |
-| Arkivering | Send ferdig tilsyn til kommunens arkivsystem (Public 360°) — opprett nytt dokument eller oppdater et eksisterende |
-| Dashboard | Oversikt over aktive og arkiverte tilsyn med filtrering etter status, dato og eiendom |
-| Kartplukking | Velg koordinater for tilsynsstedet via interaktivt OpenStreetMap-kart |
+| Vedlegg | Last opp bilder og dokumenter til enkeltpunkter eller befaringen generelt |
+| PDF-rapport | Generer profesjonell befaringsrapport med saksopplysninger, sjekkliste, avviksoppsummering, innebygde bilder og kart |
+| Arkivering | Send ferdig befaring til kommunens arkivsystem (Public 360°) — opprett nytt dokument eller oppdater et eksisterende |
+| Dashboard | Oversikt over aktive og arkiverte befaringer med filtrering etter status, dato og eiendom |
+| Kartplukking | Velg koordinater for befaringsstedet via interaktivt OpenStreetMap-kart |
 | Mørkt/lyst tema | Automatisk systemtema med manuell overstyring (lys/mørk/system) |
 
 ### SIF-integrasjon (Plan & Bygg / Public 360°)
@@ -156,9 +157,10 @@ supabase db reset         # Nullstill lokal database og kjør alle migrasjoner p
 | `010_sif_stage.sql` | Behandlingstrinn-felt på tilsyn |
 | `013_auto_dispatch.sql` | Auto-dispatch-flagg i SIF-innstillinger |
 | `015_checkpoint_definitions.sql` | Dynamisk sjekkpunkt-bibliotek i databasen |
-| `017_applicant_recno.sql` | Søkers 360°-recno lagret på tilsynet |
+| `017_applicant_recno.sql` | Søkers 360°-recno lagret på befaringen |
 | `020_audit_log.sql` | Audit-logg for admin-handlinger (ISO 27001 A.12.4.1) |
-| … | (19 migrasjoner totalt) |
+| `021_befaring_rename.sql` | Nye felt `befaringsomrade text[]` og `tiltakstype text[]` på `inspections`; `applies_to_omrade` og `applies_to_type_codes` på `checkpoint_definitions` |
+| … | (21 migrasjoner totalt) |
 
 ---
 
@@ -169,11 +171,12 @@ app/
 ├── api/                        # Next.js Route Handlers (server-side)
 │   ├── archive/                # POST /api/archive — fullstendig arkiveringsflyt
 │   │   └── preview/            # POST /api/archive/preview — forhåndsvisning uten arkivering
-│   ├── inspections/            # CRUD for tilsyn + svar + vedlegg
+│   ├── inspections/            # CRUD for befaringer + svar + vedlegg
+│   ├── inspection-codetables/  # GET — henter befaringsomrade / tiltakstype fra PNB-kodetabell
 │   ├── admin/                  # Admin-endepunkter (krever is_admin = true)
 │   │   ├── users/              # Brukeradministrasjon
 │   │   ├── checkpoints/        # Sjekkpunkt-definisjoner
-│   │   ├── inspection-config/  # Konfigurerbare dropdown-lister
+│   │   ├── inspection-config/  # Konfigurerbare lister (bakgrunn)
 │   │   └── archivals/          # Arkiveringslogg
 │   └── sif/                    # SIF-proxy-endepunkter (20+)
 │       ├── case-lookup/        # Enkelt saksoppslag (saksnummer / uid / externalId)
@@ -183,18 +186,19 @@ app/
 │       ├── case-documents/     # Eksisterende dokumenter på saken
 │       ├── case-estates/       # Eiendommer knyttet til saken
 │       ├── enterprise-search/  # Foretakssøk (GetEnterprises)
-│       ├── code-tables/        # Arkivkoder, kategorier, statuser
+│       ├── code-tables/        # Arkivkoder, kategorier, statuser (admin)
 │       ├── settings/           # Les gjeldende SIF-konfigurasjon
 │       ├── health/             # Tilkoblingskontroll
 │       └── debug-raw/          # Rå RPC-kall for testing
 ├── dashboard/                  # Autentiserte sider
-│   ├── inspections/[id]/       # Tilsynsarbeidsrom (sjekkliste, vedlegg, arkivering)
-│   ├── inspections/new/        # Skjema for nytt tilsyn
+│   ├── inspections/[id]/       # Befaringsarbeidsrom (sjekkliste, vedlegg, arkivering)
+│   ├── inspections/new/        # Skjema for ny befaring
 │   └── admin/                  # Administrasjonssider
 │       ├── checkpoints/        # Sjekkpunkt-editor
 │       ├── users/              # Brukeradministrasjon
 │       ├── sif-config/         # SIF-innstillingsskjema
 │       ├── sif-test/           # SIF-tilkoblingstester
+│       ├── tilsyn-config/      # Befaringskonfigurasjon (bakgrunn-liste)
 │       └── archivals/          # Arkiverings-audit-logg
 └── login/                      # Innloggingsside
 
@@ -332,7 +336,7 @@ Arkiveringsendepunktet (`POST /api/archive`) orkestrerer følgende steg, optimal
 
 6. (parallelt)
    ├── Oppdater arkiveringspost i DB (success / failed)
-   └── Oppdater tilsynsstatus til "archived"
+   └── Oppdater befaringsstatus til "archived"
 ```
 
 Det pre-hentede SIF-tilfellet (steg 1) sendes direkte til `archiveInspectionToSif()` for å hoppe over et redundant oppslag.
@@ -346,8 +350,8 @@ Admin-brukere får tilgang til `/dashboard/admin/`:
 | Side | Funksjon |
 |------|----------|
 | Brukere | Opprett brukere, gi/fjern admin-tilgang, endre visningsnavn |
-| Sjekkpunkter | Se, rediger, aktiver/deaktiver sjekkpunkt-definisjoner |
-| Tilsynskonfigurasjon | Konfigurer dropdown-lister (tilsynsområde, type, bakgrunn) |
+| Sjekkpunkter | Se, rediger, aktiver/deaktiver sjekkpunkt-definisjoner; konfigurer `applies_to_omrade` og `applies_to_type_codes` for kodetabell-basert filtrering |
+| Befaringskonfigurasjon | Konfigurer bakgrunn-listen (befaringsområde og tiltakstype hentes fra PNB-kodetabell) |
 | SIF-konfigurasjon | Konfigurer SIF-endepunkt, autentisering, arkivmapping og tittelmal |
 | SIF-test | Test SIF-tilkobling og inspiser rå RPC-svar |
 | Arkiveringslogg | Alle arkiveringsforsøk med status, dokumentnumre og feilmeldinger |

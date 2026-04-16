@@ -53,14 +53,19 @@ export function getAutoTags(measureTypeId: MeasureTypeId): PropertyTag[] {
 }
 
 /**
- * Filter the checkpoint library based on measure type and property tags.
- * Auto-inferred tags (derived from measure type) are merged with the
- * user-selected tags before filtering — callers only pass manual tags.
+ * Filter the checkpoint library based on measure type, property tags,
+ * and optionally befaringsomrade / tiltakstype from PNB codetables.
+ *
+ * Codetable-based rules (applies_to_omrade / applies_to_type_codes):
+ *   - Empty array on checkpoint = applies to all values (no filtering).
+ *   - Non-empty array = at least one selected value must be in the array.
  */
 export function filterCheckpoints(
   measureTypeId: MeasureTypeId,
   selectedTags: PropertyTag[],
-  allCheckpoints: CheckpointDefinition[] = CHECKPOINT_DEFINITIONS
+  allCheckpoints: CheckpointDefinition[] = CHECKPOINT_DEFINITIONS,
+  befaringsomrade: string[] = [],
+  tiltakstype: string[] = []
 ): CheckpointDefinition[] {
   const autoTags = getAutoTags(measureTypeId);
   const seen = new Set<PropertyTag>();
@@ -79,6 +84,20 @@ export function filterCheckpoints(
         effectiveTags.includes(tag)
       );
       if (!allTagsMatch) return false;
+    }
+
+    // Rule 3: if checkpoint has applies_to_omrade and user has selected
+    // befaringsomrade values, at least one must match.
+    const cpOmrade = cp.applies_to_omrade ?? [];
+    if (cpOmrade.length > 0 && befaringsomrade.length > 0) {
+      if (!befaringsomrade.some((v) => cpOmrade.includes(v))) return false;
+    }
+
+    // Rule 4: if checkpoint has applies_to_type_codes and user has selected
+    // tiltakstype values, at least one must match.
+    const cpType = cp.applies_to_type_codes ?? [];
+    if (cpType.length > 0 && tiltakstype.length > 0) {
+      if (!tiltakstype.some((v) => cpType.includes(v))) return false;
     }
 
     return true;

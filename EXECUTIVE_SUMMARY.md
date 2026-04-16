@@ -1,15 +1,15 @@
 # Tilsynsapp-PNB — Executive Summary
 
-**Et digitalt verktøy for effektiv byggetilsynsgjennomføring og automatisk arkivering**
+**Et digitalt verktøy for effektiv gjennomføring av befaringer og automatisk arkivering**
 
 ---
 
 ## Problemet vi løser
 
-Tradisjonell gjennomføring av byggetilsyn er papirbasert og tidkrevende:
+Tradisjonell gjennomføring av befaringer er papirbasert og tidkrevende:
 
 - Inspektører bruker manuelle sjekklister og håndskrevne notater i felt
-- Tilsynsrapporter skrives om fra bunnen av etter hvert besøk
+- Befaringsrapporter skrives om fra bunnen av etter hvert besøk
 - Dokumenter arkiveres manuelt i kommunens saksbehandlingssystem
 - Risiko for at funn forsvinner, feil dokumentnummer brukes, eller arkivering glemmes
 
@@ -19,14 +19,14 @@ Dette skaper merarbeid for inspektørene, forsinkelser i saksbehandlingen og pot
 
 ## Løsningen
 
-**Tilsynsapp-PNB** er en webapplikasjon som digitaliserer hele tilsynsprosessen — fra forberedelse til arkivering — i én sammenhengende arbeidsflyt.
+**Tilsynsapp-PNB** er en webapplikasjon som digitaliserer hele befaringsprosessen — fra forberedelse til arkivering — i én sammenhengende arbeidsflyt.
 
 ```
 Forberedelse  →  Gjennomføring i felt  →  Rapportgenerering  →  Arkivering i 360°
   (5 min)           (på stedet)              (automatisk)          (ett klikk)
 ```
 
-Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når tilsynet er fullført, genereres rapporten automatisk og arkiveres direkte i kommunens Plan & Bygg-system (Public 360°).
+Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når befaringen er fullført, genereres rapporten automatisk og arkiveres direkte i kommunens Plan & Bygg-system (Public 360°).
 
 ---
 
@@ -36,19 +36,20 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når tilsynet
 
 | Funksjon | Verdi |
 |----------|-------|
-| Strukturert sjekkliste | 100+ standardiserte sjekkpunkter, automatisk filtrert etter tiltakstype og eiendomsegenskaper |
+| Strukturert sjekkliste | 100+ standardiserte sjekkpunkter, automatisk filtrert etter tiltakstype, eiendomsegenskaper, befaringsområde og tiltakstype fra PNB |
+| Befaringsområde og tiltakstype | Multi-select klassifisering hentet direkte fra PNB-kodetabellene — styrer hvilke sjekkpunkter som vises |
 | Avviksregistrering | Marker funn med kommentar, ansvarlig kontakt og GPS-koordinater direkte på sjekkpunktet |
-| Vedlegg | Last opp bilder og dokumenter fra tilsynsstedet, koblet til enkeltpunkter |
-| Karttilknytning | Plasser tilsynet geografisk med ett trykk |
+| Vedlegg | Last opp bilder og dokumenter fra befaringsstedet, koblet til enkeltpunkter |
+| Karttilknytning | Plasser befaringen geografisk med ett trykk |
 | Sakssøk | Søk opp saken fra PNB direkte i appen — ingen manuell kopiering eller systembytte |
 
 ### For organisasjonen
 
 | Funksjon | Verdi |
 |----------|-------|
-| Automatisk PDF-rapport | Ferdig formatert tilsynsrapport genereres uten manuelt arbeid — inkluderer saksopplysninger, sjekkliste, avviksoppsummering, bilder og kart |
+| Automatisk PDF-rapport | Ferdig formatert befaringsrapport genereres uten manuelt arbeid — inkluderer saksopplysninger, sjekkliste, avviksoppsummering, bilder og kart |
 | Arkivering med ett klikk | Rapporten sendes direkte til riktig sak i Public 360° — opprett nytt dokument eller oppdater et eksisterende |
-| Sporbarhet | Alle tilsyn, avvik og arkiveringer er loggede og søkbare |
+| Sporbarhet | Alle befaringer, avvik og arkiveringer er loggede og søkbare |
 | Brukeradministrasjon | Enkel tilgangsstyring via admin-panel — ingen IT-avdeling nødvendig |
 | Audit-logg | Alle admin-handlinger logges automatisk (ISO 27001 A.12.4.1) |
 

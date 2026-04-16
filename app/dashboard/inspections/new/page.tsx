@@ -69,11 +69,11 @@ export default function NewInspectionPage() {
   const [longitude, setLongitude] = useState<number | null>(null);
 
   // Configurable lists
-  const [tilsynsomradeItems, setTilsynsomradeItems] = useState<{ label: string; en_label: string | null }[]>([]);
-  const [tilsynstypeItems, setTilsynstypeItems] = useState<{ label: string; en_label: string | null }[]>([]);
+  const [befaringsomradeItems, setBefaringsomradeItems] = useState<{ code: string; description: string }[]>([]);
+  const [tiltakstypeItems, setTiltakstypeItems] = useState<{ code: string; description: string }[]>([]);
   const [bakgrunnItems, setBakgrunnItems] = useState<{ label: string; en_label: string | null }[]>([]);
-  const [tilsynsomrade, setTilsynsomrade] = useState("");
-  const [tilsynstype, setTilsynstype] = useState("");
+  const [befaringsomrade, setBefaringsomrade] = useState<string[]>([]);
+  const [tiltakstype, setTiltakstype] = useState<string[]>([]);
   const [selectedBakgrunn, setSelectedBakgrunn] = useState<string[]>([]);
 
   // Step 2 fields
@@ -86,12 +86,12 @@ export default function NewInspectionPage() {
       if (!session) return;
       const headers = { Authorization: `Bearer ${session.access_token}` };
       Promise.all([
-        fetch("/api/inspection-config?category=tilsynsomrade", { headers }).then((r) => r.json()),
-        fetch("/api/inspection-config?category=tilsynstype", { headers }).then((r) => r.json()),
+        fetch("/api/inspection-codetables?type=supervision-area", { headers }).then((r) => r.json()),
+        fetch("/api/inspection-codetables?type=measure-type", { headers }).then((r) => r.json()),
         fetch("/api/inspection-config?category=bakgrunn", { headers }).then((r) => r.json()),
       ]).then(([a, b, c]) => {
-        setTilsynsomradeItems(a.items ?? []);
-        setTilsynstypeItems(b.items ?? []);
+        setBefaringsomradeItems(a.items ?? []);
+        setTiltakstypeItems(b.items ?? []);
         setBakgrunnItems(c.items ?? []);
       });
     });
@@ -334,8 +334,8 @@ export default function NewInspectionPage() {
         latitude: latitude ?? undefined,
         longitude: longitude ?? undefined,
         sif_stage_recno: selectedStageRecno ?? undefined,
-        tilsynsomrade: tilsynsomrade || undefined,
-        tilsynstype: tilsynstype || undefined,
+        befaringsomrade,
+        tiltakstype,
         bakgrunn: selectedBakgrunn,
       }),
     });
@@ -770,43 +770,61 @@ export default function NewInspectionPage() {
               )}
             </div>
 
-            {/* Tilsynsområde + Tilsynstype */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Befaringsområde (multi-select fra PNB-kodetabell) */}
+            {befaringsomradeItems.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  {t.inspection.tilsynsomrade}
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  {t.inspection.befaringsomrade}
                 </label>
-                <select
-                  value={tilsynsomrade}
-                  onChange={(e) => setTilsynsomrade(e.target.value)}
-                  className="input"
-                >
-                  <option value="">— Velg —</option>
-                  {tilsynsomradeItems.map((item) => (
-                    <option key={item.label} value={item.label}>
-                      {locale === "en" && item.en_label ? item.en_label : item.label}
-                    </option>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  {befaringsomradeItems.map((item) => (
+                    <label key={item.code} className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={befaringsomrade.includes(item.code)}
+                        onChange={() =>
+                          setBefaringsomrade((prev) =>
+                            prev.includes(item.code)
+                              ? prev.filter((v) => v !== item.code)
+                              : [...prev, item.code]
+                          )
+                        }
+                        className="w-4 h-4 accent-brand-600 flex-shrink-0"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-slate-300">{item.description}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
+            )}
+
+            {/* Tiltakstype (multi-select fra PNB-kodetabell) */}
+            {tiltakstypeItems.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  {t.inspection.tilsynstype}
+                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                  {t.inspection.tiltakstype}
                 </label>
-                <select
-                  value={tilsynstype}
-                  onChange={(e) => setTilsynstype(e.target.value)}
-                  className="input"
-                >
-                  <option value="">— Velg —</option>
-                  {tilsynstypeItems.map((item) => (
-                    <option key={item.label} value={item.label}>
-                      {locale === "en" && item.en_label ? item.en_label : item.label}
-                    </option>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  {tiltakstypeItems.map((item) => (
+                    <label key={item.code} className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={tiltakstype.includes(item.code)}
+                        onChange={() =>
+                          setTiltakstype((prev) =>
+                            prev.includes(item.code)
+                              ? prev.filter((v) => v !== item.code)
+                              : [...prev, item.code]
+                          )
+                        }
+                        className="w-4 h-4 accent-brand-600 flex-shrink-0"
+                      />
+                      <span className="text-sm text-gray-700 dark:text-slate-300">{item.description}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Bakgrunn for tilsynet */}
             {bakgrunnItems.length > 0 && (
