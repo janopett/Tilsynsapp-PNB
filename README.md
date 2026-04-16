@@ -34,6 +34,7 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 | PDF-rapport | Generer profesjonell befaringsrapport med saksopplysninger, sjekkliste, avviksoppsummering, innebygde bilder og kart |
 | Arkivering | Send ferdig befaring til kommunens arkivsystem (Public 360°) — opprett nytt dokument eller oppdater et eksisterende |
 | Dashboard | Oversikt over aktive og arkiverte befaringer med filtrering etter status, dato og eiendom |
+| Mine PNB-saker | Egen dashbordfane som henter alle saker fra PNB der innlogget bruker er ansvarlig saksbehandler — viser eiendommer, kontakter, behandlingstrinn og frister |
 | Kartplukking | Velg koordinater for befaringsstedet via interaktivt OpenStreetMap-kart |
 | Mørkt/lyst tema | Automatisk systemtema med manuell overstyring (lys/mørk/system) |
 
@@ -186,6 +187,7 @@ app/
 │       ├── case-documents/     # Eksisterende dokumenter på saken
 │       ├── case-estates/       # Eiendommer knyttet til saken
 │       ├── enterprise-search/  # Foretakssøk (GetEnterprises)
+│       ├── my-cases/           # GET — henter PNB-saker der bruker er ansvarlig (filtrert på ResponsiblePersonName)
 │       ├── code-tables/        # Arkivkoder, kategorier, statuser (admin)
 │       ├── settings/           # Les gjeldende SIF-konfigurasjon
 │       ├── health/             # Tilkoblingskontroll

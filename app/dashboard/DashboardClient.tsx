@@ -1,18 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { createClient } from "@/lib/supabase/client";
 import type { Inspection, ExternalParticipant } from "@/types";
+import type { PnbCaseItem } from "@/app/api/sif/my-cases/route";
 
 type InspectionListItem = Pick<
   Inspection,
   "id" | "property_address" | "case_number" | "case_title" | "status" | "inspection_date" | "measure_type_id" | "gnr" | "bnr" | "snr" | "fnr" | "estates" | "participants"
 > & { external_participants?: ExternalParticipant[] };
 
-type DashTab = "all" | "active" | "archived" | "completed";
+type DashTab = "all" | "active" | "archived" | "completed" | "pnb";
 
 interface DashboardClientProps {
   list: InspectionListItem[];
@@ -22,11 +24,54 @@ export default function DashboardClient({ list }: DashboardClientProps) {
   const [tab, setTab] = useState<DashTab>("active");
   const { t, locale } = useLanguage();
 
+  // ── PNB cases state ─────────────────────────────────────────────────────────
+  const [pnbCases, setPnbCases] = useState<PnbCaseItem[]>([]);
+  const [pnbLoading, setPnbLoading] = useState(false);
+  const [pnbError, setPnbError] = useState<string | null>(null);
+  const [pnbFetched, setPnbFetched] = useState(false);
+
+  useEffect(() => {
+    if (tab !== "pnb" || pnbFetched) return;
+
+    setPnbLoading(true);
+    setPnbError(null);
+
+    const supabase = createClient();
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) {
+        setPnbError(t.dashboard.pnbCases.error);
+        setPnbLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch("/api/sif/my-cases", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        const json = await res.json();
+        if (json.ok) {
+          setPnbCases(json.cases);
+          setPnbFetched(true);
+        } else if (json.notConfigured) {
+          setPnbError(t.dashboard.pnbCases.notConfigured);
+        } else if (json.noName) {
+          setPnbError(t.dashboard.pnbCases.noName);
+        } else {
+          setPnbError(json.error ?? t.dashboard.pnbCases.error);
+        }
+      } catch {
+        setPnbError(t.dashboard.pnbCases.error);
+      } finally {
+        setPnbLoading(false);
+      }
+    });
+  }, [tab, pnbFetched, t]);
+
   const counts = {
     all: list.length,
     active: list.filter((i) => i.status === "draft" || i.status === "in_progress").length,
     archived: list.filter((i) => i.status === "archived").length,
     completed: list.filter((i) => i.status === "completed").length,
+    pnb: pnbFetched ? pnbCases.length : null,
   };
 
   const filtered =
@@ -34,6 +79,8 @@ export default function DashboardClient({ list }: DashboardClientProps) {
       ? list
       : tab === "active"
       ? list.filter((i) => i.status === "draft" || i.status === "in_progress")
+      : tab === "pnb"
+      ? []
       : list.filter((i) => i.status === tab);
 
   const tabs: { key: DashTab; label: string }[] = [
@@ -41,6 +88,7 @@ export default function DashboardClient({ list }: DashboardClientProps) {
     { key: "archived", label: t.dashboard.tabs.archived },
     { key: "completed", label: t.dashboard.tabs.completed },
     { key: "all", label: t.dashboard.tabs.all },
+    { key: "pnb", label: t.dashboard.tabs.pnb },
   ];
 
   return (
@@ -59,7 +107,7 @@ export default function DashboardClient({ list }: DashboardClientProps) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-5 border-b border-gray-200 dark:border-slate-700 pb-1">
+      <div className="flex gap-2 mb-5 border-b border-gray-200 dark:border-slate-700 pb-1 flex-wrap">
         {tabs.map(({ key, label }) => {
           const count = counts[key];
           const isActive = tab === key;
@@ -74,21 +122,32 @@ export default function DashboardClient({ list }: DashboardClientProps) {
               }`}
             >
               {label}
-              <span
-                className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 rounded-full px-1.5 text-xs font-semibold ${
-                  isActive
-                    ? "bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400"
-                    : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
-                }`}
-              >
-                {count}
-              </span>
+              {count !== null && (
+                <span
+                  className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 rounded-full px-1.5 text-xs font-semibold ${
+                    isActive
+                      ? "bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400"
+                      : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
+                  }`}
+                >
+                  {count}
+                </span>
+              )}
             </button>
           );
         })}
       </div>
 
-      {filtered.length === 0 ? (
+      {/* ── PNB cases tab ──────────────────────────────────────────────────────── */}
+      {tab === "pnb" ? (
+        <PnbCasesView
+          cases={pnbCases}
+          loading={pnbLoading}
+          error={pnbError}
+          locale={locale}
+          t={t.dashboard.pnbCases}
+        />
+      ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-gray-400 dark:text-slate-500">
           <p className="text-5xl mb-4">📋</p>
           <p className="text-lg font-medium">{t.dashboard.empty}</p>
@@ -170,6 +229,199 @@ export default function DashboardClient({ list }: DashboardClientProps) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── PNB Cases View ─────────────────────────────────────────────────────────────
+
+interface PnbCasesViewProps {
+  cases: PnbCaseItem[];
+  loading: boolean;
+  error: string | null;
+  locale: string;
+  t: {
+    loading: string;
+    error: string;
+    empty: string;
+    openIn360: string;
+    newBefaring: string;
+    responsible: string;
+    lastChanged: string;
+    deadline: string;
+    daysLeft: (n: number) => string;
+  };
+}
+
+function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
+  const dateLocale = locale === "en" ? "en-GB" : "nb-NO";
+
+  if (loading) {
+    return (
+      <div className="text-center py-20 text-gray-400 dark:text-slate-500">
+        <p className="text-4xl mb-4 animate-spin inline-block">⏳</p>
+        <p className="text-base font-medium mt-2">{t.loading}</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-20 text-gray-400 dark:text-slate-500">
+        <p className="text-4xl mb-4">⚠️</p>
+        <p className="text-base font-medium text-red-600 dark:text-red-400">{error}</p>
+      </div>
+    );
+  }
+
+  if (cases.length === 0) {
+    return (
+      <div className="text-center py-20 text-gray-400 dark:text-slate-500">
+        <p className="text-5xl mb-4">🗂️</p>
+        <p className="text-lg font-medium">{t.empty}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {cases.map((c) => {
+        const activeStages = c.stages.filter((s) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed");
+        const nearestDeadline = activeStages
+          .filter((s) => s.deadlineDate)
+          .sort((a, b) => a.deadlineDate!.localeCompare(b.deadlineDate!))
+          .at(0);
+
+        return (
+          <div
+            key={c.recno}
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-4"
+          >
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div className="min-w-0 flex-1">
+                {/* Header */}
+                <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm leading-snug">
+                  {c.caseNumber} · {c.title}
+                </p>
+
+                <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-slate-400 flex-wrap">
+                  {c.caseTypeDescription && <span>{c.caseTypeDescription}</span>}
+                  {c.status && (
+                    <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full px-2 py-0.5">
+                      {c.status}
+                    </span>
+                  )}
+                  {c.lastChangedDate && (
+                    <span className="text-gray-400 dark:text-slate-500">
+                      {t.lastChanged}: {new Date(c.lastChangedDate).toLocaleDateString(dateLocale)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Estates */}
+                {c.estates.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {c.estates.map((e, i) => (
+                      <span
+                        key={i}
+                        className="text-xs text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 rounded-full px-2 py-0.5"
+                      >
+                        🏠 {e.address || e.estateNumber || "Eiendom"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Contacts */}
+                {c.contacts.length > 0 && (
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2">
+                    {c.contacts.map((contact, i) => (
+                      <span key={i} className="text-xs text-gray-500 dark:text-slate-400">
+                        {contact.name}
+                        {(contact.roleDescription ?? contact.role) && (
+                          <span className="text-gray-400 dark:text-slate-500">
+                            {" "}· {contact.roleDescription ?? contact.role}
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Active stages */}
+                {activeStages.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {activeStages.slice(0, 3).map((s, i) => (
+                      <span
+                        key={i}
+                        className="text-xs bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5 border border-gray-200 dark:border-slate-600"
+                      >
+                        {s.title ?? s.stageType ?? "Trinn"}
+                        {s.stageStatus && (
+                          <span className="text-gray-400 dark:text-slate-500"> · {s.stageStatus}</span>
+                        )}
+                      </span>
+                    ))}
+                    {activeStages.length > 3 && (
+                      <span className="text-xs text-gray-400 dark:text-slate-500">
+                        +{activeStages.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Nearest deadline */}
+                {nearestDeadline?.deadlineDate && (
+                  <div className="mt-2 text-xs">
+                    {(() => {
+                      const daysLeft = Math.ceil(
+                        (new Date(nearestDeadline.deadlineDate).getTime() - Date.now()) /
+                          (1000 * 60 * 60 * 24)
+                      );
+                      const isOverdue = daysLeft < 0;
+                      const isUrgent = daysLeft >= 0 && daysLeft <= 7;
+                      return (
+                        <span
+                          className={
+                            isOverdue
+                              ? "text-red-600 dark:text-red-400 font-semibold"
+                              : isUrgent
+                              ? "text-orange-600 dark:text-orange-400 font-medium"
+                              : "text-gray-500 dark:text-slate-400"
+                          }
+                        >
+                          {t.deadline}: {new Date(nearestDeadline.deadlineDate).toLocaleDateString(dateLocale)}
+                          {" "}({t.daysLeft(daysLeft)})
+                        </span>
+                      );
+                    })()}
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-2 items-end shrink-0">
+                <Link
+                  href={`/dashboard/inspections/new${c.caseNumber ? `?case=${encodeURIComponent(c.caseNumber)}` : ""}`}
+                  className="text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap"
+                >
+                  + {t.newBefaring}
+                </Link>
+                {c.url && (
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-brand-600 dark:text-brand-400 hover:underline whitespace-nowrap"
+                  >
+                    {t.openIn360} ↗
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

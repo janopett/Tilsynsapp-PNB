@@ -35,6 +35,20 @@ export interface Translations {
       active: string;
       archived: string;
       completed: string;
+      pnb: string;
+    };
+    pnbCases: {
+      loading: string;
+      error: string;
+      empty: string;
+      noName: string;
+      notConfigured: string;
+      openIn360: string;
+      newBefaring: string;
+      responsible: string;
+      lastChanged: string;
+      deadline: string;
+      daysLeft: (n: number) => string;
     };
   };
   newInspection: {
@@ -177,6 +191,20 @@ const nb: Translations = {
       active: "Pågår",
       archived: "Arkivert",
       completed: "Avsluttet",
+      pnb: "Mine PNB-saker",
+    },
+    pnbCases: {
+      loading: "Henter saker fra PNB…",
+      error: "Kunne ikke hente saker fra PNB",
+      empty: "Ingen saker funnet i PNB der du er ansvarlig saksbehandler",
+      noName: "Brukernavnet ditt er ikke satt. Oppdater profilnavnet ditt i innstillingene.",
+      notConfigured: "SIF er ikke konfigurert. Ta kontakt med administrator.",
+      openIn360: "Åpne i 360°",
+      newBefaring: "Ny befaring",
+      responsible: "Ansvarlig",
+      lastChanged: "Sist endret",
+      deadline: "Frist",
+      daysLeft: (n) => `${n} dag${Math.abs(n) !== 1 ? "er" : ""} igjen`,
     },
   },
   newInspection: {
@@ -331,6 +359,20 @@ const en: Translations = {
       active: "Ongoing",
       archived: "Archived",
       completed: "Closed",
+      pnb: "My PNB cases",
+    },
+    pnbCases: {
+      loading: "Loading cases from PNB…",
+      error: "Could not load cases from PNB",
+      empty: "No PNB cases found where you are the responsible case officer",
+      noName: "Your display name is not set. Please update your profile name in settings.",
+      notConfigured: "SIF is not configured. Please contact your administrator.",
+      openIn360: "Open in 360°",
+      newBefaring: "New site visit",
+      responsible: "Responsible",
+      lastChanged: "Last changed",
+      deadline: "Deadline",
+      daysLeft: (n) => `${n} day${Math.abs(n) !== 1 ? "s" : ""} left`,
     },
   },
   newInspection: {
