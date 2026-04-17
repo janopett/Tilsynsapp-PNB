@@ -195,7 +195,7 @@ export default function PnbCaseDetailPage() {
         {/* Actions */}
         <div className="flex gap-3 mt-5">
           <Link
-            href={`/dashboard/inspections/new${c.caseNumber ? `?case=${encodeURIComponent(c.caseNumber)}` : ""}`}
+            href={`/dashboard/inspections/new${c.caseNumber ? `?case=${encodeURIComponent(c.caseNumber)}${c.title ? `&title=${encodeURIComponent(c.title)}` : ""}` : ""}`}
             className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition"
           >
             + Ny befaring

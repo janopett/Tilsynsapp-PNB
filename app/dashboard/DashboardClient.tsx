@@ -456,7 +456,7 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                   Åpne sak →
                 </Link>
                 <Link
-                  href={`/dashboard/inspections/new${c.caseNumber ? `?case=${encodeURIComponent(c.caseNumber)}` : ""}`}
+                  href={`/dashboard/inspections/new${c.caseNumber ? `?case=${encodeURIComponent(c.caseNumber)}${c.title ? `&title=${encodeURIComponent(c.title)}` : ""}` : ""}`}
                   className="text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap"
                 >
                   + {t.newBefaring}
