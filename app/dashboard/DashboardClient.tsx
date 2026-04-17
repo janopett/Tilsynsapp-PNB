@@ -7,7 +7,25 @@ import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { createClient } from "@/lib/supabase/client";
 import type { Inspection, ExternalParticipant } from "@/types";
-import type { PnbCaseItem } from "@/app/api/sif/my-cases/route";
+import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
+
+// ── PNB cases sessionStorage cache (5 min TTL) ─────────────────────────────
+const PNB_CACHE_KEY = "pnb_cases_v1";
+const PNB_CACHE_TTL = 5 * 60 * 1000;
+
+function loadPnbCache(): PnbCaseItem[] | null {
+  try {
+    const raw = sessionStorage.getItem(PNB_CACHE_KEY);
+    if (!raw) return null;
+    const { cases, ts } = JSON.parse(raw) as { cases: PnbCaseItem[]; ts: number };
+    return Date.now() - ts < PNB_CACHE_TTL ? cases : null;
+  } catch { return null; }
+}
+
+function savePnbCache(cases: PnbCaseItem[]) {
+  try { sessionStorage.setItem(PNB_CACHE_KEY, JSON.stringify({ cases, ts: Date.now() })); }
+  catch { /* storage full or SSR */ }
+}
 
 type InspectionListItem = Pick<
   Inspection,
@@ -30,6 +48,12 @@ export default function DashboardClient({ list }: DashboardClientProps) {
   const [pnbError, setPnbError] = useState<string | null>(null);
   const [pnbFetched, setPnbFetched] = useState(false);
 
+  // Hydrate from cache on mount so revisiting the tab is instant
+  useEffect(() => {
+    const cached = loadPnbCache();
+    if (cached) { setPnbCases(cached); setPnbFetched(true); }
+  }, []);
+
   useEffect(() => {
     if (tab !== "pnb" || pnbFetched) return;
 
@@ -50,6 +74,7 @@ export default function DashboardClient({ list }: DashboardClientProps) {
         const json = await res.json();
         if (json.ok) {
           setPnbCases(json.cases);
+          savePnbCache(json.cases);
           setPnbFetched(true);
         } else if (json.notConfigured) {
           setPnbError(t.dashboard.pnbCases.notConfigured);
@@ -84,11 +109,11 @@ export default function DashboardClient({ list }: DashboardClientProps) {
       : list.filter((i) => i.status === tab);
 
   const tabs: { key: DashTab; label: string }[] = [
+    { key: "pnb", label: t.dashboard.tabs.pnb },
     { key: "active", label: t.dashboard.tabs.active },
     { key: "archived", label: t.dashboard.tabs.archived },
     { key: "completed", label: t.dashboard.tabs.completed },
     { key: "all", label: t.dashboard.tabs.all },
-    { key: "pnb", label: t.dashboard.tabs.pnb },
   ];
 
   return (
@@ -255,6 +280,7 @@ interface PnbCasesViewProps {
 
 function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
   const dateLocale = locale === "en" ? "en-GB" : "nb-NO";
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   if (loading) {
     return (
@@ -283,9 +309,49 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
     );
   }
 
+  // Build unique status list, preserving order of first appearance
+  const statusOrder: string[] = [];
+  for (const c of cases) {
+    if (c.status && !statusOrder.includes(c.status)) statusOrder.push(c.status);
+  }
+  const filtered = statusFilter ? cases.filter((c) => c.status === statusFilter) : cases;
+
   return (
-    <div className="space-y-3">
-      {cases.map((c) => {
+    <div>
+      {/* Status sub-tabs */}
+      {statusOrder.length > 1 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => setStatusFilter(null)}
+            className={`text-xs px-3 py-1 rounded-full border transition font-medium ${
+              statusFilter === null
+                ? "bg-brand-600 text-white border-brand-600"
+                : "bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:border-brand-400"
+            }`}
+          >
+            Alle ({cases.length})
+          </button>
+          {statusOrder.map((s) => {
+            const count = cases.filter((c) => c.status === s).length;
+            const isActive = statusFilter === s;
+            return (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`text-xs px-3 py-1 rounded-full border transition font-medium ${
+                  isActive
+                    ? "bg-brand-600 text-white border-brand-600"
+                    : "bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:border-brand-400"
+                }`}
+              >
+                {s} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <div className="space-y-3">
+      {filtered.map((c) => {
         const activeStages = c.stages.filter(
           (s) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed"
         );
@@ -338,11 +404,15 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                 )}
 
                 {/* Stage summary */}
-                {activeStages.length > 0 && (
+                {(activeStages.length > 0 || c.contacts.length > 0) && (
                   <p className="mt-2 text-xs text-gray-400 dark:text-slate-500">
-                    {activeStages.length} aktivt behandlingstrinn
-                    {activeStages.length !== 1 ? "" : ""}
-                    {" "}· {c.contacts.length} kontakter
+                    {activeStages.length > 0 && (
+                      <>{activeStages.length} {activeStages.length === 1 ? "aktivt behandlingstrinn" : "aktive behandlingstrinn"}</>
+                    )}
+                    {activeStages.length > 0 && c.contacts.length > 0 && " · "}
+                    {c.contacts.length > 0 && (
+                      <>{c.contacts.length} {c.contacts.length === 1 ? "kontakt" : "kontakter"}</>
+                    )}
                   </p>
                 )}
 
@@ -404,6 +474,7 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
