@@ -128,6 +128,8 @@ export default function SifTestPage() {
     setCodeTableResult(data);
     setCodeTableLoading(false);
   }
+
+  async function syncContact(e: React.FormEvent) {
     e.preventDefault();
     if (!syncFirstName.trim() && !syncLastName.trim()) return;
     setSyncLoading(true);
