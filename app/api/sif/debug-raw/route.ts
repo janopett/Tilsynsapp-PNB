@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
       // Try with CaseNumber first; also try CaseRecno if we can look it up
       let caseRecno: number | undefined;
       try {
-        const sifCase = await findCaseInSif({ caseNumber });
+        const sifCase = await findCaseInSif({ caseNumber: caseNumber ?? undefined });
         caseRecno = sifCase.recno;
       } catch { /* ignore */ }
 
