@@ -75,13 +75,17 @@ export async function GET(req: NextRequest) {
   }
 
   // Forsøk uten wrapping, deretter med
+  let lastError = "Ukjent feil";
+
   try {
     const result = await fetchCodeTable(false);
     if (result.Successful !== false) {
       return NextResponse.json({ ok: true, items: mapRows(result) });
     }
-  } catch {
-    // fall through
+    lastError = result.ErrorMessage ?? "Successful=false";
+  } catch (e) {
+    lastError = e instanceof Error ? e.message : String(e);
+    console.error("[codetables] unwrapped call failed:", lastError);
   }
 
   try {
@@ -89,13 +93,16 @@ export async function GET(req: NextRequest) {
     if (result.Successful !== false) {
       return NextResponse.json({ ok: true, items: mapRows(result) });
     }
+    lastError = result.ErrorMessage ?? "Successful=false (wrapped)";
     return NextResponse.json(
-      { ok: false, items: [], error: "Kunne ikke hente kodeverdier fra SIF." },
+      { ok: false, items: [], error: lastError },
       { status: 502 }
     );
-  } catch {
+  } catch (e) {
+    lastError = e instanceof Error ? e.message : String(e);
+    console.error("[codetables] wrapped call failed:", lastError);
     return NextResponse.json(
-      { ok: false, items: [], error: "Kunne ikke hente kodeverdier fra SIF." },
+      { ok: false, items: [], error: lastError },
       { status: 502 }
     );
   }
