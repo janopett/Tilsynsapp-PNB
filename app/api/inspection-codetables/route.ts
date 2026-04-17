@@ -16,14 +16,14 @@ interface CodeTableRow {
   Recno?: number;
   Code?: string;
   Description?: string;
-  SortOrder?: number;
-  Active?: boolean;
+  Language?: string;
+  IsExpired?: boolean;
 }
 
 interface GetCodeTableRowsResponse {
   Successful?: boolean;
   ErrorMessage?: string;
-  Rows?: CodeTableRow[];
+  CodeTableRows?: CodeTableRow[];
 }
 
 // ── GET /api/inspection-codetables?type=supervision-area|measure-type ─────────
@@ -52,58 +52,31 @@ export async function GET(req: NextRequest) {
 
   const config = toSifClientConfig(settings);
 
-  async function fetchCodeTable(wrap: boolean): Promise<GetCodeTableRowsResponse> {
-    return sifRpcCallWithConfig<{ CodeTable: string }, GetCodeTableRowsResponse>(
-      config,
-      "SupportService",
-      "GetCodeTableRows",
-      { CodeTable: tableName },
-      undefined,
-      0,
-      wrap
-    );
-  }
-
   function mapRows(result: GetCodeTableRowsResponse) {
-    return (result.Rows ?? [])
-      .filter((r) => r.Active !== false)
-      .sort((a, b) => (a.SortOrder ?? 0) - (b.SortOrder ?? 0))
+    return (result.CodeTableRows ?? [])
+      .filter((r) => !r.IsExpired)
       .map((r) => ({
         code: r.Code ?? r.Description ?? "",
         description: r.Description ?? r.Code ?? "",
       }));
   }
 
-  // Forsøk uten wrapping, deretter med
-  let lastError = "Ukjent feil";
-
   try {
-    const result = await fetchCodeTable(false);
-    if (result.Successful !== false) {
-      return NextResponse.json({ ok: true, items: mapRows(result) });
-    }
-    lastError = result.ErrorMessage ?? "Successful=false";
-  } catch (e) {
-    lastError = e instanceof Error ? e.message : String(e);
-    console.error("[codetables] unwrapped call failed:", lastError);
-  }
+    const result = await sifRpcCallWithConfig<
+      { CodeTableName: string },
+      GetCodeTableRowsResponse
+    >(config, "SupportService", "GetCodeTableRows", { CodeTableName: tableName }, undefined, 0, true);
 
-  try {
-    const result = await fetchCodeTable(true);
-    if (result.Successful !== false) {
-      return NextResponse.json({ ok: true, items: mapRows(result) });
+    if (result.Successful === false) {
+      return NextResponse.json(
+        { ok: false, items: [], error: result.ErrorMessage ?? "Successful=false" },
+        { status: 502 }
+      );
     }
-    lastError = result.ErrorMessage ?? "Successful=false (wrapped)";
-    return NextResponse.json(
-      { ok: false, items: [], error: lastError },
-      { status: 502 }
-    );
+    return NextResponse.json({ ok: true, items: mapRows(result) });
   } catch (e) {
-    lastError = e instanceof Error ? e.message : String(e);
-    console.error("[codetables] wrapped call failed:", lastError);
-    return NextResponse.json(
-      { ok: false, items: [], error: lastError },
-      { status: 502 }
-    );
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[codetables] GetCodeTableRows failed:", msg);
+    return NextResponse.json({ ok: false, items: [], error: msg }, { status: 502 });
   }
 }
