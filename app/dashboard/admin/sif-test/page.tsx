@@ -111,6 +111,24 @@ export default function SifTestPage() {
   const [updateResult, setUpdateResult] = useState<RawDebugResult | null>(null);
   const [updateLoading, setUpdateLoading] = useState(false);
 
+  // GetCodeTableRows test
+  const [codeTableName, setCodeTableName] = useState("eBy Supervision area");
+  const [codeTableResult, setCodeTableResult] = useState<RawDebugResult | null>(null);
+  const [codeTableLoading, setCodeTableLoading] = useState(false);
+
+  async function lookupCodeTable(e: React.FormEvent) {
+    e.preventDefault();
+    if (!codeTableName.trim()) return;
+    setCodeTableLoading(true);
+    setCodeTableResult(null);
+    const res = await authFetch(
+      `/api/sif/debug-raw?service=codetable&codetable=${encodeURIComponent(codeTableName.trim())}`
+    );
+    const data = await res.json();
+    setCodeTableResult(data);
+    setCodeTableLoading(false);
+  }
+
   async function syncContact(e: React.FormEvent) {
     e.preventDefault();
     if (!syncFirstName.trim() && !syncLastName.trim()) return;
@@ -752,6 +770,38 @@ export default function SifTestPage() {
             </p>
             <CopyableJson data={updateResult.raw} ok={updateResult.ok} />
           </div>
+        )}
+      </div>
+
+      {/* GetCodeTableRows test */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+        <h2 className="text-base font-semibold mb-1">Test: GetCodeTableRows</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+          Kaller{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">SupportService/GetCodeTableRows</code>{" "}
+          direkte og viser råsvaret. Bruk dette for å verifisere at kodetabellnavnet er riktig i din installasjon.
+        </p>
+        <form onSubmit={lookupCodeTable} className="flex gap-3 mb-4">
+          <input
+            type="text"
+            value={codeTableName}
+            onChange={(e) => setCodeTableName(e.target.value)}
+            placeholder="F.eks. eBy Supervision area"
+            className="input flex-1 font-mono text-sm"
+          />
+          <button
+            type="submit"
+            disabled={codeTableLoading || !codeTableName.trim()}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {codeTableLoading ? "Henter…" : "Hent kodetabell"}
+          </button>
+        </form>
+        {codeTableResult && (
+          <CopyableJson
+            data={codeTableResult.ok ? codeTableResult.raw : codeTableResult.error}
+            ok={codeTableResult.ok}
+          />
         )}
       </div>
 
