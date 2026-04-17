@@ -17,10 +17,16 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const caseNumber = searchParams.get("caseNumber");
-  const service = searchParams.get("service"); // "estates" | "contacts"
+  const service = searchParams.get("service");
+  const codetable = searchParams.get("codetable");
 
-  if (!caseNumber || !service) {
-    return NextResponse.json({ error: "caseNumber and service are required" }, { status: 400 });
+  if (!service) {
+    return NextResponse.json({ error: "service is required" }, { status: 400 });
+  }
+
+  // codetable service doesn't need caseNumber
+  if (service !== "codetable" && !caseNumber) {
+    return NextResponse.json({ error: "caseNumber is required" }, { status: 400 });
   }
 
   try {
@@ -70,16 +76,26 @@ export async function GET(req: NextRequest) {
         SortCriterion: "RecnoDescending",
       });
     } else if (service === "files") {
-      // GetFilesWithMetadata is blocked on some endpoints.
-      // Use GetDocuments with IncludeFiles: true to list files nested within documents.
       raw = await sifRpcCall("DocumentService", "GetDocuments", {
         CaseNumber: caseNumber,
         MaxReturnedDocuments: 25,
         SortCriterion: "RecnoDescending",
         IncludeFiles: true,
       });
+    } else if (service === "codetable") {
+      if (!codetable) {
+        return NextResponse.json({ error: "codetable param is required" }, { status: 400 });
+      }
+      const { loadSifSettingsWithEnvFallback, toSifClientConfig } = await import("@/lib/sif/settings");
+      const { sifRpcCallWithConfig } = await import("@/lib/sif/client");
+      const config = toSifClientConfig(await loadSifSettingsWithEnvFallback());
+      raw = await sifRpcCallWithConfig(
+        config, "SupportService", "GetCodeTableRows",
+        { CodeTableName: codetable },
+        undefined, 0, true
+      );
     } else {
-      return NextResponse.json({ error: "service must be 'estates', 'contacts', 'cases', 'documents', or 'files'" }, { status: 400 });
+      return NextResponse.json({ error: "unknown service" }, { status: 400 });
     }
 
     return NextResponse.json({ ok: true, raw });
