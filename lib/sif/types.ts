@@ -147,7 +147,13 @@ export interface SifCaseEstate {
 export interface SifMilestone {
   Recno?: number;
   Title?: string;
+  /** Various field names used across 360° versions */
   Date?: string;
+  Deadline?: string;
+  DeadlineDate?: string;
+  DueDate?: string;
+  ActualDate?: string;
+  PlannedDate?: string;
   Status?: string;
   StatusDescription?: string;
   Notes?: string;
