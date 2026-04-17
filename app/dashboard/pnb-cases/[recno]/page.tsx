@@ -254,7 +254,7 @@ export default function PnbCaseDetailPage() {
       })()}
 
       {/* Active stages + milestones */}
-      {(activeStages.length > 0 || c.milestones.length > 0) && (
+      {activeStages.length > 0 && (
         <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-4">
           <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-4">
             Aktive behandlingstrinn
@@ -276,13 +276,6 @@ export default function PnbCaseDetailPage() {
                 <MilestoneList milestones={s.milestones} />
               </div>
             ))}
-            {/* Case-level milestones */}
-            {c.milestones.length > 0 && (
-              <div className="border-l-2 border-gray-200 dark:border-slate-600 pl-3">
-                <p className="text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">Saksmilepæler</p>
-                <MilestoneList milestones={c.milestones} />
-              </div>
-            )}
           </div>
         </section>
       )}
