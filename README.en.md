@@ -188,6 +188,7 @@ app/
 │       ├── case-estates/       # Properties linked to a case
 │       ├── enterprise-search/  # Company search (GetEnterprises)
 │       ├── my-cases/           # GET — fetch PNB cases where user is responsible (filtered by ResponsiblePersonName)
+│       ├── pnb-case/[recno]/   # GET — fetch a single PNB case with full detail (contacts, stages, milestones)
 │       ├── code-tables/        # Archive codes, categories, statuses (admin only)
 │       ├── settings/           # Read current SIF config
 │       ├── health/             # Connectivity check
@@ -195,6 +196,7 @@ app/
 ├── dashboard/                  # Authenticated pages
 │   ├── inspections/[id]/       # Site visit workspace (checklist, attachments, archive)
 │   ├── inspections/new/        # New site visit form
+│   ├── pnb-cases/[recno]/      # Detail page for a single PNB case (contacts, stages, milestones)
 │   └── admin/                  # Administration pages
 │       ├── checkpoints/        # Checkpoint editor (inc. codetable filter config)
 │       ├── users/              # User management
