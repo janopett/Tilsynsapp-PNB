@@ -154,6 +154,8 @@ export interface SifMilestone {
   DueDate?: string;
   ActualDate?: string;
   PlannedDate?: string;
+  StartDate?: string;
+  CompletedDate?: string;
   Status?: string;
   StatusDescription?: string;
   Notes?: string;

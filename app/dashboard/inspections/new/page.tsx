@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MEASURE_TYPES, PROPERTY_QUESTIONS } from "@/data/seed/measure-types";
 import type { MeasureTypeId, PropertyTag, SifContact, SifEstate, SifCaseStage, ExternalParticipant } from "@/types";
 import type { SifEnterpriseResult } from "@/lib/sif/types";
@@ -13,6 +13,7 @@ import { useLanguage } from "@/lib/i18n";
 
 export default function NewInspectionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t, locale } = useLanguage();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -21,8 +22,8 @@ export default function NewInspectionPage() {
 
   // Step 1 fields
   const [propertyAddress, setPropertyAddress] = useState("");
-  const [caseNumber, setCaseNumber] = useState("");
-  const [caseTitle, setCaseTitle] = useState("");
+  const [caseNumber, setCaseNumber] = useState(() => searchParams.get("case") ?? "");
+  const [caseTitle, setCaseTitle] = useState(() => searchParams.get("title") ?? "");
   const [gnr, setGnr] = useState("");
   const [bnr, setBnr] = useState("");
   const [snr, setSnr] = useState("");
