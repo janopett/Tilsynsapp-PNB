@@ -7,6 +7,22 @@ import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n";
 import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 
+const CASE_CACHE_TTL = 5 * 60 * 1000;
+
+function loadCaseCache(recno: string): PnbCaseItem | null {
+  try {
+    const raw = sessionStorage.getItem(`pnb_case_${recno}_v1`);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw) as { data: PnbCaseItem; ts: number };
+    return Date.now() - ts < CASE_CACHE_TTL ? data : null;
+  } catch { return null; }
+}
+
+function saveCaseCache(recno: string, data: PnbCaseItem) {
+  try { sessionStorage.setItem(`pnb_case_${recno}_v1`, JSON.stringify({ data, ts: Date.now() })); }
+  catch { /* storage full or SSR */ }
+}
+
 export default function PnbCaseDetailPage() {
   const { recno } = useParams<{ recno: string }>();
   const { locale } = useLanguage();
@@ -17,6 +33,9 @@ export default function PnbCaseDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const cached = loadCaseCache(recno);
+    if (cached) { setCaseData(cached); setLoading(false); return; }
+
     const supabase = createClient();
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { setError("Ikke autentisert"); setLoading(false); return; }
@@ -27,6 +46,7 @@ export default function PnbCaseDetailPage() {
         const json = await res.json();
         if (json.ok) {
           setCaseData(json.case);
+          saveCaseCache(recno, json.case);
         } else {
           setError(json.error ?? "Kunne ikke laste saken");
         }
@@ -116,7 +136,7 @@ export default function PnbCaseDetailPage() {
     <div className="max-w-3xl mx-auto">
       {/* Back */}
       <Link
-        href="/dashboard"
+        href="/dashboard?tab=pnb"
         className="inline-block text-sm text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 mb-5"
       >
         ← Mine PNB-saker

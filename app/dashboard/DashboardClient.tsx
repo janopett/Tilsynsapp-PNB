@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
@@ -39,7 +40,8 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ list }: DashboardClientProps) {
-  const [tab, setTab] = useState<DashTab>("active");
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<DashTab>((searchParams.get("tab") as DashTab) ?? "active");
   const { t, locale } = useLanguage();
 
   // ── PNB cases state ─────────────────────────────────────────────────────────
