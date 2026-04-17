@@ -143,6 +143,17 @@ export interface SifCaseEstate {
   Address?: SifAddress;
 }
 
+/** Data Contract: Milestone — attached to a Stage or directly to a Case */
+export interface SifMilestone {
+  Recno?: number;
+  Title?: string;
+  Date?: string;
+  Status?: string;
+  StatusDescription?: string;
+  Notes?: string;
+  Responsible?: string;
+}
+
 /** Data Contract: Stage (SIF API docs 7.4.22) */
 export interface SifCaseStage {
   Recno?: number;
@@ -155,7 +166,7 @@ export interface SifCaseStage {
   StageStatus?: { Code?: string; Description?: string };
   ProlongedCaseHandlingDays?: number;
   RemainingDays?: number;
-  Milestones?: unknown[];
+  Milestones?: SifMilestone[];
 }
 
 export interface SifResponsibleEntity {
@@ -213,7 +224,7 @@ export interface SifCaseResult {
   ReferringDocuments?: unknown;
   Remarks?: unknown;
   Keywords?: unknown;
-  Milestones?: unknown;
+  Milestones?: SifMilestone[];
   ProgressPlan?: {
     Recno?: string;
     Description?: string;

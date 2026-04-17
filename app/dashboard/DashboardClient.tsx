@@ -235,6 +235,8 @@ export default function DashboardClient({ list }: DashboardClientProps) {
 
 // ── PNB Cases View ─────────────────────────────────────────────────────────────
 
+const CONTACTS_PREVIEW = 4;
+
 interface PnbCasesViewProps {
   cases: PnbCaseItem[];
   loading: boolean;
@@ -255,6 +257,7 @@ interface PnbCasesViewProps {
 
 function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
   const dateLocale = locale === "en" ? "en-GB" : "nb-NO";
+  const [expandedContacts, setExpandedContacts] = useState<Set<number>>(new Set());
 
   if (loading) {
     return (
@@ -283,6 +286,14 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
     );
   }
 
+  function toggleContacts(recno: number) {
+    setExpandedContacts((prev) => {
+      const next = new Set(prev);
+      next.has(recno) ? next.delete(recno) : next.add(recno);
+      return next;
+    });
+  }
+
   return (
     <div className="space-y-3">
       {cases.map((c) => {
@@ -291,6 +302,15 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
           .filter((s) => s.deadlineDate)
           .sort((a, b) => a.deadlineDate!.localeCompare(b.deadlineDate!))
           .at(0);
+        const isContactsExpanded = expandedContacts.has(c.recno);
+        const visibleContacts = isContactsExpanded ? c.contacts : c.contacts.slice(0, CONTACTS_PREVIEW);
+        const hiddenCount = c.contacts.length - CONTACTS_PREVIEW;
+
+        // Collect all milestones: case-level + from each stage
+        const allMilestones = [
+          ...c.milestones,
+          ...c.stages.flatMap((s) => s.milestones),
+        ];
 
         return (
           <div
@@ -332,19 +352,29 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                   </div>
                 )}
 
-                {/* Contacts */}
+                {/* Contacts — collapsible */}
                 {c.contacts.length > 0 && (
-                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2">
-                    {c.contacts.map((contact, i) => (
-                      <span key={i} className="text-xs text-gray-500 dark:text-slate-400">
-                        {contact.name}
-                        {(contact.roleDescription ?? contact.role) && (
-                          <span className="text-gray-400 dark:text-slate-500">
-                            {" "}· {contact.roleDescription ?? contact.role}
-                          </span>
-                        )}
-                      </span>
-                    ))}
+                  <div className="mt-2">
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                      {visibleContacts.map((contact, i) => (
+                        <span key={i} className="text-xs text-gray-500 dark:text-slate-400">
+                          {contact.name}
+                          {(contact.roleDescription ?? contact.role) && (
+                            <span className="text-gray-400 dark:text-slate-500">
+                              {" "}· {contact.roleDescription ?? contact.role}
+                            </span>
+                          )}
+                        </span>
+                      ))}
+                    </div>
+                    {hiddenCount > 0 && (
+                      <button
+                        onClick={() => toggleContacts(c.recno)}
+                        className="mt-0.5 text-xs text-brand-600 dark:text-brand-400 hover:underline"
+                      >
+                        {isContactsExpanded ? "▲ Skjul" : `▼ +${hiddenCount} flere kontakter`}
+                      </button>
+                    )}
                   </div>
                 )}
 
@@ -367,6 +397,26 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                         +{activeStages.length - 3}
                       </span>
                     )}
+                  </div>
+                )}
+
+                {/* Milestones */}
+                {allMilestones.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {allMilestones.map((m, i) => (
+                      <span
+                        key={i}
+                        className="text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full px-2 py-0.5 border border-purple-100 dark:border-purple-800"
+                      >
+                        ◆ {m.title ?? "Milepæl"}
+                        {m.status && <span className="opacity-70"> · {m.status}</span>}
+                        {m.date && (
+                          <span className="opacity-70">
+                            {" "}· {new Date(m.date).toLocaleDateString(dateLocale)}
+                          </span>
+                        )}
+                      </span>
+                    ))}
                   </div>
                 )}
 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import { sifRpcCall } from "@/lib/sif/client";
-import type { SifGetCasesQuery, SifGetCasesResult, SifCaseResult } from "@/lib/sif/types";
+import type { SifGetCasesQuery, SifGetCasesResult, SifCaseResult, SifMilestone } from "@/lib/sif/types";
 
 const MAX_PAGES = 20;
 const PAGE_SIZE = 50;
@@ -32,7 +32,10 @@ export interface PnbCaseItem {
     stageStatus?: string;
     deadlineDate?: string;
     remainingDays?: number;
+    milestones: Array<{ title?: string; date?: string; status?: string }>;
   }>;
+  /** Case-level milestones (if returned by SIF alongside stage milestones) */
+  milestones: Array<{ title?: string; date?: string; status?: string }>;
 }
 
 function mapCase(raw: SifCaseResult, baseUrl = ""): PnbCaseItem {
@@ -67,8 +70,18 @@ function mapCase(raw: SifCaseResult, baseUrl = ""): PnbCaseItem {
       stageStatus: s.StageStatus?.Description,
       deadlineDate: s.DeadlineDate,
       remainingDays: s.RemainingDays,
+      milestones: mapMilestones(s.Milestones),
     })),
+    milestones: mapMilestones(raw.Milestones),
   };
+}
+
+function mapMilestones(ms: SifMilestone[] | undefined) {
+  return (ms ?? []).map((m) => ({
+    title: m.Title,
+    date: m.Date,
+    status: m.StatusDescription ?? m.Status,
+  }));
 }
 
 async function fetchPage(page: number): Promise<SifGetCasesResult> {
@@ -77,6 +90,7 @@ async function fetchPage(page: number): Promise<SifGetCasesResult> {
     IncludeCaseContacts: true,
     IncludeCaseEstates: true,
     IncludeStages: true,
+    IncludeMilestones: true,
     SortCriterion: "RecnoDescending",
     Page: page,
   });
