@@ -34,6 +34,7 @@ Web application for conducting and archiving building site visits (befaringer) i
 | PDF report | Generate a professional site visit report with case metadata, checklist findings, deviation summary, inline images, and map |
 | Archiving | Send a completed site visit to the municipal records system (Public 360°) — create a new document or update an existing one |
 | Dashboard | Overview of active and archived site visits with filtering by status, date, and property |
+| My PNB cases | Dedicated dashboard tab that fetches all PNB cases where the logged-in user is the responsible case officer — shows properties, contacts, case stages, and deadlines |
 | Map picker | Select coordinates for the site visit location via an interactive OpenStreetMap map |
 | Dark/light theme | Automatic system theme with manual override (light / dark / system) |
 
@@ -186,6 +187,7 @@ app/
 │       ├── case-documents/     # Documents already on a case
 │       ├── case-estates/       # Properties linked to a case
 │       ├── enterprise-search/  # Company search (GetEnterprises)
+│       ├── my-cases/           # GET — fetch PNB cases where user is responsible (filtered by ResponsiblePersonName)
 │       ├── code-tables/        # Archive codes, categories, statuses (admin only)
 │       ├── settings/           # Read current SIF config
 │       ├── health/             # Connectivity check

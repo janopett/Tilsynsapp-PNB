@@ -42,6 +42,7 @@ The inspector works in a browser on PC, tablet, or mobile. When the site visit i
 | Attachments | Upload photos and documents from the site visit, linked to individual checkpoints |
 | Map integration | Pin the site visit location geographically with one tap |
 | Case search | Look up the case from PNB directly in the app — no manual copying or switching between systems |
+| My PNB cases | Dashboard tab showing all PNB cases where the logged-in user is the responsible case officer — with properties, contacts, case stages, and deadlines at a glance |
 
 ### For the organisation
 

@@ -42,6 +42,7 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når befaring
 | Vedlegg | Last opp bilder og dokumenter fra befaringsstedet, koblet til enkeltpunkter |
 | Karttilknytning | Plasser befaringen geografisk med ett trykk |
 | Sakssøk | Søk opp saken fra PNB direkte i appen — ingen manuell kopiering eller systembytte |
+| Mine PNB-saker | Oversiktsfane som viser alle saker i PNB der innlogget bruker er ansvarlig — med eiendommer, kontakter, behandlingstrinn og frister direkte i dashbordet |
 
 ### For organisasjonen
 
