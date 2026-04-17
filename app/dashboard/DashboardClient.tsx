@@ -306,12 +306,6 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
         const visibleContacts = isContactsExpanded ? c.contacts : c.contacts.slice(0, CONTACTS_PREVIEW);
         const hiddenCount = c.contacts.length - CONTACTS_PREVIEW;
 
-        // Collect all milestones: case-level + from each stage
-        const allMilestones = [
-          ...c.milestones,
-          ...c.stages.flatMap((s) => s.milestones),
-        ];
-
         return (
           <div
             key={c.recno}
@@ -378,45 +372,71 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                   </div>
                 )}
 
-                {/* Active stages */}
+                {/* Stages with their milestones grouped */}
                 {activeStages.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {activeStages.slice(0, 3).map((s, i) => (
-                      <span
-                        key={i}
-                        className="text-xs bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5 border border-gray-200 dark:border-slate-600"
-                      >
-                        {s.title ?? s.stageType ?? "Trinn"}
-                        {s.stageStatus && (
-                          <span className="text-gray-400 dark:text-slate-500"> · {s.stageStatus}</span>
-                        )}
-                      </span>
-                    ))}
-                    {activeStages.length > 3 && (
-                      <span className="text-xs text-gray-400 dark:text-slate-500">
-                        +{activeStages.length - 3}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Milestones */}
-                {allMilestones.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {allMilestones.map((m, i) => (
-                      <span
-                        key={i}
-                        className="text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full px-2 py-0.5 border border-purple-100 dark:border-purple-800"
-                      >
-                        ◆ {m.title ?? "Milepæl"}
-                        {m.status && <span className="opacity-70"> · {m.status}</span>}
-                        {m.date && (
-                          <span className="opacity-70">
-                            {" "}· {new Date(m.date).toLocaleDateString(dateLocale)}
+                  <div className="mt-2 space-y-1.5">
+                    {activeStages.map((s, i) => {
+                      const sorted = [...s.milestones].sort((a, b) =>
+                        (a.date ?? "").localeCompare(b.date ?? "")
+                      );
+                      return (
+                        <div key={i}>
+                          {/* Stage pill */}
+                          <span className="inline-flex items-center text-xs bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5 border border-gray-200 dark:border-slate-600">
+                            {s.title ?? s.stageType ?? "Trinn"}
+                            {s.stageStatus && (
+                              <span className="text-gray-400 dark:text-slate-500"> · {s.stageStatus}</span>
+                            )}
                           </span>
-                        )}
-                      </span>
-                    ))}
+                          {/* Milestones for this stage */}
+                          {sorted.length > 0 && (
+                            <div className="ml-3 mt-1 flex flex-wrap gap-1.5">
+                              {sorted.map((m, j) => (
+                                <span
+                                  key={j}
+                                  className="inline-flex items-center gap-1 text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full px-2 py-0.5 border border-purple-100 dark:border-purple-800"
+                                >
+                                  <span className="text-[9px]">◆</span>
+                                  {m.title ?? "Milepæl"}
+                                  {m.date && (
+                                    <span className="opacity-60">
+                                      · {new Date(m.date).toLocaleDateString(dateLocale)}
+                                    </span>
+                                  )}
+                                  {m.status && (
+                                    <span className="opacity-60">· {m.status}</span>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {/* Case-level milestones (not tied to a specific stage) */}
+                    {c.milestones.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-0.5">
+                        {[...c.milestones]
+                          .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""))
+                          .map((m, i) => (
+                            <span
+                              key={i}
+                              className="inline-flex items-center gap-1 text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full px-2 py-0.5 border border-purple-100 dark:border-purple-800"
+                            >
+                              <span className="text-[9px]">◆</span>
+                              {m.title ?? "Milepæl"}
+                              {m.date && (
+                                <span className="opacity-60">
+                                  · {new Date(m.date).toLocaleDateString(dateLocale)}
+                                </span>
+                              )}
+                              {m.status && (
+                                <span className="opacity-60">· {m.status}</span>
+                              )}
+                            </span>
+                          ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
