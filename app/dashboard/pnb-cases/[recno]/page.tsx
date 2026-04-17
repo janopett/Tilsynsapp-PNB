@@ -183,36 +183,55 @@ export default function PnbCaseDetailPage() {
         </div>
       </div>
 
-      {/* Contacts */}
-      {c.contacts.length > 0 && (
-        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-4">
-          <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
-            Kontakter ({c.contacts.length})
-          </h2>
-          <div className="divide-y divide-gray-100 dark:divide-slate-700">
-            {c.contacts.map((contact, i) => (
-              <div key={i} className="py-2 flex items-baseline justify-between gap-4 text-sm">
-                <div className="min-w-0">
-                  <span className="font-medium text-gray-800 dark:text-slate-200">{contact.name}</span>
-                  {(contact.roleDescription ?? contact.role) && (
-                    <span className="ml-2 text-xs text-gray-400 dark:text-slate-500">
-                      {contact.roleDescription ?? contact.role}
-                    </span>
+      {/* Contacts — grouped by name, roles joined on one line */}
+      {c.contacts.length > 0 && (() => {
+        type GroupedContact = { name: string; roles: string[]; email?: string };
+        const grouped = new Map<string, GroupedContact>();
+        for (const contact of c.contacts) {
+          const role = contact.roleDescription ?? contact.role;
+          const existing = grouped.get(contact.name);
+          if (existing) {
+            if (role && !existing.roles.includes(role)) existing.roles.push(role);
+            if (contact.email && !existing.email) existing.email = contact.email;
+          } else {
+            grouped.set(contact.name, {
+              name: contact.name,
+              roles: role ? [role] : [],
+              email: contact.email,
+            });
+          }
+        }
+        const rows = Array.from(grouped.values());
+        return (
+          <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-4">
+            <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
+              Kontakter ({rows.length})
+            </h2>
+            <div className="divide-y divide-gray-100 dark:divide-slate-700">
+              {rows.map((contact, i) => (
+                <div key={i} className="py-2 flex items-baseline justify-between gap-4 text-sm">
+                  <div className="min-w-0">
+                    <span className="font-medium text-gray-800 dark:text-slate-200">{contact.name}</span>
+                    {contact.roles.length > 0 && (
+                      <span className="ml-2 text-xs text-gray-400 dark:text-slate-500">
+                        {contact.roles.join(" · ")}
+                      </span>
+                    )}
+                  </div>
+                  {contact.email && (
+                    <a
+                      href={`mailto:${contact.email}`}
+                      className="text-xs text-brand-600 dark:text-brand-400 hover:underline shrink-0"
+                    >
+                      {contact.email}
+                    </a>
                   )}
                 </div>
-                {contact.email && (
-                  <a
-                    href={`mailto:${contact.email}`}
-                    className="text-xs text-brand-600 dark:text-brand-400 hover:underline shrink-0"
-                  >
-                    {contact.email}
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Active stages + milestones */}
       {(activeStages.length > 0 || c.milestones.length > 0) && (
