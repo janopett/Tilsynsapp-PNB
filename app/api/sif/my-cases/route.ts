@@ -2,87 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import { sifRpcCall } from "@/lib/sif/client";
-import type { SifGetCasesQuery, SifGetCasesResult, SifCaseResult, SifMilestone } from "@/lib/sif/types";
+import { mapPnbCase } from "@/lib/sif/pnb-case-mapper";
+import type { SifGetCasesQuery, SifGetCasesResult, SifCaseResult } from "@/lib/sif/types";
+export type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 
 const MAX_PAGES = 20;
 const PAGE_SIZE = 50;
-
-export interface PnbCaseItem {
-  recno: number;
-  caseNumber: string;
-  title: string;
-  status?: string;
-  date?: string;
-  lastChangedDate?: string;
-  caseTypeDescription?: string;
-  url?: string;
-  contacts: Array<{
-    name: string;
-    role?: string;
-    roleDescription?: string;
-    email?: string;
-  }>;
-  estates: Array<{
-    estateNumber?: string;
-    address?: string;
-  }>;
-  stages: Array<{
-    title?: string;
-    stageType?: string;
-    stageStatus?: string;
-    deadlineDate?: string;
-    remainingDays?: number;
-    milestones: Array<{ title?: string; date?: string; status?: string }>;
-  }>;
-  /** Case-level milestones (if returned by SIF alongside stage milestones) */
-  milestones: Array<{ title?: string; date?: string; status?: string }>;
-}
-
-function mapCase(raw: SifCaseResult, baseUrl = ""): PnbCaseItem {
-  return {
-    recno: raw.Recno,
-    caseNumber: raw.CaseNumber,
-    title: raw.Title,
-    status: raw.Status,
-    date: raw.Date,
-    lastChangedDate: raw.LastChangedDate,
-    caseTypeDescription: raw.CaseTypeDescription,
-    url: raw.URL
-      ? raw.URL.startsWith("/")
-        ? `${baseUrl}${raw.URL}`
-        : raw.URL
-      : undefined,
-    contacts: (raw.Contacts ?? []).map((c) => ({
-      name: c.ContactName ?? "",
-      role: c.Role,
-      roleDescription: c.RoleDescription,
-      email: c.Email,
-    })),
-    estates: (raw.CaseEstates ?? []).map((e) => ({
-      estateNumber: e.EstateNumber,
-      address: [e.Address?.StreetAddress, e.Address?.ZipCode, e.Address?.ZipPlace]
-        .filter(Boolean)
-        .join(" "),
-    })),
-    stages: (raw.Stages ?? []).map((s) => ({
-      title: s.Title,
-      stageType: s.StageType?.Description,
-      stageStatus: s.StageStatus?.Description,
-      deadlineDate: s.DeadlineDate,
-      remainingDays: s.RemainingDays,
-      milestones: mapMilestones(s.Milestones),
-    })),
-    milestones: mapMilestones(raw.Milestones),
-  };
-}
-
-function mapMilestones(ms: SifMilestone[] | undefined) {
-  return (ms ?? []).map((m) => ({
-    title: m.Title,
-    date: m.Date,
-    status: m.StatusDescription ?? m.Status,
-  }));
-}
 
 async function fetchPage(page: number): Promise<SifGetCasesResult> {
   return sifRpcCall<SifGetCasesQuery, SifGetCasesResult>("CaseService", "GetCases", {
@@ -154,7 +79,7 @@ export async function GET(req: NextRequest) {
 
     const cases = allRaw
       .filter((c) => (c.ResponsiblePersonName ?? "").toLowerCase().trim() === nameLower)
-      .map((c) => mapCase(c, baseUrl));
+      .map((c) => mapPnbCase(c, baseUrl));
 
     return NextResponse.json({
       ok: true,

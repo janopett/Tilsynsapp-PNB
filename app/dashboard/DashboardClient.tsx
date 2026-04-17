@@ -235,8 +235,6 @@ export default function DashboardClient({ list }: DashboardClientProps) {
 
 // ── PNB Cases View ─────────────────────────────────────────────────────────────
 
-const CONTACTS_PREVIEW = 4;
-
 interface PnbCasesViewProps {
   cases: PnbCaseItem[];
   loading: boolean;
@@ -257,7 +255,6 @@ interface PnbCasesViewProps {
 
 function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
   const dateLocale = locale === "en" ? "en-GB" : "nb-NO";
-  const [expandedContacts, setExpandedContacts] = useState<Set<number>>(new Set());
 
   if (loading) {
     return (
@@ -286,25 +283,16 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
     );
   }
 
-  function toggleContacts(recno: number) {
-    setExpandedContacts((prev) => {
-      const next = new Set(prev);
-      next.has(recno) ? next.delete(recno) : next.add(recno);
-      return next;
-    });
-  }
-
   return (
     <div className="space-y-3">
       {cases.map((c) => {
-        const activeStages = c.stages.filter((s) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed");
+        const activeStages = c.stages.filter(
+          (s) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed"
+        );
         const nearestDeadline = activeStages
           .filter((s) => s.deadlineDate)
           .sort((a, b) => a.deadlineDate!.localeCompare(b.deadlineDate!))
           .at(0);
-        const isContactsExpanded = expandedContacts.has(c.recno);
-        const visibleContacts = isContactsExpanded ? c.contacts : c.contacts.slice(0, CONTACTS_PREVIEW);
-        const hiddenCount = c.contacts.length - CONTACTS_PREVIEW;
 
         return (
           <div
@@ -314,9 +302,12 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="min-w-0 flex-1">
                 {/* Header */}
-                <p className="font-semibold text-gray-900 dark:text-slate-100 text-sm leading-snug">
+                <Link
+                  href={`/dashboard/pnb-cases/${c.recno}`}
+                  className="font-semibold text-gray-900 dark:text-slate-100 text-sm leading-snug hover:text-brand-700 dark:hover:text-brand-300 hover:underline"
+                >
                   {c.caseNumber} · {c.title}
-                </p>
+                </Link>
 
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 dark:text-slate-400 flex-wrap">
                   {c.caseTypeDescription && <span>{c.caseTypeDescription}</span>}
@@ -346,103 +337,18 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                   </div>
                 )}
 
-                {/* Contacts — collapsible */}
-                {c.contacts.length > 0 && (
-                  <div className="mt-2">
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                      {visibleContacts.map((contact, i) => (
-                        <span key={i} className="text-xs text-gray-500 dark:text-slate-400">
-                          {contact.name}
-                          {(contact.roleDescription ?? contact.role) && (
-                            <span className="text-gray-400 dark:text-slate-500">
-                              {" "}· {contact.roleDescription ?? contact.role}
-                            </span>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                    {hiddenCount > 0 && (
-                      <button
-                        onClick={() => toggleContacts(c.recno)}
-                        className="mt-0.5 text-xs text-brand-600 dark:text-brand-400 hover:underline"
-                      >
-                        {isContactsExpanded ? "▲ Skjul" : `▼ +${hiddenCount} flere kontakter`}
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                {/* Stages with their milestones grouped */}
+                {/* Stage summary */}
                 {activeStages.length > 0 && (
-                  <div className="mt-2 space-y-1.5">
-                    {activeStages.map((s, i) => {
-                      const sorted = [...s.milestones].sort((a, b) =>
-                        (a.date ?? "").localeCompare(b.date ?? "")
-                      );
-                      return (
-                        <div key={i}>
-                          {/* Stage pill */}
-                          <span className="inline-flex items-center text-xs bg-gray-50 dark:bg-slate-700 text-gray-600 dark:text-slate-300 rounded-full px-2 py-0.5 border border-gray-200 dark:border-slate-600">
-                            {s.title ?? s.stageType ?? "Trinn"}
-                            {s.stageStatus && (
-                              <span className="text-gray-400 dark:text-slate-500"> · {s.stageStatus}</span>
-                            )}
-                          </span>
-                          {/* Milestones for this stage */}
-                          {sorted.length > 0 && (
-                            <div className="ml-3 mt-1 flex flex-wrap gap-1.5">
-                              {sorted.map((m, j) => (
-                                <span
-                                  key={j}
-                                  className="inline-flex items-center gap-1 text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full px-2 py-0.5 border border-purple-100 dark:border-purple-800"
-                                >
-                                  <span className="text-[9px]">◆</span>
-                                  {m.title ?? "Milepæl"}
-                                  {m.date && (
-                                    <span className="opacity-60">
-                                      · {new Date(m.date).toLocaleDateString(dateLocale)}
-                                    </span>
-                                  )}
-                                  {m.status && (
-                                    <span className="opacity-60">· {m.status}</span>
-                                  )}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {/* Case-level milestones (not tied to a specific stage) */}
-                    {c.milestones.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 pt-0.5">
-                        {[...c.milestones]
-                          .sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""))
-                          .map((m, i) => (
-                            <span
-                              key={i}
-                              className="inline-flex items-center gap-1 text-xs bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 rounded-full px-2 py-0.5 border border-purple-100 dark:border-purple-800"
-                            >
-                              <span className="text-[9px]">◆</span>
-                              {m.title ?? "Milepæl"}
-                              {m.date && (
-                                <span className="opacity-60">
-                                  · {new Date(m.date).toLocaleDateString(dateLocale)}
-                                </span>
-                              )}
-                              {m.status && (
-                                <span className="opacity-60">· {m.status}</span>
-                              )}
-                            </span>
-                          ))}
-                      </div>
-                    )}
-                  </div>
+                  <p className="mt-2 text-xs text-gray-400 dark:text-slate-500">
+                    {activeStages.length} aktivt behandlingstrinn
+                    {activeStages.length !== 1 ? "" : ""}
+                    {" "}· {c.contacts.length} kontakter
+                  </p>
                 )}
 
                 {/* Nearest deadline */}
                 {nearestDeadline?.deadlineDate && (
-                  <div className="mt-2 text-xs">
+                  <div className="mt-1.5 text-xs">
                     {(() => {
                       const daysLeft = Math.ceil(
                         (new Date(nearestDeadline.deadlineDate).getTime() - Date.now()) /
@@ -471,6 +377,12 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
 
               {/* Actions */}
               <div className="flex flex-col gap-2 items-end shrink-0">
+                <Link
+                  href={`/dashboard/pnb-cases/${c.recno}`}
+                  className="text-xs bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap"
+                >
+                  Åpne sak →
+                </Link>
                 <Link
                   href={`/dashboard/inspections/new${c.caseNumber ? `?case=${encodeURIComponent(c.caseNumber)}` : ""}`}
                   className="text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap"

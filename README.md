@@ -188,6 +188,7 @@ app/
 │       ├── case-estates/       # Eiendommer knyttet til saken
 │       ├── enterprise-search/  # Foretakssøk (GetEnterprises)
 │       ├── my-cases/           # GET — henter PNB-saker der bruker er ansvarlig (filtrert på ResponsiblePersonName)
+│       ├── pnb-case/[recno]/   # GET — henter én PNB-sak med full detalj (kontakter, trinn, milepæler)
 │       ├── code-tables/        # Arkivkoder, kategorier, statuser (admin)
 │       ├── settings/           # Les gjeldende SIF-konfigurasjon
 │       ├── health/             # Tilkoblingskontroll
@@ -195,6 +196,7 @@ app/
 ├── dashboard/                  # Autentiserte sider
 │   ├── inspections/[id]/       # Befaringsarbeidsrom (sjekkliste, vedlegg, arkivering)
 │   ├── inspections/new/        # Skjema for ny befaring
+│   ├── pnb-cases/[recno]/      # Detaljside for én PNB-sak (kontakter, trinn, milepæler)
 │   └── admin/                  # Administrasjonssider
 │       ├── checkpoints/        # Sjekkpunkt-editor
 │       ├── users/              # Brukeradministrasjon
