@@ -16,8 +16,8 @@ interface CodeTableRow {
   Recno?: number;
   Code?: string;
   Description?: string;
-  SortOrder?: number;
-  Active?: boolean;
+  Language?: string;
+  IsExpired?: boolean;
 }
 
 interface GetCodeTableRowsResponse {
@@ -56,51 +56,30 @@ export async function GET(req: NextRequest) {
   const config = toSifClientConfig(settings);
 
   function mapRows(result: GetCodeTableRowsResponse) {
-    return (result.Rows ?? result.CodeTableRows ?? [])
-      .filter((r) => r.Active !== false)
-      .sort((a, b) => (a.SortOrder ?? 0) - (b.SortOrder ?? 0))
+    return (result.CodeTableRows ?? result.Rows ?? [])
+      .filter((r) => r.IsExpired !== true)
       .map((r) => ({
         code: r.Code ?? r.Description ?? "",
         description: r.Description ?? r.Code ?? "",
       }));
   }
 
-  const payload = { CodeTableName: tableName, IncludeExpiredValues: false };
-  type Payload = typeof payload;
-
-  async function fetchWith(wrap: boolean): Promise<GetCodeTableRowsResponse> {
-    return sifRpcCallWithConfig<Payload, GetCodeTableRowsResponse>(
-      config, "SupportService", "GetCodeTableRows", payload, undefined, 0, wrap
-    );
-  }
-
-  let firstError: string | null = null;
-
-  // Attempt 1: no wrapping (matches all other working SIF calls)
+  // Swagger confirms { parameter: {...} } wrapping is always required for GetCodeTableRows
   try {
-    const result = await fetchWith(false);
-    if (result.Successful !== false) {
-      return NextResponse.json({ ok: true, items: mapRows(result) });
-    }
-    firstError = result.ErrorMessage ?? result.ErrorDetails ?? "Successful=false";
-    console.info("[codetables] Attempt 1 (unwrapped) Successful=false, retrying wrapped", { type, firstError });
-  } catch (e) {
-    firstError = e instanceof Error ? e.message : String(e);
-    console.info("[codetables] Attempt 1 (unwrapped) threw, retrying wrapped", { type, firstError });
-  }
+    const result = await sifRpcCallWithConfig<
+      { CodeTableName: string; IncludeExpiredValues: boolean },
+      GetCodeTableRowsResponse
+    >(config, "SupportService", "GetCodeTableRows", { CodeTableName: tableName, IncludeExpiredValues: false }, undefined, 0, true);
 
-  // Attempt 2: with { parameter: {...} } wrapping
-  try {
-    const result = await fetchWith(true);
-    if (result.Successful !== false) {
-      return NextResponse.json({ ok: true, items: mapRows(result) });
+    if (result.Successful === false) {
+      const msg = result.ErrorMessage ?? result.ErrorDetails ?? "Successful=false";
+      console.error("[codetables] GetCodeTableRows Successful=false", { type, tableName, msg });
+      return NextResponse.json({ ok: false, items: [], error: msg }, { status: 502 });
     }
-    const msg = result.ErrorMessage ?? result.ErrorDetails ?? firstError ?? "Successful=false";
-    console.error("[codetables] Both attempts failed", { type, msg });
-    return NextResponse.json({ ok: false, items: [], error: msg }, { status: 502 });
+    return NextResponse.json({ ok: true, items: mapRows(result) });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[codetables] Both attempts threw", { type, firstError, secondError: msg });
+    console.error("[codetables] GetCodeTableRows failed", { type, tableName, msg });
     return NextResponse.json({ ok: false, items: [], error: msg }, { status: 502 });
   }
 }
