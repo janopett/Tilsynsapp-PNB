@@ -25,7 +25,8 @@ interface GetCodeTableRowsResponse {
   ErrorMessage?: string;
   ErrorDetails?: string;
   TotalCount?: number;
-  Rows?: CodeTableRow[];
+  Rows?: CodeTableRow[];         // some SIF versions
+  CodeTableRows?: CodeTableRow[]; // other SIF versions
 }
 
 // ── GET /api/inspection-codetables?type=supervision-area|measure-type ─────────
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
   const config = toSifClientConfig(settings);
 
   function mapRows(result: GetCodeTableRowsResponse) {
-    return (result.Rows ?? [])
+    return (result.Rows ?? result.CodeTableRows ?? [])
       .filter((r) => r.Active !== false)
       .sort((a, b) => (a.SortOrder ?? 0) - (b.SortOrder ?? 0))
       .map((r) => ({

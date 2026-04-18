@@ -28,6 +28,7 @@ interface GetCodeTableRowsResponse {
   ErrorMessage?: string;
   ErrorDetails?: string;
   Rows?: CodeTableRow[];
+  CodeTableRows?: CodeTableRow[];
   TotalCount?: number;
 }
 
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
   }
 
   function mapRows(result: GetCodeTableRowsResponse) {
-    return (result.Rows ?? []).map((r) => ({
+    return (result.Rows ?? result.CodeTableRows ?? []).map((r) => ({
       recno: r.Recno,
       code: r.Code,
       description: r.Description,
