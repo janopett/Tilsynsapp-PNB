@@ -91,7 +91,7 @@ export async function GET(req: NextRequest) {
       const config = toSifClientConfig(await loadSifSettingsWithEnvFallback());
       raw = await sifRpcCallWithConfig(
         config, "SupportService", "GetCodeTableRows",
-        { CodeTableName: codetable },
+        { CodeTableName: codetable, IncludeExpiredValues: false },
         undefined, 0, true
       );
     } else {
