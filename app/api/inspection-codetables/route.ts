@@ -16,14 +16,16 @@ interface CodeTableRow {
   Recno?: number;
   Code?: string;
   Description?: string;
-  Language?: string;
-  IsExpired?: boolean;
+  SortOrder?: number;
+  Active?: boolean;
 }
 
 interface GetCodeTableRowsResponse {
   Successful?: boolean;
   ErrorMessage?: string;
-  CodeTableRows?: CodeTableRow[];
+  ErrorDetails?: string;
+  TotalCount?: number;
+  Rows?: CodeTableRow[];
 }
 
 // ── GET /api/inspection-codetables?type=supervision-area|measure-type ─────────
@@ -53,8 +55,9 @@ export async function GET(req: NextRequest) {
   const config = toSifClientConfig(settings);
 
   function mapRows(result: GetCodeTableRowsResponse) {
-    return (result.CodeTableRows ?? [])
-      .filter((r) => !r.IsExpired)
+    return (result.Rows ?? [])
+      .filter((r) => r.Active !== false)
+      .sort((a, b) => (a.SortOrder ?? 0) - (b.SortOrder ?? 0))
       .map((r) => ({
         code: r.Code ?? r.Description ?? "",
         description: r.Description ?? r.Code ?? "",
