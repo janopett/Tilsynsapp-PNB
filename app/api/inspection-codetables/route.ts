@@ -63,9 +63,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const result = await sifRpcCallWithConfig<
-      { CodeTableName: string },
+      { CodeTableName: string; IncludeExpiredValues: boolean },
       GetCodeTableRowsResponse
-    >(config, "SupportService", "GetCodeTableRows", { CodeTableName: tableName }, undefined, 0, true);
+    >(config, "SupportService", "GetCodeTableRows", { CodeTableName: tableName, IncludeExpiredValues: false }, undefined, 0, true);
 
     if (result.Successful === false) {
       return NextResponse.json(
