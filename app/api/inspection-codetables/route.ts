@@ -8,8 +8,8 @@ import { sifRpcCallWithConfig } from "@/lib/sif/client";
 
 // Mapping fra intern type → PNB-kodetabellnavn
 const CODETABLE_MAP: Record<string, string> = {
-  "supervision-area": "eBy Supervision area",
-  "measure-type": "eBy Measure type",
+  "supervision-area": "code table: eBy Supervision area",
+  "measure-type": "code table: eBy Measure type",
 };
 
 interface CodeTableRow {
