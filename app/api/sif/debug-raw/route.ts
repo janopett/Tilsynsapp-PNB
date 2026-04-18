@@ -87,20 +87,13 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "codetable param is required" }, { status: 400 });
       }
       const { loadSifSettingsWithEnvFallback, toSifClientConfig } = await import("@/lib/sif/settings");
-      const { sifRpcCallWithConfig, buildRpcUrl } = await import("@/lib/sif/client");
+      const { sifRpcCallWithConfig } = await import("@/lib/sif/client");
       const config = toSifClientConfig(await loadSifSettingsWithEnvFallback());
-      const payload = { CodeTableName: codetable, IncludeExpiredValues: false };
-      const url = buildRpcUrl(config, "SupportService", "GetCodeTableRows");
-      const results: Record<string, unknown> = { url };
-      // Try without wrapping first (matches other working SIF calls)
-      try {
-        results.unwrapped = await sifRpcCallWithConfig(config, "SupportService", "GetCodeTableRows", payload, undefined, 0, false);
-      } catch (e) { results.unwrappedError = String(e); }
-      // Try with wrapping
-      try {
-        results.wrapped = await sifRpcCallWithConfig(config, "SupportService", "GetCodeTableRows", payload, undefined, 0, true);
-      } catch (e) { results.wrappedError = String(e); }
-      raw = results;
+      raw = await sifRpcCallWithConfig(
+        config, "SupportService", "GetCodeTableRows",
+        { CodeTableName: codetable, IncludeExpiredValues: false },
+        undefined, 0, true
+      );
     } else {
       return NextResponse.json({ error: "unknown service" }, { status: 400 });
     }
