@@ -64,22 +64,42 @@ export async function GET(req: NextRequest) {
       }));
   }
 
-  try {
-    const result = await sifRpcCallWithConfig<
-      { CodeTableName: string; IncludeExpiredValues: boolean },
-      GetCodeTableRowsResponse
-    >(config, "SupportService", "GetCodeTableRows", { CodeTableName: tableName, IncludeExpiredValues: false }, undefined, 0, true);
+  const payload = { CodeTableName: tableName, IncludeExpiredValues: false };
+  type Payload = typeof payload;
 
-    if (result.Successful === false) {
-      return NextResponse.json(
-        { ok: false, items: [], error: result.ErrorMessage ?? "Successful=false" },
-        { status: 502 }
-      );
+  async function fetchWith(wrap: boolean): Promise<GetCodeTableRowsResponse> {
+    return sifRpcCallWithConfig<Payload, GetCodeTableRowsResponse>(
+      config, "SupportService", "GetCodeTableRows", payload, undefined, 0, wrap
+    );
+  }
+
+  let firstError: string | null = null;
+
+  // Attempt 1: no wrapping (matches all other working SIF calls)
+  try {
+    const result = await fetchWith(false);
+    if (result.Successful !== false) {
+      return NextResponse.json({ ok: true, items: mapRows(result) });
     }
-    return NextResponse.json({ ok: true, items: mapRows(result) });
+    firstError = result.ErrorMessage ?? result.ErrorDetails ?? "Successful=false";
+    console.info("[codetables] Attempt 1 (unwrapped) Successful=false, retrying wrapped", { type, firstError });
+  } catch (e) {
+    firstError = e instanceof Error ? e.message : String(e);
+    console.info("[codetables] Attempt 1 (unwrapped) threw, retrying wrapped", { type, firstError });
+  }
+
+  // Attempt 2: with { parameter: {...} } wrapping
+  try {
+    const result = await fetchWith(true);
+    if (result.Successful !== false) {
+      return NextResponse.json({ ok: true, items: mapRows(result) });
+    }
+    const msg = result.ErrorMessage ?? result.ErrorDetails ?? firstError ?? "Successful=false";
+    console.error("[codetables] Both attempts failed", { type, msg });
+    return NextResponse.json({ ok: false, items: [], error: msg }, { status: 502 });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[codetables] GetCodeTableRows failed:", msg);
+    console.error("[codetables] Both attempts threw", { type, firstError, secondError: msg });
     return NextResponse.json({ ok: false, items: [], error: msg }, { status: 502 });
   }
 }

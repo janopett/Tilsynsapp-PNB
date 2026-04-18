@@ -55,13 +55,13 @@ export async function GET(req: NextRequest) {
 
   const config = toSifClientConfig(settings);
 
-  // Some SIF installations require { parameter: {...} } wrapping even for reads.
-  // Try without wrapping first; fall back to wrapped if the result indicates failure.
+  // Try without wrapping first (matches all other working SIF calls);
+  // fall back to { parameter: {...} } wrapping if the result indicates failure.
   const tableNameStr: string = tableName;
   async function fetchCodeTable(wrap: boolean): Promise<GetCodeTableRowsResponse> {
-    return sifRpcCallWithConfig<{ CodeTable: string }, GetCodeTableRowsResponse>(
+    return sifRpcCallWithConfig<{ CodeTableName: string; IncludeExpiredValues: boolean }, GetCodeTableRowsResponse>(
       config, "SupportService", "GetCodeTableRows",
-      { CodeTable: tableNameStr },
+      { CodeTableName: tableNameStr, IncludeExpiredValues: false },
       undefined, 0, wrap
     );
   }
