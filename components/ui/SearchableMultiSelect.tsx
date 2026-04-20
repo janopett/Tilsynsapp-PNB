@@ -13,6 +13,7 @@ interface SearchableMultiSelectProps {
   selected: string[];
   onChange: (selected: string[]) => void;
   placeholder?: string;
+  emptyHint?: string;
 }
 
 export default function SearchableMultiSelect({
@@ -21,6 +22,7 @@ export default function SearchableMultiSelect({
   selected,
   onChange,
   placeholder = "Søk...",
+  emptyHint,
 }: SearchableMultiSelectProps) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -83,6 +85,11 @@ export default function SearchableMultiSelect({
             </span>
           ))}
         </div>
+      )}
+
+      {/* Empty hint */}
+      {emptyHint && selected.length === 0 && (
+        <p className="text-xs text-gray-400 dark:text-slate-500 mb-1.5">{emptyHint}</p>
       )}
 
       {/* Search input */}

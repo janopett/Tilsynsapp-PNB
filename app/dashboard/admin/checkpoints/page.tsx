@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import { CATEGORY_LABELS, CATEGORY_ORDER } from "@/lib/checklist/filter-engine";
-import type { CheckpointCategory, MeasureTypeId, PropertyTag } from "@/types";
+import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
+import type { CheckpointCategory } from "@/types";
 
 // ── Constants ──────────────────────────────────────────────────────────────────
 
@@ -19,35 +20,9 @@ const SEVERITY_COLORS: Record<string, string> = {
   info: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
 };
 
-const MEASURE_TYPE_OPTIONS: { id: MeasureTypeId; label: string }[] = [
-  { id: "garasje_carport",   label: "Garasje / Carport" },
-  { id: "tilbygg",           label: "Tilbygg" },
-  { id: "paabygg",           label: "Påbygg" },
-  { id: "enebolig",          label: "Enebolig" },
-  { id: "tomannsbolig",      label: "Tomannsbolig" },
-  { id: "bruksendring",      label: "Bruksendring" },
-  { id: "fasadeendring",     label: "Fasadeendring" },
-  { id: "terrasse_balkong",  label: "Terrasse / Balkong" },
-  { id: "stoettemur",        label: "Støttemur" },
-  { id: "riving",            label: "Riving" },
-];
-
-const PROPERTY_TAG_OPTIONS: { tag: PropertyTag; label: string }[] = [
-  { tag: "soeknadspliktig",       label: "Søknadspliktig" },
-  { tag: "naer_nabogrense",       label: "Nær nabogrense" },
-  { tag: "inneholder_vaatrom",    label: "Inneholder våtrom" },
-  { tag: "har_brannskille",       label: "Har brannskille" },
-  { tag: "har_terrengendring",    label: "Har terrengendring" },
-  { tag: "har_elektrisk_arbeid",  label: "Har elektrisk arbeid" },
-  { tag: "har_va_overvann",       label: "Har VA / overvann" },
-  { tag: "krever_tilgjengelighet","label": "Krever tilgjengelighet" },
-  { tag: "har_ansvarlige_foretak","label": "Har ansvarlige foretak" },
-  { tag: "har_dispensasjon",      label: "Har dispensasjon" },
-  { tag: "har_radon_tiltak",      label: "Har radon-tiltak" },
-  { tag: "krever_lydkrav",        label: "Krever lydkrav mellom boenheter" },
-];
-
 // ── Types ──────────────────────────────────────────────────────────────────────
+
+interface CodetableItem { code: string; description: string; }
 
 interface Checkpoint {
   id: string;
@@ -56,6 +31,8 @@ interface Checkpoint {
   description: string;
   applies_to: string[];
   required_tags: string[];
+  applies_to_omrade: string[];
+  applies_to_type_codes: string[];
   severity: string;
   legal_reference: string | null;
   legal_reference_url: string | null;
@@ -63,9 +40,7 @@ interface Checkpoint {
   sort_order: number;
 }
 
-type DraftCheckpoint = Omit<Checkpoint, "id" | "sort_order" | "active"> & {
-  id: string;
-};
+type DraftCheckpoint = Omit<Checkpoint, "sort_order" | "active">;
 
 const EMPTY_DRAFT: DraftCheckpoint = {
   id: "",
@@ -74,6 +49,8 @@ const EMPTY_DRAFT: DraftCheckpoint = {
   description: "",
   applies_to: [],
   required_tags: [],
+  applies_to_omrade: [],
+  applies_to_type_codes: [],
   severity: "info",
   legal_reference: "",
   legal_reference_url: "",
@@ -83,11 +60,15 @@ const EMPTY_DRAFT: DraftCheckpoint = {
 
 function CheckpointForm({
   initial,
+  omradeItems,
+  typeItems,
   onSave,
   onCancel,
   isNew,
 }: {
   initial: DraftCheckpoint;
+  omradeItems: CodetableItem[];
+  typeItems: CodetableItem[];
   onSave: (draft: DraftCheckpoint) => Promise<void>;
   onCancel: () => void;
   isNew: boolean;
@@ -95,10 +76,6 @@ function CheckpointForm({
   const [draft, setDraft] = useState<DraftCheckpoint>(initial);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
-  function toggleArray<T extends string>(arr: T[], val: T): T[] {
-    return arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val];
-  }
 
   async function handleSubmit() {
     if (!draft.title.trim() || !draft.category) {
@@ -118,7 +95,7 @@ function CheckpointForm({
 
   return (
     <div className="space-y-4">
-      {/* ID — only editable for new checkpoints */}
+      {/* ID */}
       {isNew && (
         <div>
           <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
@@ -219,47 +196,25 @@ function CheckpointForm({
         </div>
       </div>
 
-      {/* Applies to — measure types */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-2">
-          Gjelder for tiltakstyper
-          <span className="ml-1 font-normal text-gray-400">(velg alle som er relevante)</span>
-        </label>
-        <div className="grid grid-cols-2 gap-1.5">
-          {MEASURE_TYPE_OPTIONS.map(({ id, label }) => (
-            <label key={id} className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={draft.applies_to.includes(id)}
-                onChange={() => setDraft((d) => ({ ...d, applies_to: toggleArray(d.applies_to, id) }))}
-                className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-slate-300">{label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+      {/* Befaringsområde filter */}
+      <SearchableMultiSelect
+        label="Gjelder for befaringsområde"
+        items={omradeItems}
+        selected={draft.applies_to_omrade}
+        onChange={(v) => setDraft((d) => ({ ...d, applies_to_omrade: v }))}
+        placeholder={omradeItems.length > 0 ? "Søk etter befaringsområde…" : "Ingen kodetabellverdier lastet"}
+        emptyHint="Tom = gjelder alle befaringsområder"
+      />
 
-      {/* Required tags — property questions */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-2">
-          Vises kun hvis egenskap er valgt
-          <span className="ml-1 font-normal text-gray-400">(alle må være til stede)</span>
-        </label>
-        <div className="grid grid-cols-2 gap-1.5">
-          {PROPERTY_TAG_OPTIONS.map(({ tag, label }) => (
-            <label key={tag} className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={draft.required_tags.includes(tag)}
-                onChange={() => setDraft((d) => ({ ...d, required_tags: toggleArray(d.required_tags, tag) }))}
-                className="rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-              />
-              <span className="text-sm text-gray-700 dark:text-slate-300">{label}</span>
-            </label>
-          ))}
-        </div>
-      </div>
+      {/* Tiltakstype filter */}
+      <SearchableMultiSelect
+        label="Gjelder for tiltakstype"
+        items={typeItems}
+        selected={draft.applies_to_type_codes}
+        onChange={(v) => setDraft((d) => ({ ...d, applies_to_type_codes: v }))}
+        placeholder={typeItems.length > 0 ? "Søk etter tiltakstype…" : "Ingen kodetabellverdier lastet"}
+        emptyHint="Tom = gjelder alle tiltakstyper"
+      />
 
       {error && <p className="text-xs text-red-600">{error}</p>}
 
@@ -286,10 +241,14 @@ function CheckpointForm({
 
 function CheckpointRow({
   checkpoint,
+  omradeItems,
+  typeItems,
   onUpdate,
   onDelete,
 }: {
   checkpoint: Checkpoint;
+  omradeItems: CodetableItem[];
+  typeItems: CodetableItem[];
   onUpdate: (updated: Checkpoint) => void;
   onDelete: (id: string) => void;
 }) {
@@ -309,11 +268,9 @@ function CheckpointRow({
   }
 
   async function handleDelete() {
-    if (!confirm(`Slett sjekkpunkt "${checkpoint.title}"? Har inspeksjoner allerede brukt dette sjekkpunktet, deaktiveres det i stedet for å slettes.`)) return;
+    if (!confirm(`Slett sjekkpunkt "${checkpoint.title}"?`)) return;
     setDeleting(true);
-    await authFetch(`/api/admin/checkpoints?id=${encodeURIComponent(checkpoint.id)}`, {
-      method: "DELETE",
-    });
+    await authFetch(`/api/admin/checkpoints?id=${encodeURIComponent(checkpoint.id)}`, { method: "DELETE" });
     onDelete(checkpoint.id);
     setDeleting(false);
   }
@@ -328,6 +285,8 @@ function CheckpointRow({
         description: draft.description,
         applies_to: draft.applies_to,
         required_tags: draft.required_tags,
+        applies_to_omrade: draft.applies_to_omrade,
+        applies_to_type_codes: draft.applies_to_type_codes,
         severity: draft.severity,
         legal_reference: draft.legal_reference || null,
         legal_reference_url: draft.legal_reference_url || null,
@@ -339,19 +298,21 @@ function CheckpointRow({
     setExpanded(false);
   }
 
+  const omradeDesc = (checkpoint.applies_to_omrade ?? [])
+    .map((c) => omradeItems.find((i) => i.code === c)?.description ?? c)
+    .join(", ");
+  const typeDesc = (checkpoint.applies_to_type_codes ?? [])
+    .map((c) => typeItems.find((i) => i.code === c)?.description ?? c)
+    .join(", ");
+
   return (
     <div className={`border rounded-xl overflow-hidden transition ${checkpoint.active ? "border-gray-200 dark:border-slate-700" : "border-gray-100 dark:border-slate-800 opacity-60"}`}>
-      {/* Header row */}
       <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800">
-        {/* Severity dot */}
-        <span
-          className={`w-2 h-2 rounded-full flex-shrink-0 ${
-            checkpoint.severity === "critical" ? "bg-red-500" :
-            checkpoint.severity === "warning" ? "bg-amber-400" : "bg-blue-400"
-          }`}
-        />
+        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+          checkpoint.severity === "critical" ? "bg-red-500" :
+          checkpoint.severity === "warning" ? "bg-amber-400" : "bg-blue-400"
+        }`} />
 
-        {/* Title + meta */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">{checkpoint.title}</span>
@@ -363,40 +324,26 @@ function CheckpointRow({
               <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-2 py-0.5 rounded-full">Inaktiv</span>
             )}
           </div>
-          {checkpoint.required_tags.length > 0 && (
-            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-              Krever: {checkpoint.required_tags.map((t) => PROPERTY_TAG_OPTIONS.find((p) => p.tag === t)?.label ?? t).join(", ")}
+          {(omradeDesc || typeDesc) && (
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5 truncate">
+              {[omradeDesc && `Område: ${omradeDesc}`, typeDesc && `Type: ${typeDesc}`].filter(Boolean).join(" · ")}
             </p>
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={() => setExpanded((e) => !e)}
-            className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 font-medium transition"
-          >
+          <button onClick={() => setExpanded((e) => !e)} className="text-xs text-brand-600 dark:text-brand-400 hover:text-brand-800 font-medium transition">
             {expanded ? "Lukk" : "Rediger"}
           </button>
-          <button
-            onClick={handleToggleActive}
-            disabled={toggling}
-            className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 transition disabled:opacity-40"
-            title={checkpoint.active ? "Deaktiver" : "Aktiver"}
-          >
+          <button onClick={handleToggleActive} disabled={toggling} className="text-xs text-gray-500 hover:text-gray-700 transition disabled:opacity-40">
             {toggling ? "…" : checkpoint.active ? "Deaktiver" : "Aktiver"}
           </button>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="text-xs text-red-500 hover:text-red-700 transition disabled:opacity-40"
-          >
+          <button onClick={handleDelete} disabled={deleting} className="text-xs text-red-500 hover:text-red-700 transition disabled:opacity-40">
             {deleting ? "Sletter…" : "Slett"}
           </button>
         </div>
       </div>
 
-      {/* Expanded edit form */}
       {expanded && (
         <div className="border-t border-gray-100 dark:border-slate-700 px-4 py-4 bg-gray-50 dark:bg-slate-700/30">
           <CheckpointForm
@@ -407,10 +354,14 @@ function CheckpointRow({
               description: checkpoint.description,
               applies_to: checkpoint.applies_to,
               required_tags: checkpoint.required_tags,
+              applies_to_omrade: checkpoint.applies_to_omrade ?? [],
+              applies_to_type_codes: checkpoint.applies_to_type_codes ?? [],
               severity: checkpoint.severity,
               legal_reference: checkpoint.legal_reference ?? "",
               legal_reference_url: checkpoint.legal_reference_url ?? "",
             }}
+            omradeItems={omradeItems}
+            typeItems={typeItems}
             onSave={handleSave}
             onCancel={() => setExpanded(false)}
             isNew={false}
@@ -430,6 +381,9 @@ export default function CheckpointsAdminPage() {
   const [showInactive, setShowInactive] = useState(false);
   const [showNewForm, setShowNewForm] = useState(false);
 
+  const [omradeItems, setOmradeItems] = useState<CodetableItem[]>([]);
+  const [typeItems, setTypeItems] = useState<CodetableItem[]>([]);
+
   const load = useCallback(async () => {
     setLoading(true);
     const res = await authFetch("/api/admin/checkpoints");
@@ -438,7 +392,14 @@ export default function CheckpointsAdminPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+    // Load codetables for filtering fields
+    authFetch("/api/inspection-codetables?type=supervision-area")
+      .then((r) => r.json()).then((j) => setOmradeItems(j.items ?? []));
+    authFetch("/api/inspection-codetables?type=measure-type")
+      .then((r) => r.json()).then((j) => setTypeItems(j.items ?? []));
+  }, [load]);
 
   async function handleCreate(draft: DraftCheckpoint) {
     const res = await authFetch("/api/admin/checkpoints", {
@@ -450,6 +411,8 @@ export default function CheckpointsAdminPage() {
         description: draft.description,
         applies_to: draft.applies_to,
         required_tags: draft.required_tags,
+        applies_to_omrade: draft.applies_to_omrade,
+        applies_to_type_codes: draft.applies_to_type_codes,
         severity: draft.severity,
         legal_reference: draft.legal_reference || null,
         legal_reference_url: draft.legal_reference_url || null,
@@ -475,7 +438,6 @@ export default function CheckpointsAdminPage() {
     return true;
   });
 
-  // Group by category preserving CATEGORY_ORDER
   const grouped = CATEGORY_ORDER.reduce<Record<string, Checkpoint[]>>((acc, cat) => {
     const items = filtered.filter((c) => c.category === cat);
     if (items.length > 0) acc[cat] = items;
@@ -487,7 +449,6 @@ export default function CheckpointsAdminPage() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Sjekkpunkter</h1>
@@ -503,12 +464,13 @@ export default function CheckpointsAdminPage() {
         </button>
       </div>
 
-      {/* New checkpoint form */}
       {showNewForm && (
         <div className="bg-white dark:bg-slate-800 rounded-2xl border border-brand-200 dark:border-brand-700 shadow-sm p-5">
           <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">Nytt sjekkpunkt</h2>
           <CheckpointForm
             initial={EMPTY_DRAFT}
+            omradeItems={omradeItems}
+            typeItems={typeItems}
             onSave={handleCreate}
             onCancel={() => setShowNewForm(false)}
             isNew
@@ -516,9 +478,7 @@ export default function CheckpointsAdminPage() {
         </div>
       )}
 
-      {/* Filters */}
       <div className="flex flex-wrap items-center gap-3">
-        {/* Category filter */}
         <div className="flex flex-wrap gap-1.5">
           <button
             onClick={() => setFilterCategory("all")}
@@ -544,22 +504,14 @@ export default function CheckpointsAdminPage() {
             </button>
           ))}
         </div>
-
-        {/* Show inactive toggle */}
         {totalInactive > 0 && (
           <label className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400 cursor-pointer ml-auto">
-            <input
-              type="checkbox"
-              checked={showInactive}
-              onChange={(e) => setShowInactive(e.target.checked)}
-              className="rounded border-gray-300"
-            />
+            <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} className="rounded border-gray-300" />
             Vis inaktive
           </label>
         )}
       </div>
 
-      {/* List */}
       {loading ? (
         <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse py-8 text-center">Laster sjekkpunkter…</p>
       ) : Object.keys(grouped).length === 0 ? (
@@ -577,6 +529,8 @@ export default function CheckpointsAdminPage() {
                   <CheckpointRow
                     key={cp.id}
                     checkpoint={cp}
+                    omradeItems={omradeItems}
+                    typeItems={typeItems}
                     onUpdate={handleUpdate}
                     onDelete={handleDelete}
                   />
