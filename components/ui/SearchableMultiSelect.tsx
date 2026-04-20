@@ -107,9 +107,9 @@ export default function SearchableMultiSelect({
         />
 
         {open && filtered.length > 0 && (
-          <ul className="absolute z-30 mt-1 w-full max-h-56 overflow-auto rounded-lg
+          <ul className="absolute z-[200] mt-1 w-full max-h-64 overflow-auto rounded-lg
                          border border-gray-200 dark:border-slate-600
-                         bg-white dark:bg-slate-800 shadow-lg text-sm">
+                         bg-white dark:bg-slate-800 shadow-xl text-sm">
             {filtered.map((item) => {
               const isSelected = selected.includes(item.code);
               return (
