@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
   const serviceClient = createServiceClient();
   const { data, error } = await serviceClient
     .from("checkpoint_definitions")
-    .select("id, title, category, description, applies_to, required_tags, severity, legal_reference, legal_reference_url")
+    .select("id, title, category, description, applies_to, required_tags, severity, legal_reference, legal_reference_url, applies_to_omrade, applies_to_type_codes")
     .eq("active", true)
     .order("category")
     .order("sort_order");
