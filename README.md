@@ -161,7 +161,8 @@ supabase db reset         # Nullstill lokal database og kjør alle migrasjoner p
 | `017_applicant_recno.sql` | Søkers 360°-recno lagret på befaringen |
 | `020_audit_log.sql` | Audit-logg for admin-handlinger (ISO 27001 A.12.4.1) |
 | `021_befaring_rename.sql` | Nye felt `befaringsomrade text[]` og `tiltakstype text[]` på `inspections`; `applies_to_omrade` og `applies_to_type_codes` på `checkpoint_definitions` |
-| … | (21 migrasjoner totalt) |
+| `022_measure_type_optional.sql` | `measure_type_id` gjøres valgfri (nullable) etter fjerning av Step 2 i ny-befaring-flyten |
+| `023_checkpoint_omrade_mapping.sql` | Setter `applies_to_omrade` på sjekkpunkter basert på faglig innhold (konstruksjon→Sikkerhet bæreevne, brann→Brannsikkerhet, fukt→Fuktsikring, energi→Energibruk, tilgjengelighet→Tilgjengelighet) |
 
 ---
 
