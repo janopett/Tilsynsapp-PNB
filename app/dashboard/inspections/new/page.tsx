@@ -10,6 +10,7 @@ import CaseSearchInput from "@/components/sif/CaseSearchInput";
 import EnterpriseSearchInput from "@/components/sif/EnterpriseSearchInput";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import { useLanguage } from "@/lib/i18n";
+import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
 
 export default function NewInspectionPage() {
   const router = useRouter();
@@ -799,32 +800,15 @@ export default function NewInspectionPage() {
               </div>
             )}
 
-            {/* Tiltakstype (multi-select fra PNB-kodetabell) */}
+            {/* Tiltakstype (søkbart multi-select fra PNB-kodetabell) */}
             {tiltakstypeItems.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t.inspection.tiltakstype}
-                </label>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  {tiltakstypeItems.map((item) => (
-                    <label key={item.code} className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={tiltakstype.includes(item.code)}
-                        onChange={() =>
-                          setTiltakstype((prev) =>
-                            prev.includes(item.code)
-                              ? prev.filter((v) => v !== item.code)
-                              : [...prev, item.code]
-                          )
-                        }
-                        className="w-4 h-4 accent-brand-600 flex-shrink-0"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-slate-300">{item.description}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
+              <SearchableMultiSelect
+                label={t.inspection.tiltakstype}
+                items={tiltakstypeItems}
+                selected={tiltakstype}
+                onChange={setTiltakstype}
+                placeholder="Søk etter tiltakstype..."
+              />
             )}
 
             {/* Bakgrunn for tilsynet */}
