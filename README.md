@@ -164,6 +164,7 @@ supabase db reset         # Nullstill lokal database og kjør alle migrasjoner p
 | `022_measure_type_optional.sql` | `measure_type_id` gjøres valgfri (nullable) etter fjerning av Step 2 i ny-befaring-flyten |
 | `023_checkpoint_omrade_mapping.sql` | Setter `applies_to_omrade` på sjekkpunkter basert på faglig innhold (første utkast, erstattes av 024) |
 | `024_checkpoint_full_mapping.sql` | Fullstendig mapping mot bekreftet SIF-kodetabell: retter feil navn fra 023, setter alle befaringsområder (Plassering, Planløsning UU, Produkter til byggverk, Installasjoner og anlegg, Sluttdokumentasjon, Avfallsplaner) og setter `applies_to_type_codes` for fasade-, bruksendring-, riving-, blokkbygg- og VA-spesifikke sjekkpunkter |
+| `025_checkpoint_tiltakstype_extended.sql` | Utvidet tiltakstype-mapping basert på PBL, TEK17 og SAK10: FF004/FF005 (ansvarlige foretak), UK001/KS001 (TK2+), BR003 (brannteknisk TK2+), BF001 (UU-pliktige bygg), PRD001 (CE-krav ved byggevareprodukter), RAD001 (grunnkontakt-tiltak), KO001 (geotekniske tiltak) |
 
 ---
 

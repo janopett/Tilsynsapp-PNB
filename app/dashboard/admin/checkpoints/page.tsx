@@ -306,8 +306,8 @@ function CheckpointRow({
     .join(", ");
 
   return (
-    <div className={`border rounded-xl overflow-hidden transition ${checkpoint.active ? "border-gray-200 dark:border-slate-700" : "border-gray-100 dark:border-slate-800 opacity-60"}`}>
-      <div className="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800">
+    <div className={`border rounded-xl transition ${checkpoint.active ? "border-gray-200 dark:border-slate-700" : "border-gray-100 dark:border-slate-800 opacity-60"}`}>
+      <div className={`flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-800 ${expanded ? "rounded-t-xl" : "rounded-xl"}`}>
         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
           checkpoint.severity === "critical" ? "bg-red-500" :
           checkpoint.severity === "warning" ? "bg-amber-400" : "bg-blue-400"
@@ -345,7 +345,7 @@ function CheckpointRow({
       </div>
 
       {expanded && (
-        <div className="border-t border-gray-100 dark:border-slate-700 px-4 py-4 bg-gray-50 dark:bg-slate-700/30">
+        <div className="border-t border-gray-100 dark:border-slate-700 px-4 py-4 bg-gray-50 dark:bg-slate-700/30 rounded-b-xl">
           <CheckpointForm
             initial={{
               id: checkpoint.id,
