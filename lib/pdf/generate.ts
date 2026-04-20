@@ -16,6 +16,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { PDFDocument } from "pdf-lib";
 import type { InspectionWithAnswers } from "@/types";
+import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import {
   filterCheckpoints,
@@ -233,9 +234,7 @@ export async function generateInspectionPdf(
 
   // ── Checklist ────────────────────────────────────────────────
   const relevantCheckpoints = filterCheckpoints(
-    inspection.measure_type_id,
-    inspection.selected_tags,
-    undefined,
+    CHECKPOINT_DEFINITIONS,
     inspection.befaringsomrade ?? [],
     inspection.tiltakstype ?? []
   );
@@ -491,9 +490,7 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
   const measureType = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
 
   const relevantCheckpoints = filterCheckpoints(
-    inspection.measure_type_id,
-    inspection.selected_tags,
-    undefined,
+    CHECKPOINT_DEFINITIONS,
     inspection.befaringsomrade ?? [],
     inspection.tiltakstype ?? []
   );

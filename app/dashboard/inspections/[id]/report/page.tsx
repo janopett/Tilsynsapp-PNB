@@ -11,7 +11,7 @@ import {
   CATEGORY_ORDER,
   calculateSummary,
 } from "@/lib/checklist/filter-engine";
-import { MEASURE_TYPES } from "@/data/seed/measure-types";
+import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
 
 interface Props {
   params: { id: string };
@@ -50,11 +50,8 @@ export default async function ReportPage({ params }: Props) {
     attachments: attachmentsWithUrls,
   };
 
-  const measureType = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
   const relevantCheckpoints = filterCheckpoints(
-    inspection.measure_type_id,
-    inspection.selected_tags,
-    undefined,
+    CHECKPOINT_DEFINITIONS,
     inspection.befaringsomrade ?? [],
     inspection.tiltakstype ?? []
   );
@@ -130,7 +127,7 @@ export default async function ReportPage({ params }: Props) {
             ["Søker", inspection.applicant_name ?? "-"],
             ["Befaringsleder", inspection.inspector_name ?? "-"],
             ["Dato", new Date(inspection.inspection_date).toLocaleDateString("nb-NO")],
-            ["Tiltakstype", measureType?.name ?? inspection.measure_type_id],
+            ["Tiltakstype", (inspection.tiltakstype ?? []).join(", ") || "-"],
           ].map(([label, value]) => (
             <div key={label}>
               <span className="font-semibold text-gray-600">{label}: </span>

@@ -4,101 +4,93 @@ import {
   groupByCategory,
   calculateSummary,
 } from "@/lib/checklist/filter-engine";
-import type {
-  CheckpointDefinition,
-  MeasureTypeId,
-  PropertyTag,
-  InspectionAnswer,
-} from "@/types";
+import type { CheckpointDefinition, InspectionAnswer } from "@/types";
 
-// Minimal fixture checkpoints
+// Minimal fixture checkpoints using codetable-based filtering
 const mockCheckpoints: CheckpointDefinition[] = [
   {
     id: "cp-1",
-    title: "Sjekk 1",
+    title: "Sjekk 1 – alle områder",
     category: "plassering",
-    description: "Test checkpoint 1",
-    applies_to: ["garasje_carport", "tilbygg"],
+    description: "Gjelder alle befaringsområder",
+    applies_to: [],
     required_tags: [],
     severity: "warning",
+    applies_to_omrade: [],
+    applies_to_type_codes: [],
   },
   {
     id: "cp-2",
-    title: "Sjekk 2 – nær nabogrense",
-    category: "plassering",
-    description: "Only when near neighbor boundary",
-    applies_to: ["garasje_carport"],
-    required_tags: ["naer_nabogrense"],
+    title: "Sjekk 2 – kun bæreevne",
+    category: "konstruksjon",
+    description: "Kun for Sikkerhet, bæreevne",
+    applies_to: [],
+    required_tags: [],
     severity: "critical",
+    applies_to_omrade: ["Sikkerhet, bæreevne"],
+    applies_to_type_codes: [],
   },
   {
     id: "cp-3",
-    title: "Sjekk 3 – enebolig only",
-    category: "konstruksjon",
-    description: "Only for enebolig",
-    applies_to: ["enebolig"],
+    title: "Sjekk 3 – tiltakstype-spesifikk",
+    category: "brann",
+    description: "Kun for en bestemt tiltakstype",
+    applies_to: [],
     required_tags: [],
     severity: "info",
+    applies_to_omrade: [],
+    applies_to_type_codes: ["Nytt utvendig anlegg for vann og avløp"],
   },
   {
     id: "cp-4",
-    title: "Sjekk 4 – multiple tags required",
+    title: "Sjekk 4 – kombinert filter",
     category: "brann",
-    description: "Requires both vaatrom and brannskille",
-    applies_to: ["garasje_carport", "tilbygg", "enebolig"],
-    required_tags: ["inneholder_vaatrom", "har_brannskille"],
+    description: "Krev begge",
+    applies_to: [],
+    required_tags: [],
     severity: "critical",
+    applies_to_omrade: ["Sikkerhet, bæreevne"],
+    applies_to_type_codes: ["Nytt utvendig anlegg for vann og avløp"],
   },
 ];
 
 describe("filterCheckpoints", () => {
-  it("returns checkpoints matching measure type with no required tags", () => {
-    const result = filterCheckpoints("garasje_carport", [], mockCheckpoints);
-    expect(result.map((c) => c.id)).toEqual(["cp-1"]);
+  it("viser alle sjekkpunkter når ingen filter er valgt", () => {
+    const result = filterCheckpoints(mockCheckpoints, [], []);
+    expect(result).toHaveLength(4);
   });
 
-  it("includes checkpoint when required tag is present", () => {
-    const result = filterCheckpoints(
-      "garasje_carport",
-      ["naer_nabogrense"],
-      mockCheckpoints
-    );
+  it("inkluderer sjekkpunkter med tomt applies_to_omrade (gjelder alle)", () => {
+    const result = filterCheckpoints(mockCheckpoints, ["Sikkerhet, bæreevne"], []);
+    expect(result.map((c) => c.id)).toContain("cp-1");
+  });
+
+  it("inkluderer sjekkpunkter som matcher valgt befaringsomrade", () => {
+    const result = filterCheckpoints(mockCheckpoints, ["Sikkerhet, bæreevne"], []);
     expect(result.map((c) => c.id)).toContain("cp-2");
   });
 
-  it("excludes checkpoint when required tag is missing", () => {
-    const result = filterCheckpoints("garasje_carport", [], mockCheckpoints);
+  it("ekskluderer sjekkpunkt som ikke matcher befaringsomrade", () => {
+    const result = filterCheckpoints(mockCheckpoints, ["Energibruk"], []);
     expect(result.map((c) => c.id)).not.toContain("cp-2");
   });
 
-  it("excludes checkpoint for wrong measure type", () => {
-    const result = filterCheckpoints("riving", [], mockCheckpoints);
-    expect(result).toHaveLength(0);
-  });
-
-  it("returns enebolig checkpoints without tags", () => {
-    const result = filterCheckpoints("enebolig", [], mockCheckpoints);
+  it("inkluderer sjekkpunkter som matcher valgt tiltakstype", () => {
+    const result = filterCheckpoints(mockCheckpoints, [], ["Nytt utvendig anlegg for vann og avløp"]);
     expect(result.map((c) => c.id)).toContain("cp-3");
-    expect(result.map((c) => c.id)).not.toContain("cp-1");
   });
 
-  it("requires ALL tags to be present (not just some)", () => {
-    // Only one of the two required tags
-    const result = filterCheckpoints(
-      "garasje_carport",
-      ["inneholder_vaatrom"],
-      mockCheckpoints
+  it("kombinert filter: krever match på begge", () => {
+    const withBoth = filterCheckpoints(
+      mockCheckpoints,
+      ["Sikkerhet, bæreevne"],
+      ["Nytt utvendig anlegg for vann og avløp"]
     );
-    expect(result.map((c) => c.id)).not.toContain("cp-4");
-  });
+    expect(withBoth.map((c) => c.id)).toContain("cp-4");
 
-  it("includes checkpoint when ALL required tags are present", () => {
-    const result = filterCheckpoints(
-      "garasje_carport",
-      ["inneholder_vaatrom", "har_brannskille"],
-      mockCheckpoints
-    );
-    expect(result.map((c) => c.id)).toContain("cp-4");
+    const withOnlyOmrade = filterCheckpoints(mockCheckpoints, ["Sikkerhet, bæreevne"], []);
+    // cp-4 har type_codes satt, men ingen tiltakstype er valgt → ingen filtrering på type → vises
+    expect(withOnlyOmrade.map((c) => c.id)).toContain("cp-4");
   });
 });
 
@@ -134,9 +126,9 @@ describe("groupByCategory", () => {
   it("groups items by category", () => {
     const items = mergeCheckpointsWithAnswers(mockCheckpoints, []);
     const groups = groupByCategory(items);
-    expect(groups.get("plassering")).toHaveLength(2);
+    expect(groups.get("plassering")).toHaveLength(1);
     expect(groups.get("konstruksjon")).toHaveLength(1);
-    expect(groups.get("brann")).toHaveLength(1);
+    expect(groups.get("brann")).toHaveLength(2);
   });
 });
 
@@ -147,7 +139,7 @@ describe("calculateSummary", () => {
       inspection_id: "i1",
       checkpoint_definition_id: "cp-1",
       status: "ok",
-      comment: null,
+      comment: undefined,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },

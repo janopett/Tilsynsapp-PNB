@@ -14,7 +14,7 @@ const CreateInspectionSchema = z.object({
   inspector_name: z.string().optional(),
   inspection_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   notes: z.string().optional(),
-  measure_type_id: z.string().min(1),
+  measure_type_id: z.string().optional(),
   selected_tags: z.array(z.string()).default([]),
   applicant_recno: z.number().optional(),
   participants: z.array(z.record(z.unknown())).default([]),

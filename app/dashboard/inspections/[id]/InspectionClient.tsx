@@ -878,8 +878,6 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
   if (!inspection) return null;
 
   const relevantCheckpoints = filterCheckpoints(
-    inspection.measure_type_id,
-    inspection.selected_tags,
     checkpointDefs,
     inspection.befaringsomrade ?? [],
     inspection.tiltakstype ?? []
