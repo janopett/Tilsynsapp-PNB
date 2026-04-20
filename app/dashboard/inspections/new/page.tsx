@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { MEASURE_TYPES, PROPERTY_QUESTIONS } from "@/data/seed/measure-types";
-import type { MeasureTypeId, PropertyTag, SifContact, SifEstate, SifCaseStage, ExternalParticipant } from "@/types";
+import type { SifContact, SifEstate, SifCaseStage, ExternalParticipant } from "@/types";
 import type { SifEnterpriseResult } from "@/lib/sif/types";
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
@@ -17,7 +16,6 @@ export default function NewInspectionPage() {
   const searchParams = useSearchParams();
   const { t, locale } = useLanguage();
 
-  const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -79,8 +77,6 @@ export default function NewInspectionPage() {
   const [selectedBakgrunn, setSelectedBakgrunn] = useState<string[]>([]);
 
   // Step 2 fields
-  const [measureTypeId, setMeasureTypeId] = useState<MeasureTypeId | "">("");
-  const [selectedTags, setSelectedTags] = useState<PropertyTag[]>([]);
 
   // Fetch configurable lists on mount
   useEffect(() => {
@@ -288,17 +284,7 @@ export default function NewInspectionPage() {
     return parts.join(" — ");
   }
 
-  function toggleTag(tag: PropertyTag) {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  }
-
   async function handleSubmit() {
-    if (!measureTypeId) {
-      setError(t.newInspection.errorNoMeasureType);
-      return;
-    }
     setLoading(true);
     setError("");
 
@@ -328,8 +314,6 @@ export default function NewInspectionPage() {
         inspector_name: inspectorName || undefined,
         inspection_date: inspectionDate,
         notes: notes || undefined,
-        measure_type_id: measureTypeId,
-        selected_tags: selectedTags,
         participants,
         external_participants: externalParticipants,
         estates: selectedEstates,
@@ -357,35 +341,10 @@ export default function NewInspectionPage() {
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.newInspection.title}</h1>
-        <div className="flex items-center gap-2 mt-3">
-          {[1, 2].map((s) => (
-            <div
-              key={s}
-              className={`flex items-center gap-1 text-sm font-medium ${
-                step === s ? "text-brand-600" : "text-gray-400 dark:text-slate-500"
-              }`}
-            >
-              <span
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  step === s
-                    ? "bg-brand-600 text-white"
-                    : step > s
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
-                }`}
-              >
-                {s}
-              </span>
-              {s === 1 ? t.newInspection.step1 : t.newInspection.step2}
-            </div>
-          ))}
-        </div>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
-        {/* Step 1: Case metadata */}
-        {step === 1 && (
-          <div className="space-y-4">
+        <div className="space-y-4">
             {/* Case number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
@@ -891,71 +850,6 @@ export default function NewInspectionPage() {
               </div>
             </div>
           </div>
-        )}
-
-        {/* Step 2: Measure type + properties */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-base font-semibold text-gray-800 dark:text-slate-200 mb-3">
-                {t.newInspection.selectMeasureType}
-              </h2>
-              <div className="grid grid-cols-2 gap-3">
-                {MEASURE_TYPES.map((mt) => (
-                  <button
-                    key={mt.id}
-                    onClick={() => setMeasureTypeId(mt.id)}
-                    className={`border-2 rounded-xl p-3 text-left transition ${
-                      measureTypeId === mt.id
-                        ? "border-brand-500 bg-brand-50 dark:bg-brand-900/20"
-                        : "border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500"
-                    }`}
-                  >
-                    <span className="text-2xl">{mt.icon}</span>
-                    <p className="font-medium text-sm mt-1 dark:text-slate-100">{mt.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                      {mt.description}
-                    </p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-base font-semibold text-gray-800 dark:text-slate-200 mb-1">
-                {t.newInspection.measureProperties}
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
-                {t.newInspection.measurePropertiesHint}
-              </p>
-              <div className="space-y-2">
-                {PROPERTY_QUESTIONS.map((q) => (
-                  <label
-                    key={q.tag}
-                    className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-slate-700/30 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700 transition"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedTags.includes(q.tag)}
-                      onChange={() => toggleTag(q.tag)}
-                      className="mt-0.5 w-5 h-5 accent-brand-600 flex-shrink-0"
-                    />
-                    <div>
-                      <p className="text-sm font-medium text-gray-800 dark:text-slate-200">
-                        {q.label}
-                      </p>
-                      {q.description && (
-                        <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                          {q.description}
-                        </p>
-                      )}
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {error && (
           <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl px-4 py-3 text-sm">
@@ -964,40 +858,20 @@ export default function NewInspectionPage() {
         )}
 
         <div className="flex justify-between mt-6">
-          {step === 1 ? (
-            <div />
-          ) : (
-            <button
-              onClick={() => setStep(1)}
-              className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 font-medium"
-            >
-              {t.newInspection.back}
-            </button>
-          )}
-
-          {step === 1 ? (
-            <button
-              onClick={() => {
-                if (!propertyAddress.trim()) {
-                  setError(t.newInspection.errorNoAddress);
-                  return;
-                }
-                setError("");
-                setStep(2);
-              }}
-              className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition"
-            >
-              {t.newInspection.next}
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
-              disabled={loading || !measureTypeId}
-              className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition disabled:opacity-50"
-            >
-              {loading ? t.newInspection.creating : t.newInspection.createInspection}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-200 font-medium"
+          >
+            {t.newInspection.back}
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-semibold px-6 py-3 rounded-xl transition disabled:opacity-50"
+          >
+            {loading ? t.newInspection.creating : t.newInspection.createInspection}
+          </button>
         </div>
       </div>
 
