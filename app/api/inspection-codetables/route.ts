@@ -59,7 +59,9 @@ export async function GET(req: NextRequest) {
     return (result.CodeTableRows ?? result.Rows ?? [])
       .filter((r) => r.IsExpired !== true)
       .map((r) => ({
-        code: r.Code ?? r.Description ?? "",
+        // Use Description as the stored key so values are human-readable
+        // and consistent with migration seed data and filter-engine comparisons.
+        code: r.Description ?? r.Code ?? "",
         description: r.Description ?? r.Code ?? "",
       }));
   }
