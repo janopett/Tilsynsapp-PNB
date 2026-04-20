@@ -27,7 +27,7 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
           href="/dashboard"
           className="text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
         >
-          Tilsynsapp
+          Befaringsapplikasjon
         </Link>
 
         <div className="flex items-center gap-4">
