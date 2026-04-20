@@ -51,7 +51,13 @@ export default async function ReportPage({ params }: Props) {
   };
 
   const measureType = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
-  const relevantCheckpoints = filterCheckpoints(inspection.measure_type_id, inspection.selected_tags);
+  const relevantCheckpoints = filterCheckpoints(
+    inspection.measure_type_id,
+    inspection.selected_tags,
+    undefined,
+    inspection.befaringsomrade ?? [],
+    inspection.tiltakstype ?? []
+  );
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const summary = calculateSummary(merged);
   const grouped = groupByCategory(merged);

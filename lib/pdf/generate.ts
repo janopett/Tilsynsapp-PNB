@@ -234,7 +234,10 @@ export async function generateInspectionPdf(
   // ── Checklist ────────────────────────────────────────────────
   const relevantCheckpoints = filterCheckpoints(
     inspection.measure_type_id,
-    inspection.selected_tags
+    inspection.selected_tags,
+    undefined,
+    inspection.befaringsomrade ?? [],
+    inspection.tiltakstype ?? []
   );
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const grouped = groupByCategory(merged);
@@ -489,7 +492,10 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
 
   const relevantCheckpoints = filterCheckpoints(
     inspection.measure_type_id,
-    inspection.selected_tags
+    inspection.selected_tags,
+    undefined,
+    inspection.befaringsomrade ?? [],
+    inspection.tiltakstype ?? []
   );
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
 
