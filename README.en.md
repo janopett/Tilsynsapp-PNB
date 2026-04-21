@@ -161,7 +161,12 @@ supabase db reset         # Reset local database and re-apply all migrations
 | `017_applicant_recno.sql` | Applicant 360° recno stored on site visit |
 | `020_audit_log.sql` | Audit log for admin actions (ISO 27001 A.12.4.1) |
 | `021_befaring_rename.sql` | New fields `befaringsomrade text[]` and `tiltakstype text[]` on `inspections`; `applies_to_omrade` and `applies_to_type_codes` on `checkpoint_definitions` |
-| … | (21 migrations in total) |
+| `022_measure_type_optional.sql` | `measure_type_id` made nullable after removal of Step 2 in the new inspection flow |
+| `023_checkpoint_omrade_mapping.sql` | Sets `applies_to_omrade` on checkpoints based on subject area (first draft, superseded by 024) |
+| `024_checkpoint_full_mapping.sql` | Full mapping against confirmed SIF code table: fixes incorrect names from 023, sets all supervision areas and `applies_to_type_codes` for facade, change-of-use, demolition, block-building, and VA-specific checkpoints |
+| `025_checkpoint_tiltakstype_extended.sql` | Extended measure-type mapping based on PBL, TEK17 and SAK10 — **rolled back due to null constraint error** |
+| `026_fix_missing_checkpoints_and_025.sql` | Inserts 5 missing checkpoints (UK001, PRD001, KS001, LB001, NB001) that only existed in TypeScript and re-applies all 025 updates using explicit ARRAY values |
+| `027_inspection_avvik_frist.sql` | Adds `avvik_frist DATE` to `inspections` — deadline for closing deviations, per SAK10 § 15-3 |
 
 ---
 

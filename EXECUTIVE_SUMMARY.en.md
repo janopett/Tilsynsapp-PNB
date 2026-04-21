@@ -138,7 +138,7 @@ The archival flow is optimised for speed through parallel execution:
 | Status | Area |
 |--------|------|
 | ✅ Production-ready | Inspection workflow and structured checklists |
-| ✅ Production-ready | PDF report generation with inline images and deviation summary |
+| ✅ Production-ready | PDF report generation with inline images, deviation summary, legal references per deviation, and closure deadline (SAK10 § 15-3) |
 | ✅ Production-ready | Archiving to Public 360° — create new or update existing document |
 | ✅ Production-ready | Auto-dispatch of archived documents to recipients |
 | ✅ Production-ready | User and access administration |

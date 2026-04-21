@@ -128,6 +128,9 @@ export default async function ReportPage({ params }: Props) {
             ["Befaringsleder", inspection.inspector_name ?? "-"],
             ["Dato", new Date(inspection.inspection_date).toLocaleDateString("nb-NO")],
             ["Tiltakstype", (inspection.tiltakstype ?? []).join(", ") || "-"],
+            ...(inspection.avvik_frist
+              ? [["Frist for lukking av avvik", new Date(inspection.avvik_frist).toLocaleDateString("nb-NO")]]
+              : []),
           ].map(([label, value]) => (
             <div key={label}>
               <span className="font-semibold text-gray-600">{label}: </span>
@@ -204,13 +207,25 @@ export default async function ReportPage({ params }: Props) {
         {/* Deviations summary */}
         {summary.deviations > 0 && (
           <div className="mt-6 border-t-2 border-red-200 pt-4">
-            <h2 className="text-base font-bold text-red-800 mb-3">
-              Avvik funnet under befaring ({summary.deviations})
-            </h2>
+            <div className="flex items-baseline justify-between mb-3">
+              <h2 className="text-base font-bold text-red-800">
+                Avvik funnet under befaring ({summary.deviations})
+              </h2>
+              {inspection.avvik_frist && (
+                <span className="text-sm font-semibold text-red-700">
+                  Frist: {new Date(inspection.avvik_frist).toLocaleDateString("nb-NO")}
+                </span>
+              )}
+            </div>
             {summary.deviation_items.map((item) => (
-              <div key={item.definition.id} className="mb-3 pl-4 border-l-4 border-red-400">
+              <div key={item.definition.id} className="mb-4 pl-4 border-l-4 border-red-400">
                 <p className="font-semibold text-red-900 text-sm">{item.definition.title}</p>
                 <p className="text-xs text-gray-500">{CATEGORY_LABELS[item.definition.category]}</p>
+                {item.definition.legal_reference && (
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Hjemmel: {item.definition.legal_reference}
+                  </p>
+                )}
                 {item.answer?.comment && (
                   <p className="text-sm text-gray-700 mt-1">{item.answer.comment}</p>
                 )}
