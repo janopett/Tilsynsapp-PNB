@@ -93,6 +93,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [inspectorName, setInspectorName] = useState(inspection.inspector_name ?? "");
   const [inspectionDate, setInspectionDate] = useState(inspection.inspection_date);
   const [notes, setNotes] = useState(inspection.notes ?? "");
+  const [avvikFrist, setAvvikFrist] = useState(inspection.avvik_frist ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -234,6 +235,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         tiltakstype,
         bakgrunn: selectedBakgrunn,
         sif_stage_recno: selectedStageRecno ?? null,
+        avvik_frist: avvikFrist || null,
       })
       .eq("id", inspection.id);
 
@@ -620,6 +622,22 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               rows={3}
               className="input resize-none"
             />
+          </div>
+
+          {/* Avvik frist */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              Frist for lukking av avvik
+            </label>
+            <input
+              type="date"
+              value={avvikFrist}
+              onChange={(e) => setAvvikFrist(e.target.value)}
+              className="input"
+            />
+            <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+              SAK10 § 15-3 — settes dersom det er avvik som må lukkes
+            </p>
           </div>
 
           {/* Map */}

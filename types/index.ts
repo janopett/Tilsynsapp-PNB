@@ -161,6 +161,9 @@ export interface Inspection {
   selected_tags: PropertyTag[];
 
   status: InspectionStatus;
+
+  // Frist for lukking av avvik (SAK10 § 15-3)
+  avvik_frist?: string | null;
 }
 
 export interface InspectionCreate {
