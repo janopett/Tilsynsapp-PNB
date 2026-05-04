@@ -16,8 +16,10 @@ const ArchiveRequestSchema = z.object({
   uid: z.string().optional(),
   additionalFields: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
   existingDocumentNumber: z.string().min(1).optional(),
-  /** Base64 PNG data URLs keyed by checkpoint_definition_id, captured client-side. */
+  /** Base64 JPEG data URLs keyed by checkpoint_definition_id, captured client-side. */
   checkpointMapImages: z.record(z.string(), z.string().startsWith("data:image/")).optional(),
+  /** Base64 JPEG overview map with numbered pins, captured client-side. */
+  overviewMapImage: z.string().startsWith("data:image/").optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid request" } satisfies ArchiveInspectionResponse, { status: 400 });
   }
 
-  const { inspectionId, caseNumber, externalId, uid, additionalFields, existingDocumentNumber, checkpointMapImages } = parsed.data;
+  const { inspectionId, caseNumber, externalId, uid, additionalFields, existingDocumentNumber, checkpointMapImages, overviewMapImage } = parsed.data;
 
   // Start SIF case lookup in parallel with DB queries — findCaseInSif only needs the case number
   // from the request body, not any DB data, so it can run immediately. On failure we fall back to
@@ -101,7 +103,7 @@ export async function POST(req: NextRequest) {
 
   // Generate PDF and insert pending archival record in parallel (independent operations)
   const [pdfBuffer, { data: archival }] = await Promise.all([
-    generateInspectionPdf(inspection, attachmentFiles, checkpointMapImages),
+    generateInspectionPdf(inspection, attachmentFiles, checkpointMapImages, overviewMapImage),
     serviceClient
       .from("inspection_archivals")
       .insert({ inspection_id: inspectionId, status: "pending", sif_case_number: caseNumber })

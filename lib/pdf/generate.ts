@@ -102,8 +102,10 @@ function embedInlineImage(doc: jsPDF, img: AttachmentForPdf, startY: number): nu
 export async function generateInspectionPdf(
   inspection: InspectionWithAnswers,
   attachments?: AttachmentForPdf[],
-  /** Base64 PNG data URLs keyed by checkpoint_definition_id, captured client-side. */
-  checkpointMapImages?: Record<string, string>
+  /** Base64 JPEG data URLs keyed by checkpoint_definition_id, captured client-side. */
+  checkpointMapImages?: Record<string, string>,
+  /** Base64 JPEG overview map with numbered pins, captured client-side. */
+  overviewMapImage?: string
 ): Promise<Buffer> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const measureType = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
@@ -240,21 +242,11 @@ export async function generateInspectionPdf(
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const grouped = groupByCategory(merged);
 
-  // ── Overview map (static Kartverket WMS) ─────────────────────
-  // Collect all checkpoints with registered coordinates
+  // ── Overview map ─────────────────────────────────────────────
   const coordItems = merged.filter(
     (i) => i.answer?.latitude != null && i.answer?.longitude != null
   );
   if (coordItems.length > 0) {
-    const lats = coordItems.map((i) => i.answer!.latitude!);
-    const lngs = coordItems.map((i) => i.answer!.longitude!);
-    const pad = 0.003;
-    const minLat = Math.min(...lats) - pad;
-    const maxLat = Math.max(...lats) + pad;
-    const minLng = Math.min(...lngs) - pad;
-    const maxLng = Math.max(...lngs) + pad;
-    const bbox = `${minLat},${minLng},${maxLat},${maxLng}`;
-
     y = ensurePageSpace(doc, y, 24);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
@@ -263,32 +255,14 @@ export async function generateInspectionPdf(
     doc.setTextColor(0, 0, 0);
     y += 9;
 
-    // Fetch static Kartverket WMS tile server-side
-    const MAP_W = contentWidth;
-    const MAP_H = 55;
-    try {
-      const wmsUrl =
-        `https://openwms.statkart.no/skwms1/wms.topo4?SERVICE=WMS&REQUEST=GetMap` +
-        `&VERSION=1.3.0&LAYERS=topo4_WMS&STYLES=&CRS=EPSG:4326` +
-        `&BBOX=${bbox}&WIDTH=700&HEIGHT=300&FORMAT=image/png`;
-      const res = await fetch(wmsUrl, { signal: AbortSignal.timeout(6000) });
-      if (res.ok) {
-        const buf = Buffer.from(await res.arrayBuffer());
-        doc.addImage(
-          `data:image/png;base64,${buf.toString("base64")}`,
-          "PNG", L, y, MAP_W, MAP_H
-        );
-        doc.setFontSize(6.5);
-        doc.setTextColor(120, 120, 120);
-        doc.text("© Kartverket", L + MAP_W - 2, y + MAP_H - 1.5, { align: "right" });
-        doc.setTextColor(0, 0, 0);
-        y += MAP_H + 3;
-      }
-    } catch {
-      // WMS unavailable — show coordinate table only
+    // Embed client-captured overview map with numbered pins (if provided)
+    if (overviewMapImage) {
+      const MAP_H = 80;
+      doc.addImage(overviewMapImage, "JPEG", L, y, contentWidth, MAP_H);
+      y += MAP_H + 3;
     }
 
-    // Coordinate table — numbered list with checkpoint title and coordinates
+    // Numbered coordinate table — matches pin numbers in the map
     autoTable(doc, {
       startY: y,
       head: [["#", "Sjekkpunkt", "Koordinater (lat, lon)", "Status"]],
@@ -308,6 +282,7 @@ export async function generateInspectionPdf(
       },
       margin: { left: L },
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
@@ -506,10 +481,10 @@ export async function generateInspectionPdf(
       },
       alternateRowStyles: { fillColor: [255, 248, 248] },
       columnStyles: {
-        0: { cellWidth: 65 },
-        1: { cellWidth: 75 },
-        2: { cellWidth: contentWidth - 175 },
-        3: { cellWidth: 28 },
+        0: { cellWidth: 55 },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 42 },
+        3: { cellWidth: 25 },
       },
       margin: { left: L },
     });
