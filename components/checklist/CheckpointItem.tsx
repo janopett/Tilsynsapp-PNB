@@ -24,7 +24,8 @@ interface Props {
     contactRecno: number | null,
     contactName: string | null,
     lat?: number | null,
-    lng?: number | null
+    lng?: number | null,
+    frist?: string | null
   ) => void;
 }
 
@@ -128,6 +129,7 @@ const CheckpointItem = memo(function CheckpointItem({
   );
   const [lat, setLat] = useState<number | null>(answer?.latitude ?? null);
   const [lng, setLng] = useState<number | null>(answer?.longitude ?? null);
+  const [frist, setFrist] = useState(answer?.frist ?? "");
   const [showMap, setShowMap] = useState(false);
 
   type LocalAttachment = Attachment & { objectUrl?: string };
@@ -145,13 +147,13 @@ const CheckpointItem = memo(function CheckpointItem({
   }
 
   function handleStatus(status: CheckpointStatus) {
-    onUpdate(definition.id, status, comment, selectedContactRecno, currentContactName(), lat, lng);
+    onUpdate(definition.id, status, comment, selectedContactRecno, currentContactName(), lat, lng, frist || null);
     if (status === "deviation") setExpanded(true);
   }
 
   function handleCommentBlur() {
     if (comment !== (answer?.comment ?? "")) {
-      onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), lat, lng);
+      onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), lat, lng, frist || null);
     }
   }
 
@@ -159,20 +161,26 @@ const CheckpointItem = memo(function CheckpointItem({
     const recno = e.target.value ? Number(e.target.value) : null;
     const name = recno ? (contacts.find((c) => c.recno === recno)?.name ?? null) : null;
     setSelectedContactRecno(recno);
-    onUpdate(definition.id, currentStatus, comment, recno, name, lat, lng);
+    onUpdate(definition.id, currentStatus, comment, recno, name, lat, lng, frist || null);
+  }
+
+  function handleFristChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setFrist(val);
+    onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), lat, lng, val || null);
   }
 
   function handleMapSave(newLat: number, newLng: number) {
     setLat(newLat);
     setLng(newLng);
     setShowMap(false);
-    onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), newLat, newLng);
+    onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), newLat, newLng, frist || null);
   }
 
   function clearCoords() {
     setLat(null);
     setLng(null);
-    onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), null, null);
+    onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), null, null, frist || null);
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -354,6 +362,24 @@ const CheckpointItem = memo(function CheckpointItem({
                        placeholder:text-gray-400 dark:placeholder:text-slate-500
                        focus:outline-none focus:ring-2 focus:ring-brand-400"
           />
+        )}
+
+        {/* Frist for retting — vises kun ved avvik */}
+        {currentStatus === "deviation" && (
+          <div className="mt-3 flex items-center gap-2">
+            <label className="text-xs font-medium text-gray-500 dark:text-slate-400 whitespace-nowrap">
+              Rettes innen
+            </label>
+            <input
+              type="date"
+              value={frist}
+              onChange={handleFristChange}
+              disabled={isSaving}
+              className="border border-gray-200 dark:border-slate-600 rounded-lg px-2 py-1 text-sm
+                         bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100
+                         focus:outline-none focus:ring-2 focus:ring-brand-400"
+            />
+          </div>
         )}
 
         {/* Map pin + file upload row */}

@@ -240,13 +240,25 @@ export default async function ReportPage({ params }: Props) {
             </div>
             {summary.deviation_items.map((item) => (
               <div key={item.definition.id} className="mb-4 pl-4 border-l-4 border-red-400">
-                <p className="font-semibold text-red-900 text-sm">{item.definition.title}</p>
-                <p className="text-xs text-gray-500">{CATEGORY_LABELS[item.definition.category]}</p>
-                {item.definition.legal_reference && (
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    Hjemmel: {item.definition.legal_reference}
-                  </p>
-                )}
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-red-900 text-sm">{item.definition.title}</p>
+                    <p className="text-xs text-gray-500">{CATEGORY_LABELS[item.definition.category]}</p>
+                    {item.definition.legal_reference && (
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Hjemmel: {item.definition.legal_reference}
+                      </p>
+                    )}
+                  </div>
+                  {item.answer?.frist && (
+                    <div className="flex-shrink-0 text-right">
+                      <p className="text-xs text-gray-500">Rettes innen</p>
+                      <p className="text-sm font-semibold text-red-700">
+                        {new Date(item.answer.frist).toLocaleDateString("nb-NO")}
+                      </p>
+                    </div>
+                  )}
+                </div>
                 {item.answer?.comment && (
                   <p className="text-sm text-gray-700 mt-1">{item.answer.comment}</p>
                 )}

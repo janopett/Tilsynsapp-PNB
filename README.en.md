@@ -167,6 +167,7 @@ supabase db reset         # Reset local database and re-apply all migrations
 | `025_checkpoint_tiltakstype_extended.sql` | Extended measure-type mapping based on PBL, TEK17 and SAK10 — **rolled back due to null constraint error** |
 | `026_fix_missing_checkpoints_and_025.sql` | Inserts 5 missing checkpoints (UK001, PRD001, KS001, LB001, NB001) that only existed in TypeScript and re-applies all 025 updates using explicit ARRAY values |
 | `027_inspection_avvik_frist.sql` | Adds `avvik_frist DATE` to `inspections` — deadline for closing deviations, per SAK10 § 15-3 |
+| `028_answer_frist.sql` | Adds `frist DATE` to `inspection_answers` — per-deviation correction deadline, shown in checklist, HTML report and PDF |
 
 ---
 
