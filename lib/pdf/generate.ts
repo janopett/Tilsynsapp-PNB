@@ -179,7 +179,6 @@ export async function generateInspectionPdf(
     ["Søker", inspection.applicant_name ?? "–"],
     ["Befaringsleder", inspection.inspector_name ?? "–"],
     ["Dato", inspection.inspection_date ?? ""],
-    ["Tiltakstype (internt)", measureType?.name ?? inspection.measure_type_id],
   ];
 
   if (inspection.befaringsomrade?.length) metaRows.push(["Befaringsområde", inspection.befaringsomrade.join(", ")]);
@@ -241,11 +240,86 @@ export async function generateInspectionPdf(
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
   const grouped = groupByCategory(merged);
 
+  // ── Overview map (static Kartverket WMS) ─────────────────────
+  // Collect all checkpoints with registered coordinates
+  const coordItems = merged.filter(
+    (i) => i.answer?.latitude != null && i.answer?.longitude != null
+  );
+  if (coordItems.length > 0) {
+    const lats = coordItems.map((i) => i.answer!.latitude!);
+    const lngs = coordItems.map((i) => i.answer!.longitude!);
+    const pad = 0.003;
+    const minLat = Math.min(...lats) - pad;
+    const maxLat = Math.max(...lats) + pad;
+    const minLng = Math.min(...lngs) - pad;
+    const maxLng = Math.max(...lngs) + pad;
+    const bbox = `${minLat},${minLng},${maxLat},${maxLng}`;
+
+    y = ensurePageSpace(doc, y, 24);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BRAND_MID);
+    doc.text("KART — REGISTRERTE POSISJONER", L, y + 5.5);
+    doc.setTextColor(0, 0, 0);
+    y += 9;
+
+    // Fetch static Kartverket WMS tile server-side
+    const MAP_W = contentWidth;
+    const MAP_H = 55;
+    try {
+      const wmsUrl =
+        `https://openwms.statkart.no/skwms1/wms.topo4?SERVICE=WMS&REQUEST=GetMap` +
+        `&VERSION=1.3.0&LAYERS=topo4_WMS&STYLES=&CRS=EPSG:4326` +
+        `&BBOX=${bbox}&WIDTH=700&HEIGHT=300&FORMAT=image/png`;
+      const res = await fetch(wmsUrl, { signal: AbortSignal.timeout(6000) });
+      if (res.ok) {
+        const buf = Buffer.from(await res.arrayBuffer());
+        doc.addImage(
+          `data:image/png;base64,${buf.toString("base64")}`,
+          "PNG", L, y, MAP_W, MAP_H
+        );
+        doc.setFontSize(6.5);
+        doc.setTextColor(120, 120, 120);
+        doc.text("© Kartverket", L + MAP_W - 2, y + MAP_H - 1.5, { align: "right" });
+        doc.setTextColor(0, 0, 0);
+        y += MAP_H + 3;
+      }
+    } catch {
+      // WMS unavailable — show coordinate table only
+    }
+
+    // Coordinate table — numbered list with checkpoint title and coordinates
+    autoTable(doc, {
+      startY: y,
+      head: [["#", "Sjekkpunkt", "Koordinater (lat, lon)", "Status"]],
+      body: coordItems.map((item, idx) => [
+        `${idx + 1}`,
+        item.definition.title,
+        `${item.answer!.latitude!.toFixed(5)}, ${item.answer!.longitude!.toFixed(5)}`,
+        STATUS_LABELS[item.answer?.status ?? "not_checked"],
+      ]),
+      styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
+      headStyles: { fillColor: [...BRAND_MID] as [number, number, number], textColor: [255, 255, 255], fontSize: 8 },
+      columnStyles: {
+        0: { cellWidth: 7 },
+        1: { cellWidth: contentWidth - 65 },
+        2: { cellWidth: 38 },
+        3: { cellWidth: 20 },
+      },
+      margin: { left: L },
+    });
+    y = (doc as any).lastAutoTable.finalY + 6;
+  }
+
   const pdfAttachmentsToMerge: Buffer[] = [];
 
   for (const category of CATEGORY_ORDER) {
-    const items = grouped.get(category);
-    if (!items?.length) continue;
+    const allItems = grouped.get(category);
+    // Only show categories that have at least one explicitly checked item
+    const items = (allItems ?? []).filter(
+      (i) => (i.answer?.status ?? "not_checked") !== "not_checked"
+    );
+    if (items.length === 0) continue;
 
     y = ensurePageSpace(doc, y, 18);
 
@@ -262,8 +336,6 @@ export async function generateInspectionPdf(
     y += 11;
 
     for (const item of items) {
-      // Skip checkpoints marked as "ikke relevant" (not_checked) — not reported
-      if ((item.answer?.status ?? "not_checked") === "not_checked") continue;
 
       const checkpointImages = imagesByCheckpoint.get(item.definition.id) ?? [];
       const checkpointPdfs = pdfsByCheckpoint.get(item.definition.id) ?? [];
