@@ -410,12 +410,21 @@ export async function generateInspectionPdf(
 
     autoTable(doc, {
       startY: y,
-      head: [["Sjekkpunkt", "Avviksbeskrivelse", "Ansvarlig"]],
-      body: deviations.map((i) => [
-        `${i.definition.title}\n(${CATEGORY_LABELS[i.definition.category]})`,
-        i.answer?.comment ?? "(ingen kommentar)",
-        i.answer?.responsible_contact_name ?? "",
-      ]),
+      head: [["Sjekkpunkt", "Avviksbeskrivelse", "Ansvarlig", "Rettes innen"]],
+      body: deviations.map((i) => {
+        const hjemmel = i.definition.legal_reference
+          ? `Hjemmel: ${i.definition.legal_reference}`
+          : "";
+        const fristStr = i.answer?.frist
+          ? new Date(i.answer.frist).toLocaleDateString("nb-NO")
+          : "";
+        return [
+          `${i.definition.title}\n(${CATEGORY_LABELS[i.definition.category]})${hjemmel ? `\n${hjemmel}` : ""}`,
+          i.answer?.comment ?? "(ingen kommentar)",
+          i.answer?.responsible_contact_name ?? "",
+          fristStr,
+        ];
+      }),
       styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak" },
       headStyles: {
         fillColor: [240, 60, 60],
@@ -425,9 +434,10 @@ export async function generateInspectionPdf(
       },
       alternateRowStyles: { fillColor: [255, 248, 248] },
       columnStyles: {
-        0: { cellWidth: 72 },
-        1: { cellWidth: 86 },
-        2: { cellWidth: contentWidth - 158 },
+        0: { cellWidth: 65 },
+        1: { cellWidth: 75 },
+        2: { cellWidth: contentWidth - 175 },
+        3: { cellWidth: 28 },
       },
       margin: { left: L },
     });

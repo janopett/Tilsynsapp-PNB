@@ -819,7 +819,8 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
     contactRecno: number | null = null,
     contactName: string | null = null,
     lat: number | null = null,
-    lng: number | null = null
+    lng: number | null = null,
+    frist: string | null = null
   ) => {
     if (!inspection) return;
     setSavingId(checkpointId);
@@ -835,6 +836,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         responsible_contact_name: contactName,
         latitude: lat,
         longitude: lng,
+        frist: frist || null,
       },
       { onConflict: "inspection_id,checkpoint_definition_id" }
     );
@@ -867,6 +869,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         responsible_contact_name: contactName,
         latitude: lat,
         longitude: lng,
+        frist: frist || null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };

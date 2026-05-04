@@ -210,6 +210,7 @@ export interface InspectionAnswer {
   responsible_contact_name?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  frist?: string | null;
   created_at: string;
   updated_at: string;
 }

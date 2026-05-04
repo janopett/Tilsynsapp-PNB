@@ -167,6 +167,7 @@ supabase db reset         # Nullstill lokal database og kjør alle migrasjoner p
 | `025_checkpoint_tiltakstype_extended.sql` | Utvidet tiltakstype-mapping basert på PBL, TEK17 og SAK10: FF004/FF005 (ansvarlige foretak), UK001/KS001 (TK2+), BR003 (brannteknisk TK2+), BF001 (UU-pliktige bygg), PRD001 (CE-krav ved byggevareprodukter), RAD001 (grunnkontakt-tiltak), KO001 (geotekniske tiltak) — **rullet tilbake pga. null-feil** |
 | `026_fix_missing_checkpoints_and_025.sql` | Setter inn 5 manglende sjekkpunkter (UK001, PRD001, KS001, LB001, NB001) som bare fantes i TypeScript og gjentar alle 025-oppdateringer med eksplisitte ARRAY-verdier (ingen subqueries) |
 | `027_inspection_avvik_frist.sql` | Legger til `avvik_frist DATE` på `inspections` — frist for lukking av avvik, jf. SAK10 § 15-3 |
+| `028_answer_frist.sql` | Legger til `frist DATE` på `inspection_answers` — per-avvik-frist for retting, vises i sjekkliste, HTML-rapport og PDF |
 
 ---
 
