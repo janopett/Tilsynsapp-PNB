@@ -12,6 +12,7 @@ import {
   calculateSummary,
 } from "@/lib/checklist/filter-engine";
 import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
+import CheckpointOverviewMap, { type MapPoint } from "@/components/ui/CheckpointOverviewMap";
 
 interface Props {
   params: { id: string };
@@ -69,6 +70,19 @@ export default async function ReportPage({ params }: Props) {
     }
   }
 
+  // Overview map points — all checkpoints with registered coordinates, numbered sequentially
+  let mapNum = 0;
+  const mapPoints: MapPoint[] = merged
+    .filter((item) => item.answer?.latitude != null && item.answer?.longitude != null)
+    .map((item) => ({
+      lat: item.answer!.latitude!,
+      lng: item.answer!.longitude!,
+      num: ++mapNum,
+      id: item.definition.id,
+      title: item.definition.title,
+      status: (item.answer?.status ?? "not_checked") as MapPoint["status"],
+    }));
+
   // Checkpoints that have attachments OR a registered coordinate — shown in appendix
   const appendixItems = merged.filter(
     (item) =>
@@ -79,12 +93,12 @@ export default async function ReportPage({ params }: Props) {
   const statusLabel: Record<string, string> = {
     ok: "OK",
     deviation: "Avvik",
-    not_checked: "Ikke kontrollert",
+    not_checked: "Ikke relevant",
   };
   const statusClass: Record<string, string> = {
     ok: "text-green-700 bg-green-50 dark:text-green-400 dark:bg-green-900/30",
     deviation: "text-red-700 bg-red-50 font-bold dark:text-red-400 dark:bg-red-900/30",
-    not_checked: "text-yellow-700 bg-yellow-50 dark:text-yellow-400 dark:bg-yellow-900/30",
+    not_checked: "text-gray-500 bg-gray-50",
   };
 
   function kartverketMapUrl(lat: number, lng: number): string {
@@ -146,12 +160,11 @@ export default async function ReportPage({ params }: Props) {
         )}
 
         {/* Summary */}
-        <div className="grid grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { label: "Totalt", value: summary.total, cls: "bg-gray-50" },
+            { label: "Kontrollert", value: summary.ok + summary.deviations, cls: "bg-gray-50" },
             { label: "OK", value: summary.ok, cls: "bg-green-50 text-green-800" },
             { label: "Avvik", value: summary.deviations, cls: "bg-red-50 text-red-800" },
-            { label: "Ikke sjekket", value: summary.not_checked, cls: "bg-yellow-50 text-yellow-800" },
           ].map((s) => (
             <div key={s.label} className={`${s.cls} rounded-xl p-3 text-center`}>
               <p className="text-2xl font-bold">{s.value}</p>
@@ -160,9 +173,17 @@ export default async function ReportPage({ params }: Props) {
           ))}
         </div>
 
-        {/* Checklist by category */}
-        {CATEGORY_ORDER.filter((c) => grouped.has(c)).map((category) => {
-          const items = grouped.get(category)!;
+        {/* Overview map — all checkpoints with registered coordinates */}
+        <CheckpointOverviewMap points={mapPoints} />
+
+        {/* Checklist by category — "Ikke relevant" items hidden */}
+        {CATEGORY_ORDER.filter((c) => {
+          const items = grouped.get(c);
+          return items?.some((i) => (i.answer?.status ?? "not_checked") !== "not_checked");
+        }).map((category) => {
+          const items = grouped.get(category)!.filter(
+            (i) => (i.answer?.status ?? "not_checked") !== "not_checked"
+          );
           return (
             <div key={category} className="mb-6">
               <h2 className="text-sm font-bold text-brand-900 uppercase tracking-wide mb-2 border-b border-gray-200 pb-1">
