@@ -30,7 +30,7 @@ import {
 const STATUS_LABELS: Record<string, string> = {
   ok: "OK",
   deviation: "Avvik",
-  not_checked: "Ikke kontrollert",
+  not_checked: "Ikke relevant",
 };
 
 // Brand colours
@@ -262,6 +262,9 @@ export async function generateInspectionPdf(
     y += 11;
 
     for (const item of items) {
+      // Skip checkpoints marked as "ikke relevant" (not_checked) — not reported
+      if ((item.answer?.status ?? "not_checked") === "not_checked") continue;
+
       const checkpointImages = imagesByCheckpoint.get(item.definition.id) ?? [];
       const checkpointPdfs = pdfsByCheckpoint.get(item.definition.id) ?? [];
       const isDeviation = item.answer?.status === "deviation";

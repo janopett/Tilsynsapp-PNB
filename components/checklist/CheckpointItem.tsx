@@ -30,7 +30,7 @@ interface Props {
 
 const STATUS_CONFIG: Record<CheckpointStatus, { label: string; cls: string; icon: string }> = {
   not_checked: {
-    label: "Ikke kontrollert",
+    label: "Ikke relevant",
     cls: "border-gray-200 bg-white dark:border-slate-600 dark:bg-slate-800",
     icon: "⬜",
   },
@@ -310,7 +310,7 @@ const CheckpointItem = memo(function CheckpointItem({
                   : "border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500"
               }`}
             >
-              {st === "ok" ? "✅ OK" : st === "deviation" ? "⚠️ Avvik" : "Ikke sjekket"}
+              {st === "ok" ? "✅ OK" : st === "deviation" ? "⚠️ Avvik" : "Ikke relevant"}
             </button>
           ))}
         </div>
