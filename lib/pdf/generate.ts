@@ -26,6 +26,22 @@ import {
   groupByCategory,
 } from "@/lib/checklist/filter-engine";
 
+/** Resolve a legal_reference string to a Lovdata URL for the primary law/regulation. */
+function legalReferenceUrl(ref: string): string | null {
+  const pblMatch = ref.match(/^pbl\s*§\s*([\d-]+)/i);
+  if (pblMatch) return `https://lovdata.no/lov/2008-06-27-71/§${pblMatch[1]}`;
+  const tek17SecMatch = ref.match(/^TEK17\s*§\s*([\d-]+)/i);
+  if (tek17SecMatch) return `https://lovdata.no/forskrift/2017-06-19-840/§${tek17SecMatch[1]}`;
+  const tek17KapMatch = ref.match(/^TEK17\s*kap\.?\s*(\d+)/i);
+  if (tek17KapMatch) return `https://lovdata.no/forskrift/2017-06-19-840/KAPITTEL_${tek17KapMatch[1]}`;
+  const sak10Match = ref.match(/^SAK10\s*§\s*([\d-]+)/i);
+  if (sak10Match) return `https://lovdata.no/forskrift/2010-03-26-488/§${sak10Match[1]}`;
+  if (/forurensningsloven/i.test(ref)) return "https://lovdata.no/lov/1981-03-13-6";
+  if (/el-tilsynsloven/i.test(ref)) return "https://lovdata.no/lov/1929-05-24-4";
+  if (/dok-forskriften/i.test(ref)) return "https://lovdata.no/forskrift/2016-10-05-1134";
+  return null;
+}
+
 /** Norwegian status labels used in the PDF checklist table. */
 const STATUS_LABELS: Record<string, string> = {
   ok: "OK",
@@ -456,6 +472,10 @@ export async function generateInspectionPdf(
     doc.setTextColor(0, 0, 0);
     y += 11;
 
+    const deviationUrls = deviations.map((i) =>
+      i.definition.legal_reference ? legalReferenceUrl(i.definition.legal_reference) : null
+    );
+
     autoTable(doc, {
       startY: y,
       head: [["Sjekkpunkt", "Avviksbeskrivelse", "Ansvarlig", "Rettes innen"]],
@@ -488,6 +508,50 @@ export async function generateInspectionPdf(
         3: { cellWidth: 25 },
       },
       margin: { left: L },
+      didDrawCell: (data) => {
+        if (data.section !== "body" || data.column.index !== 0) return;
+        const url = deviationUrls[data.row.index];
+        if (!url) return;
+
+        const lines = data.cell.text;
+        const hjemmelLineIdx = lines.findIndex((l) => l.startsWith("Hjemmel:"));
+        if (hjemmelLineIdx < 0) return;
+
+        const hjemmelText = lines[hjemmelLineIdx];
+        const ptToMm = 25.4 / 72;
+        const fontH = 9 * ptToMm;
+        const lineH = fontH * doc.getLineHeightFactor();
+        const topPad = data.cell.padding("top");
+        const leftPad = data.cell.padding("left");
+
+        // textPos.y is the baseline of the first rendered text line (internal jspdf-autotable prop)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const textPosY = (data.cell as any).textPos?.y;
+        const firstBaseline: number = typeof textPosY === "number"
+          ? textPosY
+          : data.cell.y + topPad + fontH;
+        const hjemmelBaseline = firstBaseline + hjemmelLineIdx * lineH;
+        const textX = data.cell.x + leftPad;
+
+        // Re-draw the hjemmel line in blue over the already-rendered gray text
+        const fillColor = data.cell.styles.fillColor;
+        const bg: [number, number, number] = Array.isArray(fillColor)
+          ? [fillColor[0] as number, fillColor[1] as number, fillColor[2] as number]
+          : [255, 255, 255];
+        doc.setFillColor(...bg);
+        doc.rect(textX, hjemmelBaseline - fontH, data.cell.contentWidth, fontH * 1.3, "F");
+
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(37, 99, 235); // blue-600
+        doc.text(hjemmelText, textX, hjemmelBaseline);
+        doc.setTextColor(0, 0, 0);
+
+        // Add PDF link annotation over the hjemmel text area
+        doc.setFontSize(9);
+        const textW = doc.getTextWidth(hjemmelText);
+        doc.link(textX, hjemmelBaseline - fontH, textW, lineH, { url });
+      },
     });
   }
 
