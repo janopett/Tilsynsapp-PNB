@@ -29,6 +29,7 @@ import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
 import type { CheckpointDefinition } from "@/types";
 import CheckpointItem from "@/components/checklist/CheckpointItem";
 import ArchivePanel from "@/components/archive/ArchivePanel";
+import CaseFilesPanel from "@/components/sif/CaseFilesPanel";
 import StatusBadge from "@/components/ui/StatusBadge";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
@@ -44,8 +45,8 @@ const DUMMY_CONTACTS: SifContact[] = [
   { recno: 3, name: "Per Foretak AS", role: "UTF", roleDescription: "Ansvarlig utførende", type: "enterprise" },
 ];
 
-type Tab = "checklist" | "summary" | "archive";
-const TABS: Tab[] = ["checklist", "summary", "archive"];
+type Tab = "checklist" | "summary" | "archive" | "files";
+const TABS: Tab[] = ["checklist", "summary", "archive", "files"];
 
 // ── Edit Modal ──────────────────────────────────────────────────────────────
 
@@ -1027,9 +1028,9 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         ))}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — hide "files" tab when no case is linked */}
       <div className="flex gap-1 bg-gray-100 dark:bg-slate-700/50 rounded-xl p-1 mb-5">
-        {TABS.map((tab) => (
+        {TABS.filter((tab) => tab !== "files" || !!inspection.case_number).map((tab) => (
           <button
             key={tab}
             onClick={() => { setActiveTab(tab); if (tab === "archive") setArchivePanelMounted(true); }}
@@ -1042,6 +1043,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
             {tab === "checklist" && t.inspection.tabChecklist}
             {tab === "summary" && t.inspection.tabDeviations(summary.deviations)}
             {tab === "archive" && t.inspection.tabArchive}
+            {tab === "files" && t.inspection.tabFiles}
           </button>
         ))}
       </div>
@@ -1166,6 +1168,11 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         <div className={activeTab !== "archive" ? "hidden" : ""}>
           <ArchivePanel inspection={inspection} onArchived={fetchInspection} onMarkCompleted={fetchInspection} />
         </div>
+      )}
+
+      {/* Saksfiler tab — files fetched directly from the linked PNB case */}
+      {activeTab === "files" && inspection.case_number && (
+        <CaseFilesPanel caseNumber={inspection.case_number} />
       )}
 
       {/* Edit modal */}
