@@ -106,6 +106,8 @@ export async function captureMapImage(
   }
 }
 
+import type { GeoJsonPolygon } from "@/types";
+
 export interface OverviewPoint {
   lat: number;
   lng: number;
@@ -208,6 +210,93 @@ export async function captureOverviewMapImage(
 
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+  drawAttribution(ctx, canvasW, canvasH);
+
+  try {
+    return canvas.toDataURL("image/jpeg", 0.82);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Capture a static map image showing a GeoJSON polygon (tilsynsområde) with blue fill.
+ * Automatically selects a zoom level that fits the polygon within ≤5 tiles in each axis.
+ */
+export async function capturePolygonMapImage(polygon: GeoJsonPolygon): Promise<string | null> {
+  if (typeof document === "undefined") return null;
+
+  const ring = polygon.coordinates[0];
+  if (!ring || ring.length < 3) return null;
+
+  const TILE_SIZE = 256;
+  const MAX_TILES = 5;
+
+  // GeoJSON coords are [lng, lat]
+  const lats = ring.map(([, lat]) => lat);
+  const lngs = ring.map(([lng]) => lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+
+  let zoom = 17;
+  while (zoom > 10) {
+    const txMin = Math.floor(lon2tileFrac(minLng, zoom));
+    const txMax = Math.floor(lon2tileFrac(maxLng, zoom));
+    const tyMin = Math.floor(lat2tileFrac(maxLat, zoom));
+    const tyMax = Math.floor(lat2tileFrac(minLat, zoom));
+    if (txMax - txMin < MAX_TILES && tyMax - tyMin < MAX_TILES) break;
+    zoom--;
+  }
+
+  const tileXMin = Math.floor(lon2tileFrac(minLng, zoom)) - 1;
+  const tileXMax = Math.floor(lon2tileFrac(maxLng, zoom)) + 1;
+  const tileYMin = Math.floor(lat2tileFrac(maxLat, zoom)) - 1;
+  const tileYMax = Math.floor(lat2tileFrac(minLat, zoom)) + 1;
+
+  const canvasW = (tileXMax - tileXMin + 1) * TILE_SIZE;
+  const canvasH = (tileYMax - tileYMin + 1) * TILE_SIZE;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasW;
+  canvas.height = canvasH;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  ctx.fillStyle = "#e8e0d8";
+  ctx.fillRect(0, 0, canvasW, canvasH);
+
+  const tilePromises: Array<Promise<void>> = [];
+  for (let ty = tileYMin; ty <= tileYMax; ty++) {
+    for (let tx = tileXMin; tx <= tileXMax; tx++) {
+      const px = (tx - tileXMin) * TILE_SIZE;
+      const py = (ty - tileYMin) * TILE_SIZE;
+      tilePromises.push(
+        loadTile(zoom, tx, ty).then((img) => {
+          if (img) ctx.drawImage(img, px, py, TILE_SIZE, TILE_SIZE);
+        })
+      );
+    }
+  }
+  await Promise.all(tilePromises);
+
+  // Project polygon vertices onto canvas pixels (ring is closed: last === first)
+  const pixels = ring.map(([lng, lat]) => ({
+    x: (lon2tileFrac(lng, zoom) - tileXMin) * TILE_SIZE,
+    y: (lat2tileFrac(lat, zoom) - tileYMin) * TILE_SIZE,
+  }));
+
+  ctx.beginPath();
+  ctx.moveTo(pixels[0].x, pixels[0].y);
+  for (let i = 1; i < pixels.length - 1; i++) ctx.lineTo(pixels[i].x, pixels[i].y);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(37, 99, 235, 0.18)";
+  ctx.fill();
+  ctx.strokeStyle = "#2563eb";
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
   drawAttribution(ctx, canvasW, canvasH);
 
   try {

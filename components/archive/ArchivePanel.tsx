@@ -5,7 +5,7 @@ import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
-import { captureMapImage, captureOverviewMapImage, type OverviewPoint } from "@/lib/pdf/map-capture";
+import { captureMapImage, captureOverviewMapImage, capturePolygonMapImage, type OverviewPoint } from "@/lib/pdf/map-capture";
 
 interface CaseDocument {
   Recno: number;
@@ -137,17 +137,28 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       })
     );
 
-    // Capture overview map with all numbered pins
+    // Capture overview map with all numbered pins + polygon area map (in parallel)
     let overviewMapImage: string | undefined;
-    if (answersWithCoords.length > 0) {
-      const pts: OverviewPoint[] = answersWithCoords.map((a, idx) => ({
-        lat: a.latitude!,
-        lng: a.longitude!,
-        num: idx + 1,
-        status: (a.status ?? "not_checked") as OverviewPoint["status"],
-      }));
-      overviewMapImage = (await captureOverviewMapImage(pts)) ?? undefined;
-    }
+    let areaMapImage: string | undefined;
+
+    await Promise.all([
+      (async () => {
+        if (answersWithCoords.length > 0) {
+          const pts: OverviewPoint[] = answersWithCoords.map((a, idx) => ({
+            lat: a.latitude!,
+            lng: a.longitude!,
+            num: idx + 1,
+            status: (a.status ?? "not_checked") as OverviewPoint["status"],
+          }));
+          overviewMapImage = (await captureOverviewMapImage(pts)) ?? undefined;
+        }
+      })(),
+      (async () => {
+        if (inspection.area_geojson) {
+          areaMapImage = (await capturePolygonMapImage(inspection.area_geojson)) ?? undefined;
+        }
+      })(),
+    ]);
 
     const res = await authFetch("/api/archive", {
       method: "POST",
@@ -163,6 +174,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
           ? checkpointMapImages
           : undefined,
         overviewMapImage,
+        areaMapImage,
       }),
     });
 

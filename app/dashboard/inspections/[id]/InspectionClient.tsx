@@ -182,6 +182,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [showMap, setShowMap] = useState(false);
   const [latitude, setLatitude] = useState<number | null>(inspection.latitude ?? null);
   const [longitude, setLongitude] = useState<number | null>(inspection.longitude ?? null);
+  const [areaGeojson, setAreaGeojson] = useState<import("@/types").GeoJsonPolygon | null>(inspection.area_geojson ?? null);
 
   function addParticipant() {
     if (!participantDropdown) return;
@@ -232,6 +233,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         estates: selectedEstates,
         latitude: latitude ?? null,
         longitude: longitude ?? null,
+        area_geojson: areaGeojson ?? null,
         befaringsomrade,
         tiltakstype,
         bakgrunn: selectedBakgrunn,
@@ -692,15 +694,18 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         <MapPickerModal
           initialLat={latitude}
           initialLng={longitude}
+          initialPolygon={areaGeojson}
           addressHint={[
             propertyAddress,
             inspection.estates?.[0]?.zipCode,
             inspection.estates?.[0]?.zipPlace,
           ].filter(Boolean).join(" ") || undefined}
           title={t.inspection.mapTitle}
-          onSave={(lat, lng) => {
+          allowPolygon
+          onSave={(lat, lng, polygon) => {
             setLatitude(lat);
             setLongitude(lng);
+            setAreaGeojson(polygon ?? null);
             setShowMap(false);
           }}
           onClose={() => setShowMap(false)}
