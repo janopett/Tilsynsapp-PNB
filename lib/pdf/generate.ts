@@ -26,20 +26,45 @@ import {
   groupByCategory,
 } from "@/lib/checklist/filter-engine";
 
-/** Resolve a legal_reference string to a Lovdata URL for the primary law/regulation. */
+/** Resolve a single (non-compound) legal reference string to a Lovdata URL. */
 function legalReferenceUrl(ref: string): string | null {
-  const pblMatch = ref.match(/^pbl\s*§\s*([\d-]+)/i);
+  const r = ref.trim();
+  const pblMatch = r.match(/^pbl\s*§\s*([\d-]+)/i);
   if (pblMatch) return `https://lovdata.no/lov/2008-06-27-71/§${pblMatch[1]}`;
-  const tek17SecMatch = ref.match(/^TEK17\s*§\s*([\d-]+)/i);
+  if (/^pbl$/i.test(r)) return "https://lovdata.no/lov/2008-06-27-71";
+  const tek17SecMatch = r.match(/^TEK17\s*§\s*([\d-]+)/i);
   if (tek17SecMatch) return `https://lovdata.no/forskrift/2017-06-19-840/§${tek17SecMatch[1]}`;
-  const tek17KapMatch = ref.match(/^TEK17\s*kap\.?\s*(\d+)/i);
+  const tek17KapMatch = r.match(/^TEK17\s*kap\.?\s*(\d+)/i);
   if (tek17KapMatch) return `https://lovdata.no/forskrift/2017-06-19-840/KAPITTEL_${tek17KapMatch[1]}`;
-  const sak10Match = ref.match(/^SAK10\s*§\s*([\d-]+)/i);
+  if (/^TEK17$/i.test(r)) return "https://lovdata.no/forskrift/2017-06-19-840";
+  const sak10Match = r.match(/^SAK10\s*§\s*([\d-]+)/i);
   if (sak10Match) return `https://lovdata.no/forskrift/2010-03-26-488/§${sak10Match[1]}`;
-  if (/forurensningsloven/i.test(ref)) return "https://lovdata.no/lov/1981-03-13-6";
-  if (/el-tilsynsloven/i.test(ref)) return "https://lovdata.no/lov/1929-05-24-4";
-  if (/dok-forskriften/i.test(ref)) return "https://lovdata.no/forskrift/2016-10-05-1134";
+  if (/^SAK10$/i.test(r)) return "https://lovdata.no/forskrift/2010-03-26-488";
+  if (/forurensningsloven/i.test(r)) return "https://lovdata.no/lov/1981-03-13-6";
+  if (/el-tilsynsloven/i.test(r)) return "https://lovdata.no/lov/1929-05-24-4";
+  if (/dok-forskriften/i.test(r)) return "https://lovdata.no/forskrift/2016-10-05-1134";
   return null;
+}
+
+/**
+ * Split a (possibly compound) legal_reference into individual parts, each with a URL.
+ * Handles cases like "TEK17 § 11-2, § 11-4" where a bare "§ X-Y" inherits the last law prefix.
+ */
+function parseHjemmelParts(ref: string): Array<{ text: string; url: string | null }> {
+  const parts = ref.split(/,\s*/);
+  let lastLawPrefix = "";
+  return parts.map((raw) => {
+    const part = raw.trim();
+    const lawMatch = part.match(/^(pbl|TEK17|SAK10|Forurensningsloven|el-tilsynsloven|DOK-forskriften)/i);
+    if (lawMatch) lastLawPrefix = lawMatch[1];
+
+    // Bare section like "§ 11-4" — prefix with the last seen law so it resolves correctly
+    const fullRef = !lawMatch && /^§/.test(part) && lastLawPrefix
+      ? `${lastLawPrefix} ${part}`
+      : part;
+
+    return { text: part, url: legalReferenceUrl(fullRef) };
+  });
 }
 
 /** Norwegian status labels used in the PDF checklist table. */
@@ -472,22 +497,31 @@ export async function generateInspectionPdf(
     doc.setTextColor(0, 0, 0);
     y += 11;
 
-    const deviationUrls = deviations.map((i) =>
-      i.definition.legal_reference ? legalReferenceUrl(i.definition.legal_reference) : null
+    // Per-row array of {text, url} pairs — one entry per individual hjemmel part
+    const deviationHjemmelData = deviations.map((i) =>
+      i.definition.legal_reference
+        ? parseHjemmelParts(i.definition.legal_reference).map((p) => ({
+            text: `Hjemmel: ${p.text}`,
+            url: p.url,
+          }))
+        : []
     );
 
     autoTable(doc, {
       startY: y,
       head: [["Sjekkpunkt", "Avviksbeskrivelse", "Ansvarlig", "Rettes innen"]],
-      body: deviations.map((i) => {
-        const hjemmel = i.definition.legal_reference
-          ? `Hjemmel: ${i.definition.legal_reference}`
-          : "";
+      body: deviations.map((i, rowIdx) => {
+        // One "Hjemmel: …" line per individual reference part
+        const hjemmelLines = deviationHjemmelData[rowIdx].map((p) => p.text);
         const fristStr = i.answer?.frist
           ? new Date(i.answer.frist).toLocaleDateString("nb-NO")
           : "";
         return [
-          `${i.definition.title}\n(${CATEGORY_LABELS[i.definition.category]})${hjemmel ? `\n${hjemmel}` : ""}`,
+          [
+            `${i.definition.title}`,
+            `(${CATEGORY_LABELS[i.definition.category]})`,
+            ...hjemmelLines,
+          ].join("\n"),
           i.answer?.comment ?? "(ingen kommentar)",
           i.answer?.responsible_contact_name ?? "",
           fristStr,
@@ -510,47 +544,55 @@ export async function generateInspectionPdf(
       margin: { left: L },
       didDrawCell: (data) => {
         if (data.section !== "body" || data.column.index !== 0) return;
-        const url = deviationUrls[data.row.index];
-        if (!url) return;
+        const hjemmelData = deviationHjemmelData[data.row.index];
+        if (hjemmelData.length === 0) return;
 
         const lines = data.cell.text;
-        const hjemmelLineIdx = lines.findIndex((l) => l.startsWith("Hjemmel:"));
-        if (hjemmelLineIdx < 0) return;
+        // Collect indices of all "Hjemmel:" lines in the rendered cell text
+        const hjemmelLineIndices = lines
+          .map((l, i) => (l.startsWith("Hjemmel:") ? i : -1))
+          .filter((i) => i >= 0);
+        if (hjemmelLineIndices.length === 0) return;
 
-        const hjemmelText = lines[hjemmelLineIdx];
         const ptToMm = 25.4 / 72;
         const fontH = 9 * ptToMm;
         const lineH = fontH * doc.getLineHeightFactor();
         const topPad = data.cell.padding("top");
         const leftPad = data.cell.padding("left");
-
-        // textPos.y is the baseline of the first rendered text line (internal jspdf-autotable prop)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const textPosY = (data.cell as any).textPos?.y;
-        const firstBaseline: number = typeof textPosY === "number"
-          ? textPosY
-          : data.cell.y + topPad + fontH;
-        const hjemmelBaseline = firstBaseline + hjemmelLineIdx * lineH;
         const textX = data.cell.x + leftPad;
 
-        // Re-draw the hjemmel line in blue over the already-rendered gray text
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const textPosY = (data.cell as any).textPos?.y;
+        const firstBaseline: number =
+          typeof textPosY === "number" ? textPosY : data.cell.y + topPad + fontH;
+
         const fillColor = data.cell.styles.fillColor;
         const bg: [number, number, number] = Array.isArray(fillColor)
           ? [fillColor[0] as number, fillColor[1] as number, fillColor[2] as number]
           : [255, 255, 255];
-        doc.setFillColor(...bg);
-        doc.rect(textX, hjemmelBaseline - fontH, data.cell.contentWidth, fontH * 1.3, "F");
 
-        doc.setFontSize(9);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(37, 99, 235); // blue-600
-        doc.text(hjemmelText, textX, hjemmelBaseline);
-        doc.setTextColor(0, 0, 0);
+        for (let k = 0; k < hjemmelLineIndices.length; k++) {
+          const lineIdx = hjemmelLineIndices[k];
+          const item = hjemmelData[k];
+          if (!item?.url) continue;
 
-        // Add PDF link annotation over the hjemmel text area
-        doc.setFontSize(9);
-        const textW = doc.getTextWidth(hjemmelText);
-        doc.link(textX, hjemmelBaseline - fontH, textW, lineH, { url });
+          const baseline = firstBaseline + lineIdx * lineH;
+          const lineText = lines[lineIdx];
+
+          // Cover existing gray text, redraw in blue
+          doc.setFillColor(...bg);
+          doc.rect(textX, baseline - fontH, data.cell.contentWidth, fontH * 1.3, "F");
+          doc.setFontSize(9);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(37, 99, 235);
+          doc.text(lineText, textX, baseline);
+          doc.setTextColor(0, 0, 0);
+
+          // PDF link annotation
+          doc.setFontSize(9);
+          const textW = doc.getTextWidth(lineText);
+          doc.link(textX, baseline - fontH, textW, lineH, { url: item.url });
+        }
       },
     });
   }
