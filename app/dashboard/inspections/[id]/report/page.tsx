@@ -13,6 +13,7 @@ import {
 } from "@/lib/checklist/filter-engine";
 import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
 import CheckpointOverviewMap, { type MapPoint } from "@/components/ui/CheckpointOverviewMap";
+import PolygonMap from "@/components/ui/PolygonMap";
 
 interface Props {
   params: { id: string };
@@ -172,6 +173,16 @@ export default async function ReportPage({ params }: Props) {
             </div>
           ))}
         </div>
+
+        {/* Tilsynsområde — polygon drawn during inspection creation */}
+        {inspection.area_geojson && (
+          <div className="mb-8">
+            <h2 className="text-sm font-bold text-brand-900 uppercase tracking-wide mb-3 border-b border-gray-200 pb-1">
+              Tilsynsområde
+            </h2>
+            <PolygonMap polygon={inspection.area_geojson} />
+          </div>
+        )}
 
         {/* Overview map — all checkpoints with registered coordinates */}
         <CheckpointOverviewMap points={mapPoints} />

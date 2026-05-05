@@ -22,6 +22,7 @@ const CreateInspectionSchema = z.object({
   estates: z.array(z.record(z.unknown())).default([]),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
+  area_geojson: z.object({ type: z.literal("Polygon"), coordinates: z.array(z.array(z.tuple([z.number(), z.number()]))) }).nullable().optional(),
   sif_stage_recno: z.number().optional(),
   bakgrunn: z.array(z.string()).default([]),
   befaringsomrade: z.array(z.string()).default([]),

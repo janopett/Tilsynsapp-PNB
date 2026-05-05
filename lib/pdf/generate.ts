@@ -146,7 +146,9 @@ export async function generateInspectionPdf(
   /** Base64 JPEG data URLs keyed by checkpoint_definition_id, captured client-side. */
   checkpointMapImages?: Record<string, string>,
   /** Base64 JPEG overview map with numbered pins, captured client-side. */
-  overviewMapImage?: string
+  overviewMapImage?: string,
+  /** Base64 JPEG polygon map (tilsynsområde), captured client-side. */
+  areaMapImage?: string
 ): Promise<Buffer> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const measureType = MEASURE_TYPES.find((m) => m.id === inspection.measure_type_id);
@@ -272,6 +274,22 @@ export async function generateInspectionPdf(
     doc.setTextColor(0, 0, 0);
     doc.text(noteLines, L + 3, y + 9);
     y += noteH + 6;
+  }
+
+  // ── Tilsynsområde (polygon map) ──────────────────────────────
+  if (areaMapImage) {
+    y = ensurePageSpace(doc, y, 30);
+    doc.setFontSize(9);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(...BRAND_MID);
+    doc.text("TILSYNSOMRÅDE", L, y + 5.5);
+    doc.setTextColor(0, 0, 0);
+    y += 9;
+    const areaProps = doc.getImageProperties(areaMapImage);
+    const areaH = Math.round((contentWidth * areaProps.height) / areaProps.width);
+    y = ensurePageSpace(doc, y, areaH);
+    doc.addImage(areaMapImage, "JPEG", L, y, contentWidth, areaH);
+    y += areaH + 6;
   }
 
   // ── Checklist ────────────────────────────────────────────────

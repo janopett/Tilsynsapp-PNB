@@ -3,6 +3,13 @@
 // ============================================================
 
 export type InspectionStatus = "draft" | "in_progress" | "completed" | "archived";
+
+/** Minimal GeoJSON Polygon — coordinates are [longitude, latitude] pairs; ring must be closed. */
+export interface GeoJsonPolygon {
+  type: "Polygon";
+  /** Outer ring (index 0): array of [lng, lat] pairs; first === last to close the ring. */
+  coordinates: [number, number][][];
+}
 export type CheckpointStatus = "not_checked" | "ok" | "deviation";
 export type ArchivalStatus = "pending" | "success" | "failed";
 export type SifAuthMode = "authkey" | "combined_daemon";
@@ -141,6 +148,8 @@ export interface Inspection {
   // Coordinates (kart)
   latitude?: number | null;
   longitude?: number | null;
+  // Survey area polygon stored as GeoJSON (no PostGIS required)
+  area_geojson?: GeoJsonPolygon | null;
 
   // Selected SIF stage. Sent as AdditionalListFields on CreateDocument to link the document to the correct stage.
   sif_stage_recno?: number | null;

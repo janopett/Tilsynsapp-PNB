@@ -67,6 +67,7 @@ export default function NewInspectionPage() {
   const [showMap, setShowMap] = useState(false);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [areaGeojson, setAreaGeojson] = useState<import("@/types").GeoJsonPolygon | null>(null);
 
   // Configurable lists
   const [befaringsomradeItems, setBefaringsomradeItems] = useState<{ code: string; description: string }[]>([]);
@@ -319,6 +320,7 @@ export default function NewInspectionPage() {
         estates: selectedEstates,
         latitude: latitude ?? undefined,
         longitude: longitude ?? undefined,
+        area_geojson: areaGeojson ?? undefined,
         sif_stage_recno: selectedStageRecno ?? undefined,
         befaringsomrade,
         tiltakstype,
@@ -879,11 +881,14 @@ export default function NewInspectionPage() {
         <MapPickerModal
           initialLat={latitude}
           initialLng={longitude}
+          initialPolygon={areaGeojson}
           addressHint={[propertyAddress, estateZipCode, estateZipPlace].filter(Boolean).join(" ") || undefined}
           title={t.newInspection.mapTitle}
-          onSave={(lat, lng) => {
+          allowPolygon
+          onSave={(lat, lng, polygon) => {
             setLatitude(lat);
             setLongitude(lng);
+            setAreaGeojson(polygon ?? null);
             setShowMap(false);
           }}
           onClose={() => setShowMap(false)}
