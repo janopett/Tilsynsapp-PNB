@@ -4,7 +4,13 @@
 
 import { sifRpcCall } from "./client";
 import { SifUploadError, SifValidationError } from "./errors";
-import type { SifUploadInput, SifUploadResult } from "./types";
+import type {
+  SifUploadInput,
+  SifUploadResult,
+  SifGetFilesWithMetadataQuery,
+  SifGetFilesWithMetadataResult,
+  SifFileMetadata,
+} from "./types";
 import type { SifUploadedFileReference } from "@/types";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB — matches Supabase Storage bucket limit
@@ -110,4 +116,32 @@ export function mimeTypeToFormat(mimeType: string): string {
     "text/plain": "txt",
   };
   return map[mimeType] ?? "bin";
+}
+
+/**
+ * Fetch file metadata for all files on a given case (no file content included).
+ * Returns an empty array if the case has no files or SIF returns an error.
+ */
+export async function fetchCaseFilesFromSif(
+  caseNumber: string,
+  maxFiles = 200,
+  correlationId?: string
+): Promise<SifFileMetadata[]> {
+  const query: SifGetFilesWithMetadataQuery = {
+    CaseNumber: caseNumber,
+    MaxReturnedFiles: maxFiles,
+    SortCriterion: "RecnoAscending",
+  };
+
+  console.info("[SIF] FileService/GetFilesWithMetadata", { correlationId, caseNumber });
+
+  const result = await sifRpcCall<SifGetFilesWithMetadataQuery, SifGetFilesWithMetadataResult>(
+    "FileService",
+    "GetFilesWithMetadata",
+    query,
+    correlationId
+  );
+
+  if (!result.Successful) return [];
+  return result.Files ?? [];
 }
