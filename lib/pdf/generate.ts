@@ -257,7 +257,8 @@ export async function generateInspectionPdf(
 
     // Embed client-captured overview map with numbered pins (if provided)
     if (overviewMapImage) {
-      const MAP_H = 80;
+      const props = doc.getImageProperties(overviewMapImage);
+      const MAP_H = Math.round((contentWidth * props.height) / props.width);
       doc.addImage(overviewMapImage, "JPEG", L, y, contentWidth, MAP_H);
       y += MAP_H + 3;
     }
