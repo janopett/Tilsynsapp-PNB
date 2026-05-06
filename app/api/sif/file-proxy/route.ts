@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
   const filename = format ? `${safeName}.${format}` : safeName;
   const isInline = mimeType.startsWith("image/") || mimeType === "application/pdf";
 
-  return new NextResponse(downloaded.data, {
+  return new NextResponse(new Uint8Array(downloaded.data), {
     headers: {
       "Content-Type": mimeType,
       "Content-Length": String(downloaded.data.byteLength),
