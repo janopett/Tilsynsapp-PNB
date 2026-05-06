@@ -28,8 +28,9 @@ function formatSize(bytes: number | undefined): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function proxyUrl(file: SifFileMetadata): string {
-  return `/api/sif/file-proxy?url=${encodeURIComponent(file.URL ?? "")}&format=${file.Format ?? ""}&title=${encodeURIComponent(file.Title ?? "fil")}`;
+function proxyUrl(file: SifFileMetadata): string | null {
+  if (!file.Recno) return null;
+  return `/api/sif/file-proxy?recno=${file.Recno}&format=${encodeURIComponent(file.Format ?? "")}&title=${encodeURIComponent(file.Title ?? "fil")}`;
 }
 
 interface LightboxImage {
@@ -104,8 +105,8 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
   return (
     <div className="space-y-8">
       {groups.map((group) => {
-        const images = group.files.filter(isImage);
-        const others = group.files.filter((f) => !isImage(f));
+        const images = group.files.filter(isImage).filter((f) => !!f.Recno);
+        const others = group.files.filter((f) => !isImage(f)).filter((f) => !!f.Recno);
         const isReferredCase = group.caseNumber !== caseNumber;
 
         return (
@@ -137,7 +138,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
-                        src={proxyUrl(file)}
+                        src={proxyUrl(file)!}
                         alt={file.Title ?? "Bilde"}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"
@@ -154,7 +155,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                 {others.map((file, idx) => (
                   <a
                     key={file.Recno ?? idx}
-                    href={proxyUrl(file)}
+                    href={proxyUrl(file)!}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition"
@@ -227,7 +228,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={lightbox.file.Recno}
-            src={proxyUrl(lightbox.file)}
+            src={proxyUrl(lightbox.file)!}
             alt={lightbox.file.Title ?? "Bilde"}
             className="max-w-[88vw] max-h-[88vh] object-contain rounded-lg shadow-2xl"
             onClick={(e) => e.stopPropagation()}
