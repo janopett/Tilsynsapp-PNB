@@ -109,7 +109,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={`/api/sif/file-proxy?recno=${file.Recno}`}
+                  src={`/api/sif/file-proxy?url=${encodeURIComponent(file.URL ?? "")}&format=${file.Format ?? ""}&title=${encodeURIComponent(file.Title ?? "fil")}`}
                   alt={file.Title ?? "Bilde"}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                   loading="lazy"
@@ -131,7 +131,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
             {others.map((file, idx) => (
               <a
                 key={file.Recno ?? idx}
-                href={`/api/sif/file-proxy?recno=${file.Recno}`}
+                href={`/api/sif/file-proxy?url=${encodeURIComponent(file.URL ?? "")}&format=${file.Format ?? ""}&title=${encodeURIComponent(file.Title ?? "fil")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition"
@@ -205,7 +205,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={images[lightboxIdx].Recno}
-            src={`/api/sif/file-proxy?recno=${images[lightboxIdx].Recno}`}
+            src={`/api/sif/file-proxy?url=${encodeURIComponent(images[lightboxIdx].URL ?? "")}&format=${images[lightboxIdx].Format ?? ""}&title=${encodeURIComponent(images[lightboxIdx].Title ?? "fil")}`}
             alt={images[lightboxIdx].Title ?? "Bilde"}
             className="max-w-[88vw] max-h-[88vh] object-contain rounded-lg shadow-2xl"
             onClick={(e) => e.stopPropagation()}
