@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireUser } from "@/lib/api-auth";
+import { getAuthClient } from "@/lib/api-auth";
+import { createClient as createCookieClient } from "@/lib/supabase/server";
 import { sifRpcCall, buildRpcUrl } from "@/lib/sif/client";
 import { buildSifAuthHeaders } from "@/lib/sif/auth";
 import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "@/lib/sif/settings";
@@ -32,9 +33,25 @@ interface TokenResult {
   Successful?: boolean;
 }
 
+async function resolveUser(req: NextRequest) {
+  // Bearer token (authFetch / API calls)
+  const token = req.headers.get("Authorization")?.replace("Bearer ", "");
+  if (token) {
+    const supabase = getAuthClient(req);
+    const { data: { user } } = await supabase.auth.getUser(token);
+    if (user) return user;
+  }
+  // Cookie session (browser navigation: <a href>, <img src>)
+  const supabase = createCookieClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return user ?? null;
+}
+
 export async function GET(req: NextRequest) {
-  const auth = await requireUser(req);
-  if (auth.error) return auth.error;
+  const user = await resolveUser(req);
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const recnoParam = req.nextUrl.searchParams.get("recno");
   const recno = recnoParam ? Number(recnoParam) : NaN;
