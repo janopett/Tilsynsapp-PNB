@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
-import { fetchCaseFilesFromSif } from "@/lib/sif/file-service";
+import { getDocumentsWithFiles } from "@/lib/sif/extensions/referred-cases";
 
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
@@ -12,7 +12,15 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const files = await fetchCaseFilesFromSif(caseNumber);
+    const documents = await getDocumentsWithFiles(caseNumber, 50);
+    // Flatten files from all documents, deduplicate by Recno
+    const seen = new Set<number>();
+    const files = documents.flatMap((d) => d.files).filter((f) => {
+      if (!f.Recno) return true;
+      if (seen.has(f.Recno)) return false;
+      seen.add(f.Recno);
+      return true;
+    });
     return NextResponse.json({ files });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ukjent feil";

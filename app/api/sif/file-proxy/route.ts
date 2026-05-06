@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
-import { sifRpcCall } from "@/lib/sif/client";
-import type { SifGetFilesWithMetadataQuery, SifGetFilesWithMetadataResult } from "@/lib/sif/types";
+import { downloadFileByUrl } from "@/lib/sif/extensions/file-download";
+import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 
 const FORMAT_MIME: Record<string, string> = {
   jpg: "image/jpeg",
@@ -26,44 +26,45 @@ export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
 
-  const recnoParam = req.nextUrl.searchParams.get("recno");
-  const recno = recnoParam ? Number(recnoParam) : NaN;
-  if (!recno || isNaN(recno)) {
-    return NextResponse.json({ error: "recno er påkrevd" }, { status: 400 });
+  const urlParam = req.nextUrl.searchParams.get("url");
+  const formatParam = req.nextUrl.searchParams.get("format") ?? "";
+  const titleParam = req.nextUrl.searchParams.get("title") ?? "fil";
+
+  if (!urlParam) {
+    return NextResponse.json({ error: "url er påkrevd" }, { status: 400 });
   }
 
-  const query: SifGetFilesWithMetadataQuery = {
-    Recno: recno,
-    IncludeFileData: true,
-  };
+  const fileUrl = decodeURIComponent(urlParam);
 
-  const result = await sifRpcCall<SifGetFilesWithMetadataQuery, SifGetFilesWithMetadataResult>(
-    "FileService",
-    "GetFilesWithMetadata",
-    query
-  ).catch(() => null);
+  // SSRF-beskyttelse: valider at URLen tilhører SIF-verten
+  if (fileUrl.startsWith("http")) {
+    const settings = await loadSifSettingsWithEnvFallback();
+    const sifHostname = new URL(settings.baseUrl).hostname;
+    try {
+      const fileHostname = new URL(fileUrl).hostname;
+      if (fileHostname !== sifHostname) {
+        return NextResponse.json({ error: "Ugyldig URL" }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: "Ugyldig URL" }, { status: 400 });
+    }
+  }
 
-  if (!result?.Successful || !result.Files?.length) {
+  const downloaded = await downloadFileByUrl(fileUrl, titleParam, formatParam);
+  if (!downloaded) {
     return NextResponse.json({ error: "Fil ikke funnet" }, { status: 404 });
   }
 
-  const file = result.Files[0];
-  if (!file.Base64Data) {
-    return NextResponse.json({ error: "Ingen fildata returnert fra SIF" }, { status: 404 });
-  }
-
-  const format = file.Format?.toLowerCase() ?? "";
+  const format = downloaded.format.toLowerCase();
   const mimeType = FORMAT_MIME[format] ?? "application/octet-stream";
-  const fileData = Buffer.from(file.Base64Data, "base64");
-  const safeName = (file.Title ?? "fil").replace(/[^\w\s.-]/g, "_");
+  const safeName = downloaded.fileName.replace(/[^\w\s.-]/g, "_");
   const filename = format ? `${safeName}.${format}` : safeName;
-
   const isInline = mimeType.startsWith("image/") || mimeType === "application/pdf";
 
-  return new NextResponse(fileData, {
+  return new NextResponse(new Uint8Array(downloaded.data), {
     headers: {
       "Content-Type": mimeType,
-      "Content-Length": String(fileData.byteLength),
+      "Content-Length": String(downloaded.data.byteLength),
       "Content-Disposition": `${isInline ? "inline" : "attachment"}; filename="${encodeURIComponent(filename)}"`,
       "Cache-Control": "private, max-age=3600",
     },
