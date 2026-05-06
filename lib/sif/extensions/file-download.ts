@@ -11,6 +11,7 @@
 
 import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "../settings";
 import { buildSifAuthHeaders } from "../auth";
+import type { SifAuthConfig } from "../auth";
 import type { SifFileMetadata } from "../types";
 
 // ── Public types ───────────────────────────────────────────────────────────
@@ -48,13 +49,18 @@ export async function downloadFileByUrl(
   const config = toSifClientConfig(settings);
 
   // SIF often returns paths like "/Archive/..." — resolve against base URL
-  const resolvedUrl = fileUrl.startsWith("http")
+  let resolvedUrl = fileUrl.startsWith("http")
     ? fileUrl
     : `${settings.baseUrl.replace(/\/$/, "")}${fileUrl}`;
 
-  const authHeaders = await buildSifAuthHeaders(config.authConfig);
-  // Strip Content-Type — this is a GET download, not a JSON POST
-  const { "Content-Type": _ct, ...downloadHeaders } = authHeaders;
+  // Auth strategy depends on mode:
+  // - authkey: append as URL query param (same as RPC calls via buildRpcUrl)
+  // - combined_daemon: send Authorization: Bearer header
+  const fetchHeaders = await buildDownloadHeaders(config.authConfig);
+  if (config.authConfig?.mode === "authkey" && config.authConfig.authKey) {
+    const sep = resolvedUrl.includes("?") ? "&" : "?";
+    resolvedUrl = `${resolvedUrl}${sep}authkey=${encodeURIComponent(config.authConfig.authKey)}`;
+  }
 
   console.info("[SIF] downloadFileByUrl", {
     correlationId,
@@ -65,7 +71,7 @@ export async function downloadFileByUrl(
   try {
     const res = await fetch(resolvedUrl, {
       method: "GET",
-      headers: downloadHeaders as HeadersInit,
+      headers: fetchHeaders as HeadersInit,
       signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
     });
 
@@ -96,6 +102,16 @@ export async function downloadFileByUrl(
     });
     return null;
   }
+}
+
+/** Build fetch headers for a GET file download (no Content-Type, no authkey for authkey mode). */
+async function buildDownloadHeaders(authConfig?: SifAuthConfig): Promise<Record<string, string>> {
+  if (!authConfig || authConfig.mode === "authkey") {
+    return {}; // authkey goes in the URL, not headers
+  }
+  const authHeaders = await buildSifAuthHeaders(authConfig);
+  const { "Content-Type": _ct, ...rest } = authHeaders;
+  return rest as Record<string, string>;
 }
 
 /**
