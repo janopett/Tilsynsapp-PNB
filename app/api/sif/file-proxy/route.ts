@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
 
   const fileResponse = await fetch(url, {
     method: "POST",
-    headers: authHeaders as HeadersInit,
+    headers: authHeaders as unknown as HeadersInit,
     body: JSON.stringify({ parameter: { Recno: recno, FileReferenceToken: fileReference } }),
     signal: AbortSignal.timeout(30_000),
   }).catch(() => null);
