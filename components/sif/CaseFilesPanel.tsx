@@ -29,8 +29,8 @@ function formatSize(bytes: number | undefined): string {
 }
 
 function proxyUrl(file: SifFileMetadata): string | null {
-  if (!file.URL) return null;
-  return `/api/sif/file-proxy?url=${encodeURIComponent(file.URL)}&format=${encodeURIComponent(file.Format ?? "")}&title=${encodeURIComponent(file.Title ?? "fil")}`;
+  if (!file.Recno) return null;
+  return `/api/sif/file-proxy?recno=${file.Recno}&format=${encodeURIComponent(file.Format ?? "")}&title=${encodeURIComponent(file.Title ?? "fil")}`;
 }
 
 interface LightboxImage {
@@ -105,8 +105,8 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
   return (
     <div className="space-y-8">
       {groups.map((group) => {
-        const images = group.files.filter(isImage).filter((f) => !!f.URL);
-        const others = group.files.filter((f) => !isImage(f)).filter((f) => !!f.URL);
+        const images = group.files.filter(isImage).filter((f) => !!f.Recno);
+        const others = group.files.filter((f) => !isImage(f)).filter((f) => !!f.Recno);
         const isReferredCase = group.caseNumber !== caseNumber;
 
         return (
