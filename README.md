@@ -30,7 +30,7 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 | Befaringsområde og tiltakstype | Multi-select klassifisering hentet direkte fra PNB-kodetabellene «eBy Supervision area» og «eBy Measure type» — brukes til å filtrere hvilke sjekkpunkter som vises |
 | Strukturert sjekkliste | 100+ sjekkpunkter fordelt på kategorier, dynamisk filtrert etter tiltakstype, eiendomsegenskaper, befaringsområde og tiltakstype fra PNB |
 | Registrering av funn | Registrer status per sjekkpunkt (ok / avvik / ikke kontrollert) med kommentar, ansvarlig kontakt og GPS-koordinater |
-| Vedlegg | Last opp bilder og dokumenter til enkeltpunkter eller befaringen generelt. Bilder med GPS-data i EXIF (f.eks. tatt med mobilkamera med stedstjeneste) får koordinatene stemplet inn på selve bildet automatisk |
+| Vedlegg | Last opp bilder og dokumenter til enkeltpunkter eller befaringen generelt. Bilder med GPS-data i EXIF (f.eks. tatt med mobilkamera med stedstjeneste) får adressen automatisk stemplet inn på bildet (reverse geocoding via Nominatim); faller tilbake til koordinater hvis oppslaget mislykkes |
 | PDF-rapport | Generer profesjonell befaringsrapport med saksopplysninger, sjekkliste, avviksoppsummering, innebygde bilder og kart |
 | Arkivering | Send ferdig befaring til kommunens arkivsystem (Public 360°) — opprett nytt dokument eller oppdater et eksisterende |
 | Dashboard | Oversikt over aktive og arkiverte befaringer med filtrering etter status, dato og eiendom |

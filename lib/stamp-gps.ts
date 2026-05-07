@@ -1,5 +1,5 @@
 /**
- * Browser-only: extract GPS from image EXIF and stamp coordinates onto the image.
+ * Browser-only: extract GPS from image EXIF and stamp a location label onto the image.
  * Falls back to navigator.geolocation if EXIF has no GPS data.
  * Uses Canvas API — must only be called from client-side code.
  */
@@ -61,13 +61,49 @@ export async function extractGps(file: File): Promise<ExifGps | null> {
 }
 
 /**
- * Draw GPS coordinates as a label onto the image and return a JPEG blob.
+ * Reverse-geocode coordinates to a short address string using Nominatim.
+ * Returns null if the lookup fails or no meaningful address is found.
+ */
+export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    const url =
+      `https://nominatim.openstreetmap.org/reverse` +
+      `?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=no&zoom=18`;
+    const res = await fetch(url, {
+      headers: { "Accept": "application/json" },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as {
+      address?: Record<string, string>;
+      display_name?: string;
+    };
+    if (!data.address) return null;
+
+    const a = data.address;
+    const road = a.road ?? a.pedestrian ?? a.path ?? a.footway ?? "";
+    const houseNo = a.house_number ?? "";
+    const city = a.city ?? a.town ?? a.village ?? a.municipality ?? a.county ?? "";
+
+    let label = road;
+    if (houseNo) label += ` ${houseNo}`;
+    if (city) label += label ? `, ${city}` : city;
+
+    return label || (data.display_name?.split(",")[0] ?? null);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Draw a location label (address or coordinate fallback) onto the image and return a JPEG blob.
  * If the image cannot be loaded via canvas, returns the original file unchanged.
  */
 export function stampGpsOnImage(
   file: File,
   lat: number,
-  lng: number
+  lng: number,
+  addressLabel?: string | null
 ): Promise<{ blob: Blob; ext: string; type: string }> {
   return new Promise((resolve) => {
     const img = new Image();
@@ -86,9 +122,13 @@ export function stampGpsOnImage(
 
       ctx.drawImage(img, 0, 0);
 
-      const latDir = lat >= 0 ? "N" : "S";
-      const lngDir = lng >= 0 ? "Ø" : "V";
-      const text = `${Math.abs(lat).toFixed(5)}° ${latDir}  ${Math.abs(lng).toFixed(5)}° ${lngDir}`;
+      const text = addressLabel
+        ? addressLabel
+        : (() => {
+            const latDir = lat >= 0 ? "N" : "S";
+            const lngDir = lng >= 0 ? "Ø" : "V";
+            return `${Math.abs(lat).toFixed(5)}° ${latDir}  ${Math.abs(lng).toFixed(5)}° ${lngDir}`;
+          })();
 
       // Font size: ~2.2% of image width, clamped 18–64px
       const fontSize = Math.max(18, Math.min(Math.round(img.naturalWidth * 0.022), 64));

@@ -7,7 +7,7 @@ import { buildLegalUrl } from "@/lib/legal-reference";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n";
-import { extractGps, stampGpsOnImage } from "@/lib/stamp-gps";
+import { extractGps, reverseGeocode, stampGpsOnImage } from "@/lib/stamp-gps";
 
 const STORAGE_BUCKET = "inspection-attachments";
 
@@ -202,7 +202,8 @@ const CheckpointItem = memo(function CheckpointItem({
     if (file.type.startsWith("image/")) {
       const gps = await extractGps(file);
       if (gps) {
-        const stamped = await stampGpsOnImage(file, gps.latitude, gps.longitude);
+        const address = await reverseGeocode(gps.latitude, gps.longitude);
+        const stamped = await stampGpsOnImage(file, gps.latitude, gps.longitude, address);
         uploadBlob = stamped.blob;
         fileExt = stamped.ext;
         fileType = stamped.type;
