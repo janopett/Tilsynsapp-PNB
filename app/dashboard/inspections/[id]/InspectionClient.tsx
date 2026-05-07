@@ -1038,7 +1038,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         {TABS.filter((tab) => tab !== "files" || !!inspection.case_number).map((tab) => (
           <button
             key={tab}
-            onClick={() => { setActiveTab(tab); if (tab === "archive") setArchivePanelMounted(true); }}
+            onClick={() => { setActiveTab(tab); if (tab === "archive") { setArchivePanelMounted(true); fetchInspection(); } }}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === tab
                 ? "bg-white dark:bg-slate-800 shadow text-gray-900 dark:text-slate-100"
@@ -1113,7 +1113,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
                 ↑ {t.inspection.scrollToTop}
               </button>
               <button
-                onClick={() => { setActiveTab("archive"); setArchivePanelMounted(true); }}
+                onClick={() => { setActiveTab("archive"); setArchivePanelMounted(true); fetchInspection(); }}
                 className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition"
               >
                 {t.inspection.tabArchive} →

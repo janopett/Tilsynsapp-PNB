@@ -18,15 +18,25 @@ function lat2tileFrac(lat: number, zoom: number): number {
 
 const TILE_SUBDOMAINS = ["a", "b", "c"] as const;
 
-function loadTile(z: number, x: number, y: number): Promise<HTMLImageElement | null> {
+async function loadTile(z: number, x: number, y: number): Promise<HTMLImageElement | null> {
   const sub = TILE_SUBDOMAINS[Math.abs(x + y) % TILE_SUBDOMAINS.length];
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = `https://${sub}.tile.openstreetmap.org/${z}/${x}/${y}.png`;
-  });
+  const url = `https://${sub}.tile.openstreetmap.org/${z}/${x}/${y}.png`;
+  // Fetch via blob URL so the canvas is never tainted by cross-origin restrictions,
+  // which would cause toDataURL() to throw a SecurityError.
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(objectUrl); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+      img.src = objectUrl;
+    });
+  } catch {
+    return null;
+  }
 }
 
 function drawAttribution(ctx: CanvasRenderingContext2D, canvasW: number, canvasH: number) {
@@ -187,21 +197,27 @@ export async function captureOverviewMapImage(
   await Promise.all(tilePromises);
 
   // Draw numbered, colour-coded pins
-  const R = 14;
+  const R = 18;
   for (const pt of points) {
     const pinX = (lon2tileFrac(pt.lng, zoom) - tileXMin) * TILE_SIZE;
     const pinY = (lat2tileFrac(pt.lat, zoom) - tileYMin) * TILE_SIZE;
     const color = PIN_COLOR[pt.status] ?? "#6b7280";
+
+    // Dark shadow ring for contrast against any map background
+    ctx.beginPath();
+    ctx.arc(pinX, pinY, R + 3, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fill();
 
     ctx.beginPath();
     ctx.arc(pinX, pinY, R, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3;
     ctx.stroke();
 
-    ctx.font = "bold 12px sans-serif";
+    ctx.font = `bold ${R}px sans-serif`;
     ctx.fillStyle = "#ffffff";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
