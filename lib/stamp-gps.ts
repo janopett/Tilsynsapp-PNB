@@ -1,34 +1,68 @@
 /**
  * Browser-only: extract GPS from image EXIF and stamp coordinates onto the image.
+ * Falls back to navigator.geolocation if EXIF has no GPS data.
  * Uses Canvas API — must only be called from client-side code.
  */
 
 export interface ExifGps {
   latitude: number;
   longitude: number;
+  source: "exif" | "geolocation";
 }
 
 /**
- * Read GPS coordinates from file EXIF metadata.
- * Returns null if the file has no GPS data or EXIF cannot be read.
+ * Read GPS coordinates from file EXIF, with fallback to browser geolocation.
+ * Returns null only if both methods fail or are unavailable.
  */
-export async function extractExifGps(file: File): Promise<ExifGps | null> {
-  if (!file.type.startsWith("image/")) return null;
-  try {
-    const { gps } = await import("exifr");
-    const result = await gps(file);
-    if (result?.latitude != null && result?.longitude != null) {
-      return { latitude: result.latitude, longitude: result.longitude };
+export async function extractGps(file: File): Promise<ExifGps | null> {
+  // --- 1. Try EXIF ---
+  if (file.type.startsWith("image/")) {
+    try {
+      const exifrModule = await import("exifr");
+      const parse: ((input: File, opts: object) => Promise<Record<string, number> | null | undefined>) =
+        exifrModule.parse ?? (exifrModule as unknown as { default: { parse: typeof exifrModule.parse } }).default?.parse;
+
+      if (typeof parse === "function") {
+        const output = await parse(file, { gps: true });
+        if (output?.latitude != null && output?.longitude != null) {
+          return {
+            latitude: output.latitude,
+            longitude: output.longitude,
+            source: "exif",
+          };
+        }
+      }
+    } catch {
+      // exifr unavailable or file has no EXIF
     }
-  } catch {
-    // No EXIF or package unavailable
   }
+
+  // --- 2. Fallback: browser geolocation ---
+  if (typeof navigator !== "undefined" && navigator.geolocation) {
+    try {
+      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          timeout: 8000,
+          maximumAge: 60_000,
+          enableHighAccuracy: true,
+        })
+      );
+      return {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        source: "geolocation",
+      };
+    } catch {
+      // Permission denied or unavailable
+    }
+  }
+
   return null;
 }
 
 /**
  * Draw GPS coordinates as a label onto the image and return a JPEG blob.
- * If the image cannot be loaded, returns the original file unchanged.
+ * If the image cannot be loaded via canvas, returns the original file unchanged.
  */
 export function stampGpsOnImage(
   file: File,
@@ -56,7 +90,7 @@ export function stampGpsOnImage(
       const lngDir = lng >= 0 ? "Ø" : "V";
       const text = `${Math.abs(lat).toFixed(5)}° ${latDir}  ${Math.abs(lng).toFixed(5)}° ${lngDir}`;
 
-      // Font size: ~2% of image width, clamped between 18px and 64px
+      // Font size: ~2.2% of image width, clamped 18–64px
       const fontSize = Math.max(18, Math.min(Math.round(img.naturalWidth * 0.022), 64));
       const padding = Math.round(fontSize * 0.55);
       const margin = Math.round(fontSize * 0.8);
