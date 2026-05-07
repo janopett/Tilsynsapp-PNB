@@ -7,7 +7,7 @@ import { buildLegalUrl } from "@/lib/legal-reference";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n";
-import { extractExifGps, stampGpsOnImage } from "@/lib/stamp-gps";
+import { extractGps, stampGpsOnImage } from "@/lib/stamp-gps";
 
 const STORAGE_BUCKET = "inspection-attachments";
 
@@ -137,6 +137,7 @@ const CheckpointItem = memo(function CheckpointItem({
   const [attachments, setAttachments] = useState<LocalAttachment[]>(initialAttachments);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<"exif" | "geolocation" | "none" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -192,25 +193,28 @@ const CheckpointItem = memo(function CheckpointItem({
     setUploadError(null);
     const supabase = createClient();
 
-    // Stamp GPS coordinates onto image if EXIF location data is present
+    // Stamp GPS coordinates onto image if location data is available (EXIF or geolocation)
     let uploadBlob: Blob = file;
     let fileExt = file.name.split(".").pop() ?? "bin";
     let fileType = file.type;
     let fileName = file.name;
 
     if (file.type.startsWith("image/")) {
-      const gps = await extractExifGps(file);
+      const gps = await extractGps(file);
       if (gps) {
         const stamped = await stampGpsOnImage(file, gps.latitude, gps.longitude);
         uploadBlob = stamped.blob;
         fileExt = stamped.ext;
         fileType = stamped.type;
-        // Update extension in filename if format changed (e.g. HEIC → JPG)
         const origExt = file.name.split(".").pop()?.toLowerCase() ?? "";
         if (stamped.ext !== origExt) {
           fileName = file.name.replace(/\.[^.]+$/, `.${stamped.ext}`);
         }
+        setGpsStatus(gps.source);
+      } else {
+        setGpsStatus("none");
       }
+      setTimeout(() => setGpsStatus(null), 5000);
     }
 
     const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
@@ -459,6 +463,23 @@ const CheckpointItem = memo(function CheckpointItem({
         {uploadError && (
           <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-lg px-3 py-1.5">
             ⚠️ {uploadError}
+          </p>
+        )}
+
+        {/* GPS stamp status */}
+        {gpsStatus === "exif" && (
+          <p className="mt-2 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 rounded-lg px-3 py-1.5">
+            📍 GPS fra bilde stemplet inn
+          </p>
+        )}
+        {gpsStatus === "geolocation" && (
+          <p className="mt-2 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 rounded-lg px-3 py-1.5">
+            📍 Posisjon fra nettleser stemplet inn
+          </p>
+        )}
+        {gpsStatus === "none" && (
+          <p className="mt-2 text-xs text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800/60 rounded-lg px-3 py-1.5">
+            Ingen posisjon funnet i bilde
           </p>
         )}
 
