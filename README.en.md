@@ -30,7 +30,7 @@ Web application for conducting and archiving building site visits (befaringer) i
 | Survey area & measure type | Multi-select classification pulled directly from PNB code tables «eBy Supervision area» and «eBy Measure type» — used to filter which checkpoints are shown |
 | Structured checklist | 100+ checkpoints organised by category, dynamically filtered by measure type, property attributes, survey area, and measure type from PNB |
 | Finding registration | Record status per checkpoint (ok / deviation / not checked) with free-text comment, responsible contact, and GPS coordinates |
-| Attachments | Upload photos and documents to individual checkpoints or to the site visit as a whole |
+| Attachments | Upload photos and documents to individual checkpoints or to the site visit as a whole. Photos containing GPS EXIF data (e.g. taken with a mobile camera with location services enabled) have their coordinates automatically stamped onto the image |
 | PDF report | Generate a professional site visit report with case metadata, checklist findings, deviation summary, inline images, and map |
 | Archiving | Send a completed site visit to the municipal records system (Public 360°) — create a new document or update an existing one |
 | Dashboard | Overview of active and archived site visits with filtering by status, date, and property |

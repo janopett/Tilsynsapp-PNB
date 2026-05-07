@@ -39,7 +39,7 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når befaring
 | Strukturert sjekkliste | 100+ standardiserte sjekkpunkter, automatisk filtrert etter tiltakstype, eiendomsegenskaper, befaringsområde og tiltakstype fra PNB |
 | Befaringsområde og tiltakstype | Multi-select klassifisering hentet direkte fra PNB-kodetabellene — styrer hvilke sjekkpunkter som vises |
 | Avviksregistrering | Marker funn med kommentar, ansvarlig kontakt og GPS-koordinater direkte på sjekkpunktet |
-| Vedlegg | Last opp bilder og dokumenter fra befaringsstedet, koblet til enkeltpunkter |
+| Vedlegg | Last opp bilder og dokumenter fra befaringsstedet, koblet til enkeltpunkter. GPS-koordinater fra mobilkamera stemplet automatisk inn på bildet |
 | Karttilknytning | Plasser befaringen geografisk med ett trykk |
 | Sakssøk | Søk opp saken fra PNB direkte i appen — ingen manuell kopiering eller systembytte |
 | Mine PNB-saker | Oversiktsfane som viser alle saker i PNB der innlogget bruker er ansvarlig — med eiendommer, kontakter, behandlingstrinn og frister direkte i dashbordet |
