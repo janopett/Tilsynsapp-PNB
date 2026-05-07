@@ -210,6 +210,12 @@ const CheckpointItem = memo(function CheckpointItem({
         if (stamped.ext !== origExt) {
           fileName = file.name.replace(/\.[^.]+$/, `.${stamped.ext}`);
         }
+        // Auto-set map pin from GPS if not already placed manually
+        if (lat === null) {
+          setLat(gps.latitude);
+          setLng(gps.longitude);
+          onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), gps.latitude, gps.longitude, frist || null);
+        }
         setGpsStatus(gps.source);
       } else {
         setGpsStatus("none");
