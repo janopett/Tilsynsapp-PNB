@@ -7,6 +7,7 @@ import { buildLegalUrl } from "@/lib/legal-reference";
 import MapPickerModal from "@/components/ui/MapPickerModal";
 import { createClient } from "@/lib/supabase/client";
 import { useLanguage } from "@/lib/i18n";
+import { extractExifGps, stampGpsOnImage } from "@/lib/stamp-gps";
 
 const STORAGE_BUCKET = "inspection-attachments";
 
@@ -191,13 +192,33 @@ const CheckpointItem = memo(function CheckpointItem({
     setUploadError(null);
     const supabase = createClient();
 
-    const ext = file.name.split(".").pop() ?? "bin";
-    const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    // Stamp GPS coordinates onto image if EXIF location data is present
+    let uploadBlob: Blob = file;
+    let fileExt = file.name.split(".").pop() ?? "bin";
+    let fileType = file.type;
+    let fileName = file.name;
+
+    if (file.type.startsWith("image/")) {
+      const gps = await extractExifGps(file);
+      if (gps) {
+        const stamped = await stampGpsOnImage(file, gps.latitude, gps.longitude);
+        uploadBlob = stamped.blob;
+        fileExt = stamped.ext;
+        fileType = stamped.type;
+        // Update extension in filename if format changed (e.g. HEIC → JPG)
+        const origExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+        if (stamped.ext !== origExt) {
+          fileName = file.name.replace(/\.[^.]+$/, `.${stamped.ext}`);
+        }
+      }
+    }
+
+    const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
     const filePath = `${inspectionId}/${definition.id}/${safeName}`;
 
     const { error: storageError } = await supabase.storage
       .from(STORAGE_BUCKET)
-      .upload(filePath, file, { contentType: file.type, upsert: false });
+      .upload(filePath, uploadBlob, { contentType: fileType, upsert: false });
 
     if (storageError) {
       setUploadError(`Opplasting feilet: ${storageError.message}`);
@@ -210,10 +231,10 @@ const CheckpointItem = memo(function CheckpointItem({
       .insert({
         inspection_id: inspectionId,
         checkpoint_definition_id: definition.id,
-        file_name: file.name,
+        file_name: fileName,
         file_path: filePath,
-        file_type: file.type,
-        file_size_bytes: file.size,
+        file_type: fileType,
+        file_size_bytes: uploadBlob.size,
       })
       .select()
       .single();
@@ -225,7 +246,7 @@ const CheckpointItem = memo(function CheckpointItem({
       return;
     }
 
-    const objectUrl = file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined;
+    const objectUrl = fileType.startsWith("image/") ? URL.createObjectURL(uploadBlob) : undefined;
     setAttachments((prev) => [...prev, { ...(data as Attachment), objectUrl }]);
   }
 

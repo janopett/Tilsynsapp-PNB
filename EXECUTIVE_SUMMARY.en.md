@@ -39,7 +39,7 @@ The inspector works in a browser on PC, tablet, or mobile. When the site visit i
 | Structured checklist | 100+ standardised checkpoints, filtered by measure type, property attributes, survey area, and measure type from PNB |
 | Survey area & measure type | Multi-select classification pulled from PNB code tables — controls which checkpoints are displayed |
 | Deviation registration | Mark findings with a comment, responsible contact, and GPS coordinates directly on the checkpoint |
-| Attachments | Upload photos and documents from the site visit, linked to individual checkpoints |
+| Attachments | Upload photos and documents from the site visit, linked to individual checkpoints. GPS coordinates from mobile camera photos are automatically stamped onto the image |
 | Map integration | Pin the site visit location geographically with one tap |
 | Case search | Look up the case from PNB directly in the app — no manual copying or switching between systems |
 | My PNB cases | Dashboard tab showing all PNB cases where the logged-in user is the responsible case officer — with properties, contacts, case stages, and deadlines at a glance |
