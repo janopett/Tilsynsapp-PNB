@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuthClient } from "@/lib/api-auth";
 import { createClient as createCookieClient } from "@/lib/supabase/server";
 import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
+import { downloadFileByUrl } from "@/lib/sif/extensions/file-download";
 
 const FORMAT_MIME: Record<string, string> = {
   jpg: "image/jpeg",
@@ -62,27 +63,21 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // GetFile.aspx er offentlig — ingen SIF-auth nødvendig
-  const fileResponse = await fetch(fileUrl, {
-    signal: AbortSignal.timeout(30_000),
-  }).catch(() => null);
-
-  if (!fileResponse?.ok) {
+  const downloaded = await downloadFileByUrl(fileUrl, titleParam, formatParam);
+  if (!downloaded) {
     return NextResponse.json({ error: "Fil ikke funnet" }, { status: 404 });
   }
 
-  const fileData = Buffer.from(await fileResponse.arrayBuffer());
   const format = formatParam.toLowerCase();
-  const responseCt = fileResponse.headers.get("Content-Type") ?? "";
-  const mimeType = FORMAT_MIME[format] || responseCt.split(";")[0].trim() || "application/octet-stream";
+  const mimeType = FORMAT_MIME[format] || "application/octet-stream";
   const safeName = titleParam.replace(/[^\w\s.-]/g, "_");
   const filename = format ? `${safeName}.${format}` : safeName;
-  const isInline = mimeType.startsWith("image/") || mimeType === "application/pdf";
+  const isInline = mimeType.startsWith("image/");
 
-  return new NextResponse(new Uint8Array(fileData), {
+  return new NextResponse(new Uint8Array(downloaded.data), {
     headers: {
       "Content-Type": mimeType,
-      "Content-Length": String(fileData.byteLength),
+      "Content-Length": String(downloaded.size),
       "Content-Disposition": `${isInline ? "inline" : "attachment"}; filename="${encodeURIComponent(filename)}"`,
       "Cache-Control": "private, max-age=3600",
     },
