@@ -3,7 +3,12 @@ import { requireUser } from "@/lib/api-auth";
 import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import { sifRpcCall } from "@/lib/sif/client";
 import { mapPnbCase } from "@/lib/sif/pnb-case-mapper";
-import type { SifGetCasesQuery, SifGetCasesResult } from "@/lib/sif/types";
+import type {
+  SifGetCasesQuery,
+  SifGetCasesResult,
+  SifGetProgressPlanDetailsQuery,
+  SifGetProgressPlanDetailsResult,
+} from "@/lib/sif/types";
 
 // ── GET /api/sif/pnb-case/[recno] ────────────────────────────────────────────
 // Fetches a single PNB case by internal recno, with full detail.
@@ -53,7 +58,43 @@ export async function GET(
       return NextResponse.json({ ok: false, error: "Sak ikke funnet" }, { status: 404 });
     }
 
-    return NextResponse.json({ ok: true, case: mapPnbCase(raw, baseUrl) });
+    const caseItem = mapPnbCase(raw, baseUrl);
+
+    // Enrich with progress plan dates if not already present from GetCases
+    const alreadyHasDates =
+      caseItem.stages.some((s) => s.deadlineDate || s.milestones.some((m) => m.date)) ||
+      caseItem.milestones.some((m) => m.date) ||
+      caseItem.progressPlanDates.length > 0;
+
+    if (!alreadyHasDates) {
+      try {
+        const pp = await sifRpcCall<SifGetProgressPlanDetailsQuery, SifGetProgressPlanDetailsResult>(
+          "ProgressPlanService",
+          "GetProgressPlanDetails",
+          {
+            CaseNumber: caseItem.caseNumber,
+            IncludePhases: true,
+            MaxReturnedActivities: 50,
+          }
+        );
+        if (pp.Successful && pp.Activities?.length) {
+          caseItem.progressPlanDates = pp.Activities.flatMap((a) => {
+            const dates: string[] = [];
+            if (a.DueDate) dates.push(a.DueDate);
+            if (a.StartDate) dates.push(a.StartDate);
+            for (const p of a.Phases ?? []) {
+              if (p.DueDate) dates.push(p.DueDate);
+              if (p.StartDate) dates.push(p.StartDate);
+            }
+            return dates;
+          });
+        }
+      } catch {
+        // Progress plan is optional — don't fail the request
+      }
+    }
+
+    return NextResponse.json({ ok: true, case: caseItem });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Ukjent feil";
     return NextResponse.json({ ok: false, error: message }, { status: 502 });
