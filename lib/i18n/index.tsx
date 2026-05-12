@@ -56,6 +56,10 @@ export interface Translations {
       lastChanged: string;
       deadline: string;
       daysLeft: (n: number) => string;
+      openCase: string;
+      all: string;
+      activeStages: (n: number) => string;
+      contacts: (n: number) => string;
     };
   };
   newInspection: {
@@ -291,7 +295,13 @@ const nb: Translations = {
       responsible: "Ansvarlig",
       lastChanged: "Sist endret",
       deadline: "Frist",
-      daysLeft: (n) => `${n} dag${Math.abs(n) !== 1 ? "er" : ""} igjen`,
+      daysLeft: (n) => n < 0
+        ? `${Math.abs(n)} dag${Math.abs(n) !== 1 ? "er" : ""} på overtid`
+        : `${n} dag${n !== 1 ? "er" : ""} igjen`,
+      openCase: "Åpne sak →",
+      all: "Alle",
+      activeStages: (n) => `${n} ${n !== 1 ? "aktive" : "aktivt"} behandlingstrinn`,
+      contacts: (n) => `${n} kontakt${n !== 1 ? "er" : ""}`,
     },
   },
   newInspection: {
@@ -545,7 +555,13 @@ const en: Translations = {
       responsible: "Responsible",
       lastChanged: "Last changed",
       deadline: "Deadline",
-      daysLeft: (n) => `${n} day${Math.abs(n) !== 1 ? "s" : ""} left`,
+      daysLeft: (n) => n < 0
+        ? `${Math.abs(n)} day${Math.abs(n) !== 1 ? "s" : ""} overdue`
+        : `${n} day${n !== 1 ? "s" : ""} left`,
+      openCase: "Open case →",
+      all: "All",
+      activeStages: (n) => `${n} active processing step${n !== 1 ? "s" : ""}`,
+      contacts: (n) => `${n} contact${n !== 1 ? "s" : ""}`,
     },
   },
   newInspection: {
