@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLanguage } from "@/lib/i18n";
@@ -10,13 +10,13 @@ import { createClient } from "@/lib/supabase/client";
 import type { Inspection, ExternalParticipant } from "@/types";
 import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 
-// ── PNB cases sessionStorage cache (5 min TTL) ─────────────────────────────
-const PNB_CACHE_KEY = "pnb_cases_v1";
+// ── PNB cases localStorage cache (5 min TTL, persists across page reloads) ──
+const PNB_CACHE_KEY = "pnb_cases_v2";
 const PNB_CACHE_TTL = 5 * 60 * 1000;
 
 function loadPnbCache(): PnbCaseItem[] | null {
   try {
-    const raw = sessionStorage.getItem(PNB_CACHE_KEY);
+    const raw = localStorage.getItem(PNB_CACHE_KEY);
     if (!raw) return null;
     const { cases, ts } = JSON.parse(raw) as { cases: PnbCaseItem[]; ts: number };
     return Date.now() - ts < PNB_CACHE_TTL ? cases : null;
@@ -24,7 +24,7 @@ function loadPnbCache(): PnbCaseItem[] | null {
 }
 
 function savePnbCache(cases: PnbCaseItem[]) {
-  try { sessionStorage.setItem(PNB_CACHE_KEY, JSON.stringify({ cases, ts: Date.now() })); }
+  try { localStorage.setItem(PNB_CACHE_KEY, JSON.stringify({ cases, ts: Date.now() })); }
   catch { /* storage full or SSR */ }
 }
 
@@ -49,49 +49,58 @@ export default function DashboardClient({ list }: DashboardClientProps) {
   const [pnbLoading, setPnbLoading] = useState(false);
   const [pnbError, setPnbError] = useState<string | null>(null);
   const [pnbFetched, setPnbFetched] = useState(false);
+  const pnbFetchInProgress = useRef(false);
 
-  // Hydrate from cache on mount so revisiting the tab is instant
-  useEffect(() => {
-    const cached = loadPnbCache();
-    if (cached) { setPnbCases(cached); setPnbFetched(true); }
-  }, []);
-
-  useEffect(() => {
-    if (tab !== "pnb" || pnbFetched) return;
-
-    setPnbLoading(true);
-    setPnbError(null);
+  const doFetchPnb = useCallback(async (silent: boolean) => {
+    if (pnbFetchInProgress.current) return;
+    pnbFetchInProgress.current = true;
+    if (!silent) { setPnbLoading(true); setPnbError(null); }
 
     const supabase = createClient();
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        setPnbError(t.dashboard.pnbCases.error);
-        setPnbLoading(false);
+        if (!silent) { setPnbError(t.dashboard.pnbCases.error); setPnbLoading(false); }
         return;
       }
-      try {
-        const res = await fetch("/api/sif/my-cases", {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        const json = await res.json();
-        if (json.ok) {
-          setPnbCases(json.cases);
-          savePnbCache(json.cases);
-          setPnbFetched(true);
-        } else if (json.notConfigured) {
-          setPnbError(t.dashboard.pnbCases.notConfigured);
-        } else if (json.noName) {
-          setPnbError(t.dashboard.pnbCases.noName);
-        } else {
-          setPnbError(json.error ?? t.dashboard.pnbCases.error);
-        }
-      } catch {
-        setPnbError(t.dashboard.pnbCases.error);
-      } finally {
-        setPnbLoading(false);
+      const res = await fetch("/api/sif/my-cases", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const json = await res.json();
+      if (json.ok) {
+        setPnbCases(json.cases);
+        savePnbCache(json.cases);
+        setPnbFetched(true);
+      } else if (!silent) {
+        if (json.notConfigured) setPnbError(t.dashboard.pnbCases.notConfigured);
+        else if (json.noName) setPnbError(t.dashboard.pnbCases.noName);
+        else setPnbError(json.error ?? t.dashboard.pnbCases.error);
       }
-    });
-  }, [tab, pnbFetched, t]);
+    } catch {
+      if (!silent) setPnbError(t.dashboard.pnbCases.error);
+    } finally {
+      if (!silent) setPnbLoading(false);
+      pnbFetchInProgress.current = false;
+    }
+  }, [t]);
+
+  // On mount: hydrate from cache, or fetch immediately if cache is stale/empty
+  useEffect(() => {
+    if (pnbFetched) return;
+    const cached = loadPnbCache();
+    if (cached) {
+      setPnbCases(cached);
+      setPnbFetched(true);
+    } else {
+      doFetchPnb(false);
+    }
+  }, [doFetchPnb, pnbFetched]);
+
+  // Periodic silent background refresh every 5 min
+  useEffect(() => {
+    const timer = setInterval(() => doFetchPnb(true), PNB_CACHE_TTL);
+    return () => clearInterval(timer);
+  }, [doFetchPnb]);
 
   const counts = {
     all: list.length,
@@ -171,8 +180,6 @@ export default function DashboardClient({ list }: DashboardClientProps) {
           cases={pnbCases}
           loading={pnbLoading}
           error={pnbError}
-          locale={locale}
-          t={t.dashboard.pnbCases}
         />
       ) : filtered.length === 0 ? (
         <div className="text-center py-20 text-gray-400 dark:text-slate-500">
@@ -266,21 +273,11 @@ interface PnbCasesViewProps {
   cases: PnbCaseItem[];
   loading: boolean;
   error: string | null;
-  locale: string;
-  t: {
-    loading: string;
-    error: string;
-    empty: string;
-    openIn360: string;
-    newBefaring: string;
-    responsible: string;
-    lastChanged: string;
-    deadline: string;
-    daysLeft: (n: number) => string;
-  };
 }
 
-function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
+function PnbCasesView({ cases, loading, error }: PnbCasesViewProps) {
+  const { t, locale } = useLanguage();
+  const tp = t.dashboard.pnbCases;
   const dateLocale = locale === "en" ? "en-GB" : "nb-NO";
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
@@ -288,7 +285,7 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
     return (
       <div className="text-center py-20 text-gray-400 dark:text-slate-500">
         <p className="text-4xl mb-4 animate-spin inline-block">⏳</p>
-        <p className="text-base font-medium mt-2">{t.loading}</p>
+        <p className="text-base font-medium mt-2">{tp.loading}</p>
       </div>
     );
   }
@@ -306,7 +303,7 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
     return (
       <div className="text-center py-20 text-gray-400 dark:text-slate-500">
         <p className="text-5xl mb-4">🗂️</p>
-        <p className="text-lg font-medium">{t.empty}</p>
+        <p className="text-lg font-medium">{tp.empty}</p>
       </div>
     );
   }
@@ -331,7 +328,7 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                 : "bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 border-gray-200 dark:border-slate-600 hover:border-brand-400"
             }`}
           >
-            Alle ({cases.length})
+            {tp.all} ({cases.length})
           </button>
           {statusOrder.map((s) => {
             const count = cases.filter((c) => c.status === s).length;
@@ -357,10 +354,13 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
         const activeStages = c.stages.filter(
           (s) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed"
         );
-        const nearestDeadline = activeStages
-          .filter((s) => s.deadlineDate)
-          .sort((a, b) => a.deadlineDate!.localeCompare(b.deadlineDate!))
-          .at(0);
+
+        // Collect all candidate dates: stage deadlines + stage milestone dates + case milestone dates
+        const candidateDates = [
+          ...activeStages.flatMap((s) => [s.deadlineDate, ...s.milestones.map((m) => m.date)]),
+          ...c.milestones.map((m) => m.date),
+        ].filter((d): d is string => !!d);
+        const nearestDateStr = candidateDates.sort().at(0);
 
         return (
           <div
@@ -386,7 +386,7 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                   )}
                   {c.lastChangedDate && (
                     <span className="text-gray-400 dark:text-slate-500">
-                      {t.lastChanged}: {new Date(c.lastChangedDate).toLocaleDateString(dateLocale)}
+                      {tp.lastChanged}: {new Date(c.lastChangedDate).toLocaleDateString(dateLocale)}
                     </span>
                   )}
                 </div>
@@ -399,31 +399,27 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                         key={i}
                         className="text-xs text-brand-700 dark:text-brand-400 bg-brand-50 dark:bg-brand-900/30 rounded-full px-2 py-0.5"
                       >
-                        🏠 {e.address || e.estateNumber || "Eiendom"}
+                        🏠 {e.address || e.estateNumber}
                       </span>
                     ))}
                   </div>
                 )}
 
-                {/* Stage summary */}
+                {/* Stage + contact summary */}
                 {(activeStages.length > 0 || c.contacts.length > 0) && (
                   <p className="mt-2 text-xs text-gray-400 dark:text-slate-500">
-                    {activeStages.length > 0 && (
-                      <>{activeStages.length} {activeStages.length === 1 ? "aktivt behandlingstrinn" : "aktive behandlingstrinn"}</>
-                    )}
+                    {activeStages.length > 0 && tp.activeStages(activeStages.length)}
                     {activeStages.length > 0 && c.contacts.length > 0 && " · "}
-                    {c.contacts.length > 0 && (
-                      <>{c.contacts.length} {c.contacts.length === 1 ? "kontakt" : "kontakter"}</>
-                    )}
+                    {c.contacts.length > 0 && tp.contacts(c.contacts.length)}
                   </p>
                 )}
 
-                {/* Nearest deadline */}
-                {nearestDeadline?.deadlineDate && (
+                {/* Nearest deadline (stage deadline, milestone, or case milestone) */}
+                {nearestDateStr && (
                   <div className="mt-1.5 text-xs">
                     {(() => {
                       const daysLeft = Math.ceil(
-                        (new Date(nearestDeadline.deadlineDate).getTime() - Date.now()) /
+                        (new Date(nearestDateStr).getTime() - Date.now()) /
                           (1000 * 60 * 60 * 24)
                       );
                       const isOverdue = daysLeft < 0;
@@ -438,8 +434,8 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                               : "text-gray-500 dark:text-slate-400"
                           }
                         >
-                          {t.deadline}: {new Date(nearestDeadline.deadlineDate).toLocaleDateString(dateLocale)}
-                          {" "}({t.daysLeft(daysLeft)})
+                          {tp.deadline}: {new Date(nearestDateStr).toLocaleDateString(dateLocale)}
+                          {" "}({tp.daysLeft(daysLeft)})
                         </span>
                       );
                     })()}
@@ -453,13 +449,13 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                   href={`/dashboard/pnb-cases/${c.recno}`}
                   className="text-xs bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap"
                 >
-                  Åpne sak →
+                  {tp.openCase}
                 </Link>
                 <Link
                   href={`/dashboard/inspections/new${c.caseNumber ? `?case=${encodeURIComponent(c.caseNumber)}${c.title ? `&title=${encodeURIComponent(c.title)}` : ""}` : ""}`}
                   className="text-xs bg-brand-600 hover:bg-brand-700 text-white font-medium px-3 py-1.5 rounded-lg transition whitespace-nowrap"
                 >
-                  + {t.newBefaring}
+                  + {tp.newBefaring}
                 </Link>
                 {c.url && (
                   <a
@@ -468,7 +464,7 @@ function PnbCasesView({ cases, loading, error, locale, t }: PnbCasesViewProps) {
                     rel="noopener noreferrer"
                     className="text-xs text-brand-600 dark:text-brand-400 hover:underline whitespace-nowrap"
                   >
-                    {t.openIn360} ↗
+                    {tp.openIn360} ↗
                   </a>
                 )}
               </div>
