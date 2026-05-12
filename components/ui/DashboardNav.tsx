@@ -27,7 +27,7 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
           href="/dashboard"
           className="text-lg font-bold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
         >
-          Befaringsapplikasjon
+          {t.nav.appName}
         </Link>
 
         <div className="flex items-center gap-4">
@@ -69,7 +69,7 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                   />
                   <div
                     role="menu"
-                    aria-label="Administrasjon"
+                    aria-label={t.nav.adminMenuLabel}
                     className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-800 rounded-xl shadow-lg
                                border border-gray-100 dark:border-slate-700 py-1 z-20"
                   >
@@ -77,8 +77,8 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                       { href: "/dashboard/admin/sif-config", label: t.nav.sifConfig },
                       { href: "/dashboard/admin/sif-test", label: t.nav.sifTest },
                       { href: "/dashboard/admin/arkiveringslogg", label: t.nav.archivalLog },
-                      { href: "/dashboard/admin/tilsyn-config", label: "Befaringskonfigurering" },
-                      { href: "/dashboard/admin/checkpoints", label: "Sjekkpunkter" },
+                      { href: "/dashboard/admin/tilsyn-config", label: t.nav.tilsynConfig },
+                      { href: "/dashboard/admin/checkpoints", label: t.nav.checkpoints },
                     ].map((item) => (
                       <Link
                         key={item.href}
@@ -115,7 +115,7 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
               onClick={() => setLangOpen((o) => !o)}
               aria-expanded={langOpen}
               aria-haspopup="listbox"
-              aria-label="Bytt språk"
+              aria-label={t.nav.changeLanguage}
               className="text-sm text-blue-200 hover:text-white transition flex items-center gap-1
                          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white rounded"
             >
@@ -142,7 +142,7 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                 />
                 <ul
                   role="listbox"
-                  aria-label="Velg språk"
+                  aria-label={t.nav.selectLanguage}
                   className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-lg
                              border border-gray-100 dark:border-slate-700 py-1 z-20"
                 >

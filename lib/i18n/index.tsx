@@ -15,6 +15,13 @@ export interface Translations {
     archivalLog: string;
     users: string;
     logout: string;
+    appName: string;
+    tilsynConfig: string;
+    checkpoints: string;
+    adminMenuLabel: string;
+    changeLanguage: string;
+    selectLanguage: string;
+    skipToContent: string;
   };
   status: {
     draft: string;
@@ -154,6 +161,78 @@ export interface Translations {
     statusOk: string;
     statusDeviation: string;
     statusNotChecked: string;
+    setStatus: string;
+  };
+  archive: {
+    title: string;
+    description: string;
+    caseNumberLabel: string;
+    documentLabel: string;
+    refreshList: string;
+    loading: string;
+    createNew: string;
+    updateExisting: string;
+    loadingDocuments: string;
+    noDocuments: string;
+    selectDocument: string;
+    enterCaseAndClick: string;
+    enterCase: string;
+    advancedLookup: string;
+    externalId: string;
+    externalIdPlaceholder: string;
+    uidPlaceholder: string;
+    updating: string;
+    archiving: string;
+    updateBtn: string;
+    submitBtn: string;
+    whatHappens: string;
+    whatHappensSteps: string[];
+    successTitle: string;
+    failedTitle: string;
+    openIn360: string;
+    markCompleted: string;
+    completing: string;
+    inspectionCompleted: string;
+    alertNoCase: string;
+    alertSelectDocument: string;
+    cantComplete: string;
+    archivedAs: (docNum: string) => string;
+    dispatchStarted: string;
+    dispatchFailed: (err: string) => string;
+    unknownError: string;
+    archivingError: string;
+  };
+  checkpoint: {
+    responsible: string;
+    notSelected: string;
+    commentPlaceholder: string;
+    commentLabel: string;
+    fixBy: string;
+    addPosition: string;
+    takePhoto: string;
+    takeCameraPhotoLabel: string;
+    attachFile: string;
+    uploadFileLabel: string;
+    uploading: string;
+    removeAttachment: (name: string) => string;
+    gpsFromExif: string;
+    gpsFromBrowser: string;
+    noGps: string;
+    attachmentsLabel: string;
+    positionLabel: (title: string) => string;
+    uploadError: string;
+    saveError: string;
+  };
+  caseFiles: {
+    loading: string;
+    error: string;
+    empty: string;
+    images: (n: number) => string;
+    linkedCase: string;
+    unknownFile: string;
+    close: string;
+    previous: string;
+    next: string;
   };
   language: {
     nb: string;
@@ -172,6 +251,13 @@ const nb: Translations = {
     archivalLog: "Arkiveringslogg",
     users: "Brukere",
     logout: "Logg ut",
+    appName: "Befaringsapplikasjon",
+    tilsynConfig: "Befaringskonfigurering",
+    checkpoints: "Sjekkpunkter",
+    adminMenuLabel: "Administrasjon",
+    changeLanguage: "Bytt språk",
+    selectLanguage: "Velg språk",
+    skipToContent: "Hopp til innhold",
   },
   status: {
     draft: "Utkast",
@@ -323,6 +409,84 @@ const nb: Translations = {
     statusOk: "OK",
     statusDeviation: "Avvik",
     statusNotChecked: "Ikke relevant",
+    setStatus: "Sett status",
+  },
+  archive: {
+    title: "Send og arkiver i Plan & Build",
+    description: "Generer tilsynsrapport (PDF), arkiver den på saken i Plan & Build og send den til mottakerne.",
+    caseNumberLabel: "Saksnummer i Plan & Build",
+    documentLabel: "Dokument i Plan & Build",
+    refreshList: "Oppdater liste",
+    loading: "Henter…",
+    createNew: "Opprett nytt dokument",
+    updateExisting: "Oppdater eksisterende",
+    loadingDocuments: "Henter dokumenter…",
+    noDocuments: "Ingen dokumenter funnet på saken.",
+    selectDocument: "— Velg dokument —",
+    enterCaseAndClick: "Angi saksnummer og klikk «Oppdater eksisterende» for å laste inn dokumenter.",
+    enterCase: "Angi saksnummer for å hente dokumenter.",
+    advancedLookup: "Avansert oppslag (eksternt ID / UID)",
+    externalId: "Eksternt ID",
+    externalIdPlaceholder: "Eksternt ID fra fagsystem",
+    uidPlaceholder: "Globalt unik identifikator",
+    updating: "Oppdaterer dokument...",
+    archiving: "Arkiverer og sender...",
+    updateBtn: "📝 Oppdater dokument i Plan & Build",
+    submitBtn: "📨 Send og arkiver i Plan & Build",
+    whatHappens: "Hva skjer?",
+    whatHappensSteps: [
+      "Tilsynsrapport genereres som PDF",
+      "Eventuelle bilder/vedlegg lastes opp til SIF",
+      "Dokument opprettes på saken i Plan & Build",
+      "Dokumentet sendes til mottakerne (hvis aktivert i admin)",
+      "Dokumentreferansen lagres i appen",
+    ],
+    successTitle: "Sendt og arkivert i Plan & Build",
+    failedTitle: "Arkivering feilet",
+    openIn360: "Åpne dokument i 360° →",
+    markCompleted: "✅ Sett som avsluttet",
+    completing: "⏳ Avslutter…",
+    inspectionCompleted: "✅ Tilsynet er avsluttet",
+    alertNoCase: "Angi saksnummer, eksternt ID eller UID.",
+    alertSelectDocument: "Velg et eksisterende dokument å oppdatere.",
+    cantComplete: "Kunne ikke sette som avsluttet: ",
+    archivedAs: (docNum) => `Arkivert som dokument ${docNum}`,
+    dispatchStarted: "Forsendelse startet",
+    dispatchFailed: (err) => `Forsendelse feilet: ${err}`,
+    unknownError: "ukjent feil",
+    archivingError: "Feil ved arkivering",
+  },
+  checkpoint: {
+    responsible: "Ansvarlig",
+    notSelected: "— Ikke valgt",
+    commentPlaceholder: "Kommentar / avviksbeskrivelse…",
+    commentLabel: "Kommentar",
+    fixBy: "Rettes innen",
+    addPosition: "Legg til posisjon i kart",
+    takePhoto: "Ta bilde",
+    takeCameraPhotoLabel: "Ta bilde med kamera",
+    attachFile: "Legg ved fil",
+    uploadFileLabel: "Last opp fil eller velg bilde fra galleri",
+    uploading: "Laster opp…",
+    removeAttachment: (name) => `Fjern vedlegg: ${name}`,
+    gpsFromExif: "GPS fra bilde stemplet inn",
+    gpsFromBrowser: "Posisjon fra nettleser stemplet inn",
+    noGps: "Ingen posisjon funnet i bilde",
+    attachmentsLabel: "Vedlegg",
+    positionLabel: (title) => `Posisjon: ${title}`,
+    uploadError: "Opplasting feilet: ",
+    saveError: "Kunne ikke lagre vedlegg: ",
+  },
+  caseFiles: {
+    loading: "Laster filer fra saken…",
+    error: "Kunne ikke hente filer: ",
+    empty: "Ingen filer registrert på saken i PNB.",
+    images: (n) => `Bilder (${n})`,
+    linkedCase: "tilknyttet sak",
+    unknownFile: "Ukjent fil",
+    close: "Lukk",
+    previous: "Forrige",
+    next: "Neste",
   },
   language: {
     nb: "Norsk",
@@ -341,6 +505,13 @@ const en: Translations = {
     archivalLog: "Archival Log",
     users: "Users",
     logout: "Log out",
+    appName: "Site Visit Application",
+    tilsynConfig: "Site visit configuration",
+    checkpoints: "Checkpoints",
+    adminMenuLabel: "Administration",
+    changeLanguage: "Change language",
+    selectLanguage: "Select language",
+    skipToContent: "Skip to content",
   },
   status: {
     draft: "Draft",
@@ -492,6 +663,84 @@ const en: Translations = {
     statusOk: "OK",
     statusDeviation: "Deviation",
     statusNotChecked: "Not applicable",
+    setStatus: "Set status",
+  },
+  archive: {
+    title: "Submit and archive in Plan & Build",
+    description: "Generate a site visit report (PDF), archive it on the case in Plan & Build and send it to recipients.",
+    caseNumberLabel: "Case number in Plan & Build",
+    documentLabel: "Document in Plan & Build",
+    refreshList: "Refresh list",
+    loading: "Loading…",
+    createNew: "Create new document",
+    updateExisting: "Update existing",
+    loadingDocuments: "Loading documents…",
+    noDocuments: "No documents found on this case.",
+    selectDocument: "— Select document —",
+    enterCaseAndClick: "Enter a case number and click «Update existing» to load documents.",
+    enterCase: "Enter a case number to load documents.",
+    advancedLookup: "Advanced lookup (external ID / UID)",
+    externalId: "External ID",
+    externalIdPlaceholder: "External ID from case management system",
+    uidPlaceholder: "Globally unique identifier",
+    updating: "Updating document...",
+    archiving: "Archiving and sending...",
+    updateBtn: "📝 Update document in Plan & Build",
+    submitBtn: "📨 Submit and archive in Plan & Build",
+    whatHappens: "What happens?",
+    whatHappensSteps: [
+      "Site visit report is generated as PDF",
+      "Photos / attachments are uploaded to SIF",
+      "Document is created on the case in Plan & Build",
+      "Document is sent to recipients (if enabled in admin)",
+      "Document reference is saved in the app",
+    ],
+    successTitle: "Submitted and archived in Plan & Build",
+    failedTitle: "Archiving failed",
+    openIn360: "Open document in 360° →",
+    markCompleted: "✅ Mark as closed",
+    completing: "⏳ Closing…",
+    inspectionCompleted: "✅ Site visit is closed",
+    alertNoCase: "Enter a case number, external ID or UID.",
+    alertSelectDocument: "Select an existing document to update.",
+    cantComplete: "Could not mark as closed: ",
+    archivedAs: (docNum) => `Archived as document ${docNum}`,
+    dispatchStarted: "Dispatch started",
+    dispatchFailed: (err) => `Dispatch failed: ${err}`,
+    unknownError: "unknown error",
+    archivingError: "Archiving error",
+  },
+  checkpoint: {
+    responsible: "Responsible",
+    notSelected: "— Not selected",
+    commentPlaceholder: "Comment / deviation description…",
+    commentLabel: "Comment",
+    fixBy: "Fix by",
+    addPosition: "Add position to map",
+    takePhoto: "Take photo",
+    takeCameraPhotoLabel: "Take photo with camera",
+    attachFile: "Attach file",
+    uploadFileLabel: "Upload file or select photo from gallery",
+    uploading: "Uploading…",
+    removeAttachment: (name) => `Remove attachment: ${name}`,
+    gpsFromExif: "GPS from photo stamped onto image",
+    gpsFromBrowser: "Browser position stamped onto image",
+    noGps: "No position found in photo",
+    attachmentsLabel: "Attachments",
+    positionLabel: (title) => `Position: ${title}`,
+    uploadError: "Upload failed: ",
+    saveError: "Could not save attachment: ",
+  },
+  caseFiles: {
+    loading: "Loading files from case…",
+    error: "Could not load files: ",
+    empty: "No files registered on this case in PNB.",
+    images: (n) => `Images (${n})`,
+    linkedCase: "linked case",
+    unknownFile: "Unknown file",
+    close: "Close",
+    previous: "Previous",
+    next: "Next",
   },
   language: {
     nb: "Norwegian",

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import type { SifFileMetadata } from "@/lib/sif/types";
 import type { CaseFileGroup } from "@/app/api/sif/case-files/route";
+import { useLanguage } from "@/lib/i18n";
 
 const IMAGE_FORMATS = new Set(["jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff", "svg"]);
 
@@ -44,6 +45,7 @@ interface Props {
 }
 
 export default function CaseFilesPanel({ caseNumber }: Props) {
+  const { t } = useLanguage();
   const [groups, setGroups] = useState<CaseFileGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +83,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
   if (loading) {
     return (
       <div className="py-16 text-center text-gray-400 dark:text-slate-500 text-sm">
-        Laster filer fra saken…
+        {t.caseFiles.loading}
       </div>
     );
   }
@@ -89,7 +91,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
   if (error) {
     return (
       <div className="py-10 text-center text-red-500 dark:text-red-400 text-sm">
-        Kunne ikke hente filer: {error}
+        {t.caseFiles.error}{error}
       </div>
     );
   }
@@ -97,7 +99,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
   if (groups.length === 0) {
     return (
       <div className="py-16 text-center text-gray-400 dark:text-slate-500 text-sm">
-        Ingen filer registrert på saken i PNB.
+        {t.caseFiles.empty}
       </div>
     );
   }
@@ -116,7 +118,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                 <span>{isReferredCase ? "📁" : "📋"}</span>
                 <span>{group.caseNumber}</span>
                 {isReferredCase && (
-                  <span className="normal-case font-normal text-gray-400 dark:text-slate-500">— tilknyttet sak</span>
+                  <span className="normal-case font-normal text-gray-400 dark:text-slate-500">— {t.caseFiles.linkedCase}</span>
                 )}
               </h3>
             )}
@@ -125,7 +127,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
               <div className="mb-4">
                 {groups.length === 1 && (
                   <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider mb-3">
-                    Bilder ({images.length})
+                    {t.caseFiles.images(images.length)}
                   </p>
                 )}
                 <div className="grid grid-cols-3 gap-2">
@@ -139,7 +141,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={proxyUrl(file)!}
-                        alt={file.Title ?? "Bilde"}
+                        alt={file.Title ?? t.caseFiles.unknownFile}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"
                       />
@@ -164,7 +166,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800 dark:text-slate-200 truncate">
-                        {file.Title ?? "Ukjent fil"}
+                        {file.Title ?? t.caseFiles.unknownFile}
                       </p>
                       <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                         {[
@@ -205,7 +207,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
           <button
             className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl leading-none w-10 h-10 flex items-center justify-center rounded-full hover:bg-white/10 transition"
             onClick={closeLightbox}
-            aria-label="Lukk"
+            aria-label={t.caseFiles.close}
           >
             ×
           </button>
@@ -218,7 +220,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                 const { groupImages, indexInGroup } = lightbox;
                 setLightbox({ file: groupImages[indexInGroup - 1], groupImages, indexInGroup: indexInGroup - 1 });
               }}
-              aria-label="Forrige"
+              aria-label={t.caseFiles.previous}
             >
               ‹
             </button>
@@ -228,7 +230,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
           <img
             key={lightbox.file.Recno}
             src={proxyUrl(lightbox.file)!}
-            alt={lightbox.file.Title ?? "Bilde"}
+            alt={lightbox.file.Title ?? t.caseFiles.unknownFile}
             className="max-w-[88vw] max-h-[88vh] object-contain rounded-lg shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           />
@@ -241,7 +243,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                 const { groupImages, indexInGroup } = lightbox;
                 setLightbox({ file: groupImages[indexInGroup + 1], groupImages, indexInGroup: indexInGroup + 1 });
               }}
-              aria-label="Neste"
+              aria-label={t.caseFiles.next}
             >
               ›
             </button>
