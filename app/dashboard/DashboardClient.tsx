@@ -355,10 +355,12 @@ function PnbCasesView({ cases, loading, error }: PnbCasesViewProps) {
           (s) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed"
         );
 
-        // Collect all candidate dates: stage deadlines + stage milestone dates + case milestone dates
+        // Collect all candidate dates across all stages (active or not), case milestones, and
+        // progress plan phases — so cases where the deadline lives outside the active stage are covered.
         const candidateDates = [
-          ...activeStages.flatMap((s) => [s.deadlineDate, ...s.milestones.map((m) => m.date)]),
+          ...c.stages.flatMap((s) => [s.deadlineDate, ...s.milestones.map((m) => m.date)]),
           ...c.milestones.map((m) => m.date),
+          ...c.progressPlanDates,
         ].filter((d): d is string => !!d);
         const nearestDateStr = candidateDates.sort().at(0);
 

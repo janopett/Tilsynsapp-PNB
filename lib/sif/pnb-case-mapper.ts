@@ -43,6 +43,8 @@ export interface PnbCaseItem {
   stages: PnbStage[];
   /** Case-level milestones not tied to a specific stage */
   milestones: PnbMilestone[];
+  /** Deadline dates extracted from ProgressPlan active phases */
+  progressPlanDates: string[];
 }
 
 export function mapMilestones(ms: SifMilestone[] | undefined): PnbMilestone[] {
@@ -90,5 +92,9 @@ export function mapPnbCase(raw: SifCaseResult, baseUrl = ""): PnbCaseItem {
       milestones: mapMilestones(s.Milestones),
     })),
     milestones: mapMilestones(raw.Milestones),
+    progressPlanDates: (raw.ProgressPlan?.ActivePhases ?? []).flatMap((p) =>
+      [p.DeadlineDate, p.DueDate, p.EndDate, ...mapMilestones(p.Milestones).map((m) => m.date)]
+        .filter((d): d is string => !!d)
+    ),
   };
 }

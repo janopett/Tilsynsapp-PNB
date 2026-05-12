@@ -243,7 +243,18 @@ export interface SifCaseResult {
       Status?: string;
       Type?: string;
     };
-    ActivePhases?: unknown;
+    ActivePhases?: Array<{
+      Recno?: number;
+      Title?: string;
+      Description?: string;
+      StartDate?: string;
+      EndDate?: string;
+      DeadlineDate?: string;
+      DueDate?: string;
+      Status?: string;
+      StatusDescription?: string;
+      Milestones?: SifMilestone[];
+    }>;
   };
   SubjectSpecificMetaData?: string;
   SubjectSpecificMetaDataNamespace?: string;
