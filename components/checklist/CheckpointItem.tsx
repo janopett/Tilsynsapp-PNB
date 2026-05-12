@@ -57,6 +57,7 @@ function AttachmentThumb({
   att: Attachment & { objectUrl?: string };
   onRemove: (att: Attachment) => void;
 }) {
+  const { t } = useLanguage();
   const [signedUrl, setSignedUrl] = useState<string | null>(att.objectUrl ?? null);
 
   useEffect(() => {
@@ -93,7 +94,7 @@ function AttachmentThumb({
       {/* Visible on hover AND on keyboard focus (WCAG 2.1.1) */}
       <button
         onClick={() => onRemove(att)}
-        aria-label={`Fjern vedlegg: ${att.file_name}`}
+        aria-label={t.checkpoint.removeAttachment(att.file_name)}
         className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 hover:bg-red-600
                    text-white text-[10px] items-center justify-center
                    hidden group-hover:flex focus:flex
@@ -119,7 +120,7 @@ const CheckpointItem = memo(function CheckpointItem({
   initialAttachments,
   onUpdate,
 }: Props) {
-  const { locale } = useLanguage();
+  const { locale, t } = useLanguage();
   const { definition, answer } = item;
   const displayTitle = locale === "en" && definition.en_title ? definition.en_title : definition.title;
   const currentStatus: CheckpointStatus = answer?.status ?? "not_checked";
@@ -232,7 +233,7 @@ const CheckpointItem = memo(function CheckpointItem({
       .upload(filePath, uploadBlob, { contentType: fileType, upsert: false });
 
     if (storageError) {
-      setUploadError(`Opplasting feilet: ${storageError.message}`);
+      setUploadError(t.checkpoint.uploadError + storageError.message);
       setUploading(false);
       return;
     }
@@ -252,7 +253,7 @@ const CheckpointItem = memo(function CheckpointItem({
 
     setUploading(false);
     if (dbError || !data) {
-      setUploadError(`Kunne ikke lagre vedlegg: ${dbError?.message ?? "ukjent feil"}`);
+      setUploadError(t.checkpoint.saveError + (dbError?.message ?? t.archive.unknownError));
       await supabase.storage.from(STORAGE_BUCKET).remove([filePath]);
       return;
     }
@@ -331,7 +332,7 @@ const CheckpointItem = memo(function CheckpointItem({
         )}
 
         {/* Status buttons */}
-        <div className="flex gap-2 mt-3" role="group" aria-label="Sett status">
+        <div className="flex gap-2 mt-3" role="group" aria-label={t.checklist.setStatus}>
           {(["ok", "deviation", "not_checked"] as CheckpointStatus[]).map((st) => (
             <button
               key={st}
@@ -350,7 +351,7 @@ const CheckpointItem = memo(function CheckpointItem({
                   : "border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500"
               }`}
             >
-              {st === "ok" ? "✅ OK" : st === "deviation" ? "⚠️ Avvik" : "Ikke relevant"}
+              {st === "ok" ? `✅ ${t.checklist.statusOk}` : st === "deviation" ? `⚠️ ${t.checklist.statusDeviation}` : t.checklist.statusNotChecked}
             </button>
           ))}
         </div>
@@ -359,7 +360,7 @@ const CheckpointItem = memo(function CheckpointItem({
         {contacts.length > 0 && (
           <div className="mt-3">
             <label className="block text-xs font-medium text-gray-500 dark:text-slate-400 mb-1">
-              Ansvarlig
+              {t.checkpoint.responsible}
             </label>
             <select
               value={selectedContactRecno ?? ""}
@@ -370,7 +371,7 @@ const CheckpointItem = memo(function CheckpointItem({
                          text-gray-700 dark:text-slate-300
                          focus:outline-none focus:ring-2 focus:ring-brand-400"
             >
-              <option value="">— Ikke valgt</option>
+              <option value="">{t.checkpoint.notSelected}</option>
               {contacts.map((c) => (
                 <option key={c.recno} value={c.recno}>
                   {c.name}{c.role ? ` (${c.role})` : ""}
@@ -386,8 +387,8 @@ const CheckpointItem = memo(function CheckpointItem({
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             onBlur={handleCommentBlur}
-            placeholder="Kommentar / avviksbeskrivelse…"
-            aria-label="Kommentar"
+            placeholder={t.checkpoint.commentPlaceholder}
+            aria-label={t.checkpoint.commentLabel}
             rows={2}
             className="mt-3 w-full border border-gray-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm resize-none
                        bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100
@@ -400,7 +401,7 @@ const CheckpointItem = memo(function CheckpointItem({
         {currentStatus === "deviation" && (
           <div className="mt-3 flex items-center gap-2">
             <label className="text-xs font-medium text-gray-500 dark:text-slate-400 whitespace-nowrap">
-              Rettes innen
+              {t.checkpoint.fixBy}
             </label>
             <input
               type="date"
@@ -423,7 +424,7 @@ const CheckpointItem = memo(function CheckpointItem({
                        flex items-center gap-1 transition
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
           >
-            📍 {lat != null ? "Endre posisjon" : "Legg til posisjon i kart"}
+            📍 {lat != null ? t.inspection.changePosition : t.checkpoint.addPosition}
           </button>
           {lat != null && lng != null && (
             <span className="text-xs text-gray-500 dark:text-slate-400">
@@ -444,12 +445,12 @@ const CheckpointItem = memo(function CheckpointItem({
             type="button"
             onClick={() => cameraInputRef.current?.click()}
             disabled={uploading}
-            aria-label="Ta bilde med kamera"
+            aria-label={t.checkpoint.takeCameraPhotoLabel}
             className="text-xs text-gray-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400
                        flex items-center gap-1 transition disabled:opacity-50
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
           >
-            📷 Ta bilde
+            📷 {t.checkpoint.takePhoto}
           </button>
 
           <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileSelect} />
@@ -457,12 +458,12 @@ const CheckpointItem = memo(function CheckpointItem({
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            aria-label="Last opp fil eller velg bilde fra galleri"
+            aria-label={t.checkpoint.uploadFileLabel}
             className="text-xs text-gray-500 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400
                        flex items-center gap-1 transition disabled:opacity-50
                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
           >
-            {uploading ? "⏳ Laster opp…" : "📎 Legg ved fil"}
+            {uploading ? `⏳ ${t.checkpoint.uploading}` : `📎 ${t.checkpoint.attachFile}`}
           </button>
         </div>
 
@@ -476,23 +477,23 @@ const CheckpointItem = memo(function CheckpointItem({
         {/* GPS stamp status */}
         {gpsStatus === "exif" && (
           <p className="mt-2 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 rounded-lg px-3 py-1.5">
-            📍 GPS fra bilde stemplet inn
+            📍 {t.checkpoint.gpsFromExif}
           </p>
         )}
         {gpsStatus === "geolocation" && (
           <p className="mt-2 text-xs text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-950/40 rounded-lg px-3 py-1.5">
-            📍 Posisjon fra nettleser stemplet inn
+            📍 {t.checkpoint.gpsFromBrowser}
           </p>
         )}
         {gpsStatus === "none" && (
           <p className="mt-2 text-xs text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-slate-800/60 rounded-lg px-3 py-1.5">
-            Ingen posisjon funnet i bilde
+            {t.checkpoint.noGps}
           </p>
         )}
 
         {/* Attachment thumbnails */}
         {attachments.length > 0 && (
-          <div className="mt-3 flex gap-3 flex-wrap" aria-label="Vedlegg">
+          <div className="mt-3 flex gap-3 flex-wrap" aria-label={t.checkpoint.attachmentsLabel}>
             {attachments.map((att) => (
               <AttachmentThumb key={att.id} att={att} onRemove={removeAttachment} />
             ))}
@@ -505,7 +506,7 @@ const CheckpointItem = memo(function CheckpointItem({
           initialLat={lat}
           initialLng={lng}
           addressHint={lat == null ? addressHint : undefined}
-          title={`Posisjon: ${definition.title}`}
+          title={t.checkpoint.positionLabel(displayTitle)}
           onSave={handleMapSave}
           onClose={() => setShowMap(false)}
         />

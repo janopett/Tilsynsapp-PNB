@@ -6,6 +6,7 @@ import { authFetch } from "@/lib/auth-fetch";
 import { createClient } from "@/lib/supabase/client";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
 import { captureMapImage, captureOverviewMapImage, capturePolygonMapImage, type OverviewPoint } from "@/lib/pdf/map-capture";
+import { useLanguage } from "@/lib/i18n";
 
 interface CaseDocument {
   Recno: number;
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }: Props) {
+  const { t } = useLanguage();
   const existingArchival = inspection.archival;
   const [caseNumber, setCaseNumber] = useState(inspection.case_number ?? "");
   const [externalId, setExternalId] = useState("");
@@ -39,24 +41,27 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   const [selectedDocNumber, setSelectedDocNumber] = useState<string | null>(null);
   const [selectedDocUrl, setSelectedDocUrl] = useState<string | null>(null);
   const fetchedForCase = useRef<string>("");
+
+  const buildInitialMessage = useCallback(() => {
+    if (!existingArchival) return null;
+    if (existingArchival.status === "success") {
+      const docNum = existingArchival.sif_document_number ?? existingArchival.sif_document_recno ?? "(?)";
+      const dispatchNote = existingArchival.dispatched
+        ? ` · ${t.archive.dispatchStarted}`
+        : existingArchival.dispatched === false
+        ? ` · ${t.archive.dispatchFailed(existingArchival.dispatch_error ?? t.archive.unknownError)}`
+        : "";
+      return { status: existingArchival.status as ArchivalStatus, message: `${t.archive.archivedAs(String(docNum))}${dispatchNote}`, url: existingArchival.sif_document_url ?? undefined, documentNumber: existingArchival.sif_document_number ?? undefined };
+    }
+    return { status: existingArchival.status as ArchivalStatus, message: existingArchival.error_message ?? t.archive.archivingError, url: existingArchival.sif_document_url ?? undefined, documentNumber: existingArchival.sif_document_number ?? undefined };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [result, setResult] = useState<{
     status: ArchivalStatus;
     message: string;
     url?: string;
     documentNumber?: string;
-  } | null>(
-    existingArchival
-      ? {
-          status: existingArchival.status,
-          message:
-            existingArchival.status === "success"
-              ? `Arkivert som dokument ${existingArchival.sif_document_number ?? existingArchival.sif_document_recno}${existingArchival.dispatched ? " · Forsendelse startet" : existingArchival.dispatched === false ? ` · Forsendelse feilet: ${existingArchival.dispatch_error ?? "ukjent feil"}` : ""}`
-              : existingArchival.error_message ?? "Feil ved arkivering",
-          url: existingArchival.sif_document_url ?? undefined,
-          documentNumber: existingArchival.sif_document_number ?? undefined,
-        }
-      : null
-  );
+  } | null>(() => buildInitialMessage());
 
   function sortDocuments(docs: CaseDocument[]): CaseDocument[] {
     return [...docs].sort((a, b) => {
@@ -78,10 +83,10 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     try {
       const res = await authFetch(`/api/sif/case-documents?caseNumber=${encodeURIComponent(cn.trim())}`);
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Feil ved henting av dokumenter");
+      if (!res.ok) throw new Error(data.error ?? t.archive.archivingError);
       setDocuments(sortDocuments(data.documents ?? []));
     } catch (err) {
-      setDocsError(err instanceof Error ? err.message : "Ukjent feil");
+      setDocsError(err instanceof Error ? err.message : t.archive.unknownError);
       fetchedForCase.current = "";
     } finally {
       setDocsLoading(false);
@@ -107,7 +112,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       .eq("id", inspection.id);
     setCompleting(false);
     if (error) {
-      alert("Kunne ikke sette som avsluttet: " + error.message);
+      alert(t.archive.cantComplete + error.message);
     } else {
       onMarkCompleted?.();
     }
@@ -115,11 +120,11 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
 
   async function handleArchive() {
     if (!caseNumber.trim() && !externalId.trim() && !uid.trim()) {
-      alert("Angi saksnummer, eksternt ID eller UID.");
+      alert(t.archive.alertNoCase);
       return;
     }
     if (docMode === "update" && !selectedDocNumber) {
-      alert("Velg et eksisterende dokument å oppdatere.");
+      alert(t.archive.alertSelectDocument);
       return;
     }
     setLoading(true);
@@ -183,19 +188,19 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     if (data.success && data.archival) {
       const a = data.archival;
       const dispatchNote = a.dispatched
-        ? " · Forsendelse startet"
+        ? ` · ${t.archive.dispatchStarted}`
         : a.dispatched === false
-        ? ` · Forsendelse feilet: ${a.dispatch_error ?? "ukjent feil"}`
+        ? ` · ${t.archive.dispatchFailed(a.dispatch_error ?? t.archive.unknownError)}`
         : "";
       setResult({
         status: "success",
-        message: `Arkivert som dokument ${a.sif_document_number ?? a.sif_document_recno ?? "(ukjent)"}${dispatchNote}`,
+        message: `${t.archive.archivedAs(a.sif_document_number ?? a.sif_document_recno ?? "(?)")}${dispatchNote}`,
         url: a.sif_document_url ?? selectedDocUrl ?? undefined,
         documentNumber: a.sif_document_number,
       });
       onArchived();
     } else {
-      setResult({ status: "failed", message: data.error ?? "Ukjent feil" });
+      setResult({ status: "failed", message: data.error ?? t.archive.unknownError });
     }
     setLoading(false);
   }
@@ -223,7 +228,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                   ? "text-green-800 dark:text-green-300"
                   : "text-red-800 dark:text-red-300"
               }`}>
-                {result.status === "success" ? "Sendt og arkivert i Plan & Build" : "Arkivering feilet"}
+                {result.status === "success" ? t.archive.successTitle : t.archive.failedTitle}
               </p>
               <p className={`text-sm ${
                 result.status === "success"
@@ -242,7 +247,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium"
               >
-                Åpne dokument i 360° →
+                {t.archive.openIn360}
               </a>
             )}
             {result.status === "success" && !isCompleted && (
@@ -254,12 +259,12 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                            transition disabled:opacity-50
                            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
               >
-                {completing ? "⏳ Avslutter…" : "✅ Sett som avsluttet"}
+                {completing ? t.archive.completing : t.archive.markCompleted}
               </button>
             )}
             {isCompleted && (
               <span className="inline-flex items-center gap-1 text-sm text-green-700 dark:text-green-400 font-medium">
-                ✅ Tilsynet er avsluttet
+                {t.archive.inspectionCompleted}
               </span>
             )}
           </div>
@@ -268,21 +273,21 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5">
         <h2 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">
-          Send og arkiver i Plan &amp; Build
+          {t.archive.title}
         </h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-          Generer tilsynsrapport (PDF), arkiver den på saken i Plan &amp; Build og send den til mottakerne.
+          {t.archive.description}
         </p>
 
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-              Saksnummer i Plan &amp; Build
+              {t.archive.caseNumberLabel}
             </label>
             <CaseSearchInput
               value={caseNumber}
               onChange={setCaseNumber}
-              placeholder="Søk på saksnummer eller tittel…"
+              placeholder={t.newInspection.caseSearchPlaceholder}
             />
           </div>
 
@@ -290,7 +295,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
           <div className="border border-gray-100 dark:border-slate-700 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                Dokument i Plan &amp; Build
+                {t.archive.documentLabel}
               </p>
               {docMode === "update" && caseNumber.trim() && documents !== null && (
                 <button
@@ -299,7 +304,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                   disabled={docsLoading}
                   className="text-xs text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50"
                 >
-                  {docsLoading ? "Henter…" : "Oppdater liste"}
+                  {docsLoading ? t.archive.loading : t.archive.refreshList}
                 </button>
               )}
             </div>
@@ -319,7 +324,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                     : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
                   }`}
               >
-                Opprett nytt dokument
+                {t.archive.createNew}
               </button>
               <button
                 type="button"
@@ -331,20 +336,20 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                     : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
                   }`}
               >
-                Oppdater eksisterende
+                {t.archive.updateExisting}
               </button>
             </div>
 
             {docMode === "update" && (
               docsLoading ? (
-                <p className="text-xs text-gray-400 dark:text-slate-500">Henter dokumenter…</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500">{t.archive.loadingDocuments}</p>
               ) : documents === null ? (
                 <p className="text-xs text-gray-400 dark:text-slate-500">
-                  {caseNumber.trim() ? "Angi saksnummer og klikk «Oppdater eksisterende» for å laste inn dokumenter." : "Angi saksnummer for å hente dokumenter."}
+                  {caseNumber.trim() ? t.archive.enterCaseAndClick : t.archive.enterCase}
                 </p>
               ) : documents.length === 0 ? (
                 <p className="text-xs text-gray-500 dark:text-slate-400">
-                  Ingen dokumenter funnet på saken.
+                  {t.archive.noDocuments}
                 </p>
               ) : (
                 <select
@@ -357,7 +362,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                   }}
                   className="input text-sm"
                 >
-                  <option value="">— Velg dokument —</option>
+                  <option value="">{t.archive.selectDocument}</option>
                   {documents.map((d) => (
                     <option key={d.Recno} value={d.DocumentNumber ?? d.Recno}>
                       {[d.DocumentNumber, d.Title].filter(Boolean).join(" - ")}
@@ -370,18 +375,18 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
 
           <details className="text-sm">
             <summary className="cursor-pointer text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 font-medium select-none">
-              Avansert oppslag (eksternt ID / UID)
+              {t.archive.advancedLookup}
             </summary>
             <div className="mt-3 space-y-3 pl-4 border-l-2 border-gray-100 dark:border-slate-700">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  Eksternt ID
+                  {t.archive.externalId}
                 </label>
                 <input
                   type="text"
                   value={externalId}
                   onChange={(e) => setExternalId(e.target.value)}
-                  placeholder="Eksternt ID fra fagsystem"
+                  placeholder={t.archive.externalIdPlaceholder}
                   className="input"
                 />
               </div>
@@ -393,7 +398,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                   type="text"
                   value={uid}
                   onChange={(e) => setUid(e.target.value)}
-                  placeholder="Globalt unik identifikator"
+                  placeholder={t.archive.uidPlaceholder}
                   className="input"
                 />
               </div>
@@ -413,25 +418,23 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
           {loading ? (
             <>
               <span className="animate-spin" aria-hidden="true">⏳</span>
-              {docMode === "update" ? "Oppdaterer dokument..." : "Arkiverer og sender..."}
+              {docMode === "update" ? t.archive.updating : t.archive.archiving}
             </>
           ) : docMode === "update" ? (
-            <>📝 Oppdater dokument i Plan &amp; Build</>
+            t.archive.updateBtn
           ) : (
-            <>📨 Send og arkiver i Plan &amp; Build</>
+            t.archive.submitBtn
           )}
         </button>
       </div>
 
       {/* Info box */}
       <div className="bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-xl p-4 text-xs text-blue-700 dark:text-blue-300">
-        <p className="font-semibold mb-1">Hva skjer?</p>
+        <p className="font-semibold mb-1">{t.archive.whatHappens}</p>
         <ol className="list-decimal list-inside space-y-0.5">
-          <li>Tilsynsrapport genereres som PDF</li>
-          <li>Eventuelle bilder/vedlegg lastes opp til SIF</li>
-          <li>Dokument opprettes på saken i Plan &amp; Build</li>
-          <li>Dokumentet sendes til mottakerne (hvis aktivert i admin)</li>
-          <li>Dokumentreferansen lagres i appen</li>
+          {t.archive.whatHappensSteps.map((step, i) => (
+            <li key={i}>{step}</li>
+          ))}
         </ol>
       </div>
     </div>
