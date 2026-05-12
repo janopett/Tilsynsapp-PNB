@@ -37,6 +37,7 @@ export async function GET(
         IncludeCaseEstates: true,
         IncludeStages: true,
         IncludeMilestones: true,
+        IncludeProgressPlan: true,
       }
     );
 

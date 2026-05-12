@@ -16,6 +16,7 @@ async function fetchPage(page: number): Promise<SifGetCasesResult> {
     IncludeCaseEstates: true,
     IncludeStages: true,
     IncludeMilestones: true,
+    IncludeProgressPlan: true,
     SortCriterion: "RecnoDescending",
     Page: page,
   });
