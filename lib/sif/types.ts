@@ -147,7 +147,9 @@ export interface SifCaseEstate {
 export interface SifMilestone {
   Recno?: number;
   Title?: string;
-  /** Various field names used across 360° versions */
+  /** Primary date field returned by this installation of Public 360 */
+  MilestoneDate?: string;
+  /** Fallback date fields used across different 360° versions */
   Date?: string;
   Deadline?: string;
   DeadlineDate?: string;
@@ -156,6 +158,9 @@ export interface SifMilestone {
   PlannedDate?: string;
   StartDate?: string;
   CompletedDate?: string;
+  /** Status fields — MilestoneStatus is the primary field in this installation */
+  MilestoneStatus?: string;
+  MilestoneType?: string;
   Status?: string;
   StatusDescription?: string;
   Notes?: string;
