@@ -3,7 +3,14 @@ import { requireUser } from "@/lib/api-auth";
 import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import { sifRpcCall } from "@/lib/sif/client";
 import { mapPnbCase } from "@/lib/sif/pnb-case-mapper";
-import type { SifGetCasesQuery, SifGetCasesResult, SifCaseResult } from "@/lib/sif/types";
+import type {
+  SifGetCasesQuery,
+  SifGetCasesResult,
+  SifCaseResult,
+  SifGetProgressPlanDetailsQuery,
+  SifGetProgressPlanDetailsResult,
+} from "@/lib/sif/types";
+import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 export type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 
 const MAX_PAGES = 20;
@@ -20,6 +27,30 @@ async function fetchPage(page: number): Promise<SifGetCasesResult> {
     SortCriterion: "RecnoDescending",
     Page: page,
   });
+}
+
+/** Extract all date strings from a progress plan details response */
+function extractProgressPlanDates(result: SifGetProgressPlanDetailsResult): string[] {
+  if (!result.Successful || !result.Activities?.length) return [];
+  return result.Activities.flatMap((a) => {
+    const dates: string[] = [];
+    if (a.DueDate) dates.push(a.DueDate);
+    if (a.StartDate) dates.push(a.StartDate);
+    for (const p of a.Phases ?? []) {
+      if (p.DueDate) dates.push(p.DueDate);
+      if (p.StartDate) dates.push(p.StartDate);
+    }
+    return dates;
+  });
+}
+
+/** Returns true if the case already has at least one deadline date from any source */
+function hasAnyDate(c: PnbCaseItem): boolean {
+  return (
+    c.stages.some((s) => s.deadlineDate || s.milestones.some((m) => m.date)) ||
+    c.milestones.some((m) => m.date) ||
+    c.progressPlanDates.length > 0
+  );
 }
 
 // ── GET /api/sif/my-cases ────────────────────────────────────────────────────
@@ -81,6 +112,35 @@ export async function GET(req: NextRequest) {
     const cases = allRaw
       .filter((c) => (c.ResponsiblePersonName ?? "").toLowerCase().trim() === nameLower)
       .map((c) => mapPnbCase(c, baseUrl));
+
+    // ── Enrich cases that have no dates via GetProgressPlanDetails ────────────
+    // Only called for cases where GetCases returned no deadline/milestone dates.
+    const needsDates = cases.filter((c) => !hasAnyDate(c));
+    if (needsDates.length > 0) {
+      for (let i = 0; i < needsDates.length; i += 5) {
+        const batch = needsDates.slice(i, i + 5);
+        const ppResults = await Promise.allSettled(
+          batch.map((c) =>
+            sifRpcCall<SifGetProgressPlanDetailsQuery, SifGetProgressPlanDetailsResult>(
+              "ProgressPlanService",
+              "GetProgressPlanDetails",
+              {
+                CaseNumber: c.caseNumber,
+                IncludePhases: true,
+                MaxReturnedActivities: 50,
+              }
+            )
+          )
+        );
+        for (let j = 0; j < batch.length; j++) {
+          const r = ppResults[j];
+          if (r.status === "fulfilled") {
+            const dates = extractProgressPlanDates(r.value);
+            if (dates.length) batch[j].progressPlanDates = dates;
+          }
+        }
+      }
+    }
 
     return NextResponse.json({
       ok: true,

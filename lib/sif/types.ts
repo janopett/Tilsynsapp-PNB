@@ -1030,6 +1030,64 @@ export interface SifGetVersionResult {
 }
 
 // ============================================================
+// ProgressPlanService — GetProgressPlanDetails
+// ============================================================
+
+export interface SifGetProgressPlanDetailsQuery {
+  ADContextUser?: string;
+  Title?: string;
+  Page?: number;
+  MaxReturnedActivities?: number;
+  SortCriterion?: "RecnoDescending" | "RecnoAscending";
+  Recno?: number;
+  CaseNumber?: string;
+  Project?: string;
+  AccessGroup?: string;
+  Status?: string;
+  IncludeCustomFields?: boolean;
+  IncludePhases?: boolean;
+  IncludeOtherActivities?: boolean;
+  IncludeDecisions?: boolean;
+  AdditionalFields?: SifAdditionalField[];
+  AdditionalRelations?: Array<{ Name: string; FieldCriteria?: unknown; FieldListCriteria?: unknown }>;
+  AdditionalListFields?: SifAdditionalListField[];
+}
+
+export interface SifProgressPlanPhase {
+  Recno?: number;
+  Title?: string;
+  StartDate?: string;
+  DueDate?: string;
+  Status?: { Recno?: number; Code?: string; Description?: string };
+}
+
+export interface SifProgressPlanActivity {
+  Recno?: number;
+  Title?: string;
+  StartDate?: string;
+  DueDate?: string;
+  Status?: { Recno?: number; Code?: string; Description?: string };
+  Project?: string;
+  /** Case number the activity belongs to */
+  Case?: string;
+  AccessGroup?: { Recno?: number; Code?: string; Description?: string };
+  ResponsiblePerson?: SifResponsibleEntity;
+  Phases?: SifProgressPlanPhase[];
+  OtherActivities?: unknown;
+  Decisions?: unknown;
+  CustomFields?: unknown;
+}
+
+export interface SifGetProgressPlanDetailsResult {
+  Successful: boolean;
+  Activities?: SifProgressPlanActivity[];
+  TotalPageCount?: number;
+  TotalCount?: number;
+  ErrorMessage?: string;
+  ErrorDetails?: string;
+}
+
+// ============================================================
 // Internal request builder types
 // ============================================================
 
