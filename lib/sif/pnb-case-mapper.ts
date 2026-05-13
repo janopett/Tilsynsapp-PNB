@@ -50,8 +50,18 @@ export interface PnbCaseItem {
 export function mapMilestones(ms: SifMilestone[] | undefined): PnbMilestone[] {
   return (ms ?? []).map((m) => ({
     title: m.Title,
-    date: m.Date || m.DeadlineDate || m.Deadline || m.DueDate || m.ActualDate || m.PlannedDate || m.StartDate || m.CompletedDate || undefined,
-    status: m.StatusDescription ?? m.Status,
+    date:
+      m.MilestoneDate ||
+      m.Date ||
+      m.DeadlineDate ||
+      m.Deadline ||
+      m.DueDate ||
+      m.ActualDate ||
+      m.PlannedDate ||
+      m.StartDate ||
+      m.CompletedDate ||
+      undefined,
+    status: m.MilestoneStatus ?? m.StatusDescription ?? m.Status,
   }));
 }
 
