@@ -60,13 +60,14 @@ export async function GET(req: NextRequest) {
       }
       raw = results;
     } else if (service === "cases") {
-      // Raw GetCases with all include-flags — shows Contacts, ReferringCases, and Stages
+      // Raw GetCases with all include-flags — shows Contacts, ReferringCases, Stages and Milestones
       raw = await sifRpcCall("CaseService", "GetCases", {
         CaseNumber: caseNumber,
         MaxReturnedCases: 1,
         IncludeReferringCases: true,
         IncludeCaseContacts: true,
         IncludeStages: true,
+        IncludeMilestones: true,
         IncludeDocuments: true,
       });
     } else if (service === "documents") {

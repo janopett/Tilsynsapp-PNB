@@ -240,6 +240,23 @@ export default function SifTestPage() {
     setLookupLoading(false);
   }
 
+  // IncludeMilestones test
+  const [milestonesCaseNumber, setMilestonesCaseNumber] = useState("");
+  const [milestonesResult, setMilestonesResult] = useState<RawDebugResult | null>(null);
+  const [milestonesLoading, setMilestonesLoading] = useState(false);
+
+  async function lookupMilestones(e: React.FormEvent) {
+    e.preventDefault();
+    if (!milestonesCaseNumber.trim()) return;
+    setMilestonesLoading(true);
+    setMilestonesResult(null);
+    const cn = encodeURIComponent(milestonesCaseNumber.trim());
+    const res = await authFetch(`/api/sif/debug-raw?caseNumber=${cn}&service=cases`);
+    const data = await res.json();
+    setMilestonesResult(data);
+    setMilestonesLoading(false);
+  }
+
   // GetFilesWithMetadata test
   const [filesCaseNumber, setFilesCaseNumber] = useState("");
   const [filesResult, setFilesResult] = useState<RawDebugResult | null>(null);
@@ -447,6 +464,89 @@ export default function SifTestPage() {
               <CopyableJson
                 data={refCasesResult.ok ? refCasesResult.raw : refCasesResult.error}
                 ok={refCasesResult.ok}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* IncludeMilestones + IncludeStages test */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+        <h2 className="text-base font-semibold mb-1">Test: IncludeMilestones + IncludeStages (GetCases)</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
+          Kaller{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">CaseService/GetCases</code>{" "}
+          med{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">IncludeMilestones: true</code>{" "}
+          og{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">IncludeStages: true</code>.{" "}
+          Viser sak-nivå milepæler, hvert trinn med sine milepæler, og fullstendig råsvar.
+        </p>
+        <form onSubmit={lookupMilestones} className="flex gap-3 mb-4">
+          <input
+            type="text"
+            value={milestonesCaseNumber}
+            onChange={(e) => setMilestonesCaseNumber(e.target.value)}
+            placeholder="F.eks. BYGG-25/00380"
+            className="input flex-1"
+          />
+          <button
+            type="submit"
+            disabled={milestonesLoading || !milestonesCaseNumber.trim()}
+            className="bg-brand-600 hover:bg-brand-700 text-white font-medium px-5 py-2.5 rounded-xl transition disabled:opacity-50"
+          >
+            {milestonesLoading ? "Henter…" : "Hent sak"}
+          </button>
+        </form>
+
+        {milestonesResult && (
+          <div className="space-y-4">
+            {milestonesResult.ok && (() => {
+              type RawCase = {
+                Milestones?: unknown;
+                Stages?: Array<{ Title?: string; StageStatus?: { Description?: string }; DeadlineDate?: string; Milestones?: unknown }>;
+              };
+              const c = (milestonesResult.raw as { Cases?: RawCase[] })?.Cases?.[0];
+              if (!c) return null;
+              return (
+                <>
+                  {/* Case-level milestones */}
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                      Cases[0].Milestones (sak-nivå)
+                    </p>
+                    <CopyableJson data={c.Milestones ?? null} ok={true} />
+                  </div>
+
+                  {/* Per-stage milestones */}
+                  {(c.Stages ?? []).map((s, i) => (
+                    <div key={i}>
+                      <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                        Stages[{i}] — {s.Title ?? "trinn"}{" "}
+                        {s.StageStatus?.Description && (
+                          <span className="normal-case font-normal text-gray-400">({s.StageStatus.Description})</span>
+                        )}
+                        {s.DeadlineDate && (
+                          <span className="normal-case font-normal text-brand-600 dark:text-brand-400 ml-2">
+                            frist: {s.DeadlineDate}
+                          </span>
+                        )}
+                      </p>
+                      <CopyableJson data={s.Milestones ?? null} ok={true} />
+                    </div>
+                  ))}
+                </>
+              );
+            })()}
+
+            {/* Full raw response */}
+            <div>
+              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                Fullstendig råsvar
+              </p>
+              <CopyableJson
+                data={milestonesResult.ok ? milestonesResult.raw : milestonesResult.error}
+                ok={milestonesResult.ok}
               />
             </div>
           </div>
