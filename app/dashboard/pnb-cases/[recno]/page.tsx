@@ -109,25 +109,97 @@ export default function PnbCaseDetailPage() {
     );
   }
 
-  function MilestoneList({ milestones }: { milestones: PnbCaseItem["milestones"] }) {
-    if (!milestones.length) return null;
+  function MilestoneTimeline({
+    milestones,
+    deadlineDate,
+    closed = false,
+  }: {
+    milestones: PnbCaseItem["milestones"];
+    deadlineDate?: string;
+    closed?: boolean;
+  }) {
+    if (!milestones.length && !deadlineDate) return null;
+
+    const isCompleted = (status?: string) => {
+      if (!status) return false;
+      const s = status.toLowerCase();
+      return s.includes("nådd") || s.includes("completed") || s.includes("done") || s.includes("ferdig");
+    };
+
+    type TimelineItem = {
+      kind: "milestone" | "deadline";
+      title: string;
+      date?: string;
+      status?: string;
+      completed: boolean;
+    };
+
     const sorted = [...milestones].sort((a, b) => (a.date ?? "").localeCompare(b.date ?? ""));
+    const items: TimelineItem[] = sorted.map((m) => ({
+      kind: "milestone",
+      title: m.title ?? "Milepæl",
+      date: m.date,
+      status: m.status,
+      completed: isCompleted(m.status),
+    }));
+
+    if (deadlineDate && !closed) {
+      items.push({ kind: "deadline", title: "Frist", date: deadlineDate, status: undefined, completed: false });
+    }
+
     return (
-      <div className="mt-2 space-y-1 pl-1">
-        {sorted.map((m, i) => (
-          <div key={i} className="flex items-baseline gap-2 text-xs">
-            <span className="text-purple-400 dark:text-purple-500 text-[9px] shrink-0">◆</span>
-            <span className="text-gray-700 dark:text-slate-300">{m.title ?? "Milepæl"}</span>
-            {m.date && (
-              <span className="text-gray-400 dark:text-slate-500 shrink-0">
-                {new Date(m.date).toLocaleDateString(dateLocale)}
-              </span>
-            )}
-            {m.status && (
-              <span className="ml-auto text-gray-400 dark:text-slate-500 shrink-0">{m.status}</span>
-            )}
-          </div>
-        ))}
+      <div className="mt-3 ml-0.5">
+        {items.map((item, i) => {
+          const isLast = i === items.length - 1;
+          const isDeadline = item.kind === "deadline";
+          return (
+            <div key={i} className="flex gap-3">
+              {/* Track column */}
+              <div className="flex flex-col items-center w-3.5 shrink-0">
+                {isDeadline ? (
+                  <div className="mt-0.5 w-3.5 h-3.5 rounded-full border-2 border-orange-400 dark:border-orange-500 bg-white dark:bg-slate-800 shrink-0" />
+                ) : item.completed ? (
+                  <div className="mt-0.5 w-3.5 h-3.5 rounded-full bg-green-500 dark:bg-green-600 shrink-0 flex items-center justify-center">
+                    <svg className="w-2 h-2 text-white" viewBox="0 0 8 8" fill="none">
+                      <path d="M1.5 4l2 2 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                ) : (
+                  <div className="mt-0.5 w-3.5 h-3.5 rounded-full border-2 border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 shrink-0" />
+                )}
+                {!isLast && (
+                  <div className="flex-1 w-px bg-gray-200 dark:bg-slate-600 my-1" style={{ minHeight: "14px" }} />
+                )}
+              </div>
+              {/* Content column */}
+              <div className={`${isLast ? "pb-0" : "pb-3"} min-w-0 flex items-start gap-2 flex-wrap`}>
+                <span className={`text-xs font-medium leading-[1.4] ${
+                  isDeadline
+                    ? "text-orange-600 dark:text-orange-400"
+                    : item.completed
+                    ? "text-green-700 dark:text-green-400"
+                    : "text-gray-700 dark:text-slate-300"
+                }`}>
+                  {item.title}
+                </span>
+                {item.date && (
+                  <span className="text-xs text-gray-400 dark:text-slate-500 shrink-0 leading-[1.4]">
+                    {new Date(item.date).toLocaleDateString(dateLocale)}
+                  </span>
+                )}
+                {item.status && (
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 leading-none ${
+                    item.completed
+                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                      : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
+                  }`}>
+                    {item.status}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -273,7 +345,7 @@ export default function PnbCaseDetailPage() {
                   </div>
                   {s.deadlineDate && <DeadlineBadge date={s.deadlineDate} />}
                 </div>
-                <MilestoneList milestones={s.milestones} />
+                <MilestoneTimeline milestones={s.milestones} deadlineDate={s.deadlineDate} />
               </div>
             ))}
           </div>
@@ -292,7 +364,7 @@ export default function PnbCaseDetailPage() {
                 <p className="text-sm text-gray-500 dark:text-slate-400">
                   {s.title ?? s.stageType ?? "Trinn"}
                 </p>
-                <MilestoneList milestones={s.milestones} />
+                <MilestoneTimeline milestones={s.milestones} closed />
               </div>
             ))}
           </div>
