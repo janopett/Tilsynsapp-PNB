@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
 import { createClient } from "@/lib/supabase/client";
-import CaseSearchInput from "@/components/sif/CaseSearchInput";
 import { captureMapImage, captureOverviewMapImage, capturePolygonMapImage, type OverviewPoint } from "@/lib/pdf/map-capture";
 import { useLanguage } from "@/lib/i18n";
 
@@ -26,7 +25,7 @@ interface Props {
 export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }: Props) {
   const { t } = useLanguage();
   const existingArchival = inspection.archival;
-  const [caseNumber, setCaseNumber] = useState(inspection.case_number ?? "");
+  const caseNumber = inspection.case_number ?? "";
   const [externalId, setExternalId] = useState("");
   const [uid, setUid] = useState("");
   const [loading, setLoading] = useState(false);
@@ -280,16 +279,14 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         </p>
 
         <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-              {t.archive.caseNumberLabel}
-            </label>
-            <CaseSearchInput
-              value={caseNumber}
-              onChange={setCaseNumber}
-              placeholder={t.newInspection.caseSearchPlaceholder}
-            />
-          </div>
+          {caseNumber && (
+            <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300">
+              <span className="font-medium">{t.archive.caseNumberLabel}:</span>
+              <span className="font-mono bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-lg text-gray-900 dark:text-slate-100">
+                {caseNumber}
+              </span>
+            </div>
+          )}
 
           {/* Document picker */}
           <div className="border border-gray-100 dark:border-slate-700 rounded-xl p-4 space-y-3">
