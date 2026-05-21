@@ -46,8 +46,8 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://unpkg.com",
               // Supabase storage + OSM tiles for map picker + Kartverket WMS for report maps
               `img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com https://openwms.statkart.no`,
-              // Supabase API + own API + Nominatim geocoding for map picker
-              `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org`,
+              // Supabase API + own API + Nominatim geocoding + OSM tiles (fetched via fetch() for canvas map capture)
+              `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org`,
               "font-src 'self'",
               "frame-ancestors 'none'",
               "base-uri 'self'",
