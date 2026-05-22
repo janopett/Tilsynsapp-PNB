@@ -1,295 +1,295 @@
 # Tilsynsapp-PNB
 
-Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspektører fyller ut strukturerte sjekklister, genererer befaringsrapporter og sender disse direkte til kommunens arkivsystem (Plan & Bygg / Public 360°) via SIF-API-integrasjon.
+Web application for conducting and archiving building site visits (befaringer) in Norwegian municipalities. Inspectors fill in structured checklists, generate site visit reports, and send them directly to the municipality's records management system (Plan & Building / Public 360°) via the SIF API.
 
 ---
 
-## Innhold
+## Contents
 
-- [Funksjoner](#funksjoner)
-- [Teknologi](#teknologi)
-- [Kom i gang](#kom-i-gang)
-- [Miljøvariabler](#miljøvariabler)
-- [Databasemigrasjoner](#databasemigrasjoner)
-- [Arkitektur](#arkitektur)
-- [SIF-integrasjon](#sif-integrasjon)
-- [Arkiveringsflyt](#arkiveringsflyt)
-- [Admin-funksjonalitet](#admin-funksjonalitet)
-- [Universell utforming](#universell-utforming-wcag-21-aa)
-- [Sikkerhet](#sikkerhet)
-
----
-
-## Funksjoner
-
-### Inspektører
-
-| Funksjon | Beskrivelse |
-|----------|-------------|
-| Ny befaring | Flertrinns skjema med saksreferanse, eiendomsdata og tiltakstype |
-| Befaringsområde og tiltakstype | Multi-select klassifisering hentet direkte fra PNB-kodetabellene «eBy Supervision area» og «eBy Measure type» — brukes til å filtrere hvilke sjekkpunkter som vises |
-| Strukturert sjekkliste | 100+ sjekkpunkter fordelt på kategorier, dynamisk filtrert etter tiltakstype, eiendomsegenskaper, befaringsområde og tiltakstype fra PNB |
-| Registrering av funn | Registrer status per sjekkpunkt (ok / avvik / ikke kontrollert) med kommentar, ansvarlig kontakt og GPS-koordinater |
-| Vedlegg | Last opp bilder og dokumenter til enkeltpunkter eller befaringen generelt. Bilder med GPS-data i EXIF (f.eks. tatt med mobilkamera med stedstjeneste) får adressen automatisk stemplet inn på bildet (reverse geocoding via Nominatim); faller tilbake til koordinater hvis oppslaget mislykkes |
-| PDF-rapport | Generer profesjonell befaringsrapport med saksopplysninger, sjekkliste, avviksoppsummering, innebygde bilder og kart |
-| Arkivering | Send ferdig befaring til kommunens arkivsystem (Public 360°) — opprett nytt dokument eller oppdater et eksisterende |
-| Dashboard | Oversikt over aktive og arkiverte befaringer med filtrering etter status, dato og eiendom |
-| Mine PNB-saker | Egen dashbordfane som henter alle saker fra PNB der innlogget bruker er ansvarlig saksbehandler — viser eiendommer, kontakter, behandlingstrinn og frister |
-| Kartplukking | Velg koordinater for befaringsstedet via interaktivt OpenStreetMap-kart |
-| Mørkt/lyst tema | Automatisk systemtema med manuell overstyring (lys/mørk/system) |
-
-### SIF-integrasjon (Plan & Bygg / Public 360°)
-
-- Sakssøk og oppslag av eiendom og parter direkte fra PNB
-- Automatisk innlasting av behandlingstrinn basert på saksnummer
-- Synkronisering av eksterne deltakere (f.eks. brannvernleder) til 360° som kontaktpersoner
-- Automatisk oppretting av dokument med PDF-rapport, JSON-metadata og vedlegg
-- **Oppdatering av eksisterende dokument** — hent dokumenter som allerede ligger på saken og legg til ny versjon
-- Automatisk utsending (auto-dispatch) av dokumenter etter arkivering
-- Støtter to autentiseringsmoduser:
-  - **AuthKey** — enkel nøkkelbasert tilgang (GUID-header)
-  - **OAuth2 Client Credentials (combined_daemon)** — Azure AD enterprise-autentisering
+- [Features](#features)
+- [Technology](#technology)
+- [Getting started](#getting-started)
+- [Environment variables](#environment-variables)
+- [Database migrations](#database-migrations)
+- [Architecture](#architecture)
+- [SIF integration](#sif-integration)
+- [Archival flow](#archival-flow)
+- [Admin functionality](#admin-functionality)
+- [Accessibility](#accessibility-wcag-21-aa)
+- [Security](#security)
 
 ---
 
-## Teknologi
+## Features
 
-| Lag | Valg |
-|-----|------|
-| Rammeverk | Next.js 14 (App Router, TypeScript strict mode) |
-| Styling | Tailwind CSS med mørkt tema |
+### Inspectors
+
+| Feature | Description |
+|---------|-------------|
+| New site visit | Multi-step form with case reference, property data, and measure type |
+| Survey area & measure type | Multi-select classification pulled directly from PNB code tables «eBy Supervision area» and «eBy Measure type» — used to filter which checkpoints are shown |
+| Structured checklist | 100+ checkpoints organised by category, dynamically filtered by measure type, property attributes, survey area, and measure type from PNB |
+| Finding registration | Record status per checkpoint (ok / deviation / not checked) with free-text comment, responsible contact, and GPS coordinates |
+| Attachments | Upload photos and documents to individual checkpoints or to the site visit as a whole. Photos containing GPS EXIF data (e.g. taken with a mobile camera with location services enabled) have their address automatically stamped onto the image (reverse geocoding via Nominatim); falls back to raw coordinates if the lookup fails |
+| PDF report | Generate a professional site visit report with case metadata, checklist findings, deviation summary, inline images, and map |
+| Archiving | Send a completed site visit to the municipal records system (Public 360°) — create a new document or update an existing one |
+| Dashboard | Overview of active and archived site visits with filtering by status, date, and property |
+| My PNB cases | Dedicated dashboard tab that fetches all PNB cases where the logged-in user is the responsible case officer — shows properties, contacts, case stages, and deadlines |
+| Map picker | Select coordinates for the site visit location via an interactive OpenStreetMap map |
+| Dark/light theme | Automatic system theme with manual override (light / dark / system) |
+
+### SIF integration (Plan & Building / Public 360°)
+
+- Case search and lookup of property and parties directly from PNB
+- Auto-load case stages (behandlingstrinn) based on case number
+- Synchronisation of external participants (e.g. fire safety officer) into 360° as contact persons
+- Automatic document creation with uploaded PDF report, JSON metadata export, and attachments
+- **Update existing document** — fetch documents already on the case and add a new version
+- Automatic dispatch (auto-dispatch) of documents to recipients after archiving
+- Supports two authentication modes:
+  - **AuthKey** — simple key-based access (GUID header)
+  - **OAuth2 Client Credentials (combined_daemon)** — Azure AD enterprise authentication
+
+---
+
+## Technology
+
+| Layer | Choice |
+|-------|--------|
+| Framework | Next.js 14 (App Router, TypeScript strict mode) |
+| Styling | Tailwind CSS with dark mode |
 | Database | Supabase (PostgreSQL) |
-| Autentisering | Supabase Auth (e-post + passord, JWT, cookie-sesjoner) |
-| Fillagring | Supabase Storage |
-| PDF-generering | jsPDF + jspdf-autotable + pdf-lib (sammenslåing av vedlegg) |
-| Kart | OpenStreetMap (klient-side Leaflet) + Kartverket WMS (statisk kart server-side) |
-| Ekstern integrasjon | SIF API – Public 360° (RPC over HTTPS) |
+| Authentication | Supabase Auth (email + password, JWT, cookie sessions) |
+| File storage | Supabase Storage |
+| PDF generation | jsPDF + jspdf-autotable + pdf-lib (attachment merging) |
+| Map tiles | OpenStreetMap (client-side Leaflet) + Kartverket WMS (server-side static map) |
+| External integration | SIF API – Public 360° (RPC over HTTPS) |
 | Deployment | Vercel |
 | Testing | Jest |
 
 ---
 
-## Kom i gang
+## Getting started
 
-### Forutsetninger
+### Prerequisites
 
 - Node.js 18+
-- Et Supabase-prosjekt (eller lokal Supabase via `supabase start`)
+- A Supabase project (or local Supabase via `supabase start`)
 
-### Installasjon
+### Installation
 
 ```bash
 git clone <repo-url>
 cd Tilsynsapp-PNB
 npm install
-cp .env.example .env.local   # Fyll inn verdier, se tabellen nedenfor
-npm run dev                  # Starter på http://localhost:3000
+cp .env.example .env.local   # Fill in values — see table below
+npm run dev                  # Starts at http://localhost:3000
 ```
 
-### Tilgjengelige kommandoer
+### Available commands
 
 ```bash
-npm run dev           # Utviklingsserver
-npm run build         # Produksjonsbygg
-npm run start         # Start produksjonsserver
+npm run dev           # Development server
+npm run build         # Production build
+npm run start         # Start production server
 npm run lint          # ESLint
-npm run test          # Kjør tester
-npm run test:watch    # Tester med watch-modus
-npm run test:coverage # Testdekningsrapport
-npm run db:generate   # Generer Supabase TypeScript-typer fra schema
-npm run set-admin     # Gi admin-tilgang til en bruker (via e-post)
+npm run test          # Run tests
+npm run test:watch    # Tests in watch mode
+npm run test:coverage # Test coverage report
+npm run db:generate   # Generate Supabase TypeScript types from schema
+npm run set-admin     # Grant admin access to a user (by email)
 ```
 
 ---
 
-## Miljøvariabler
+## Environment variables
 
-Kopier `.env.example` til `.env.local` og fyll inn verdiene.
+Copy `.env.example` to `.env.local` and fill in the values.
 
 ### Supabase
 
-| Variabel | Beskrivelse |
+| Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL til Supabase-prosjektet |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Offentlig anon-nøkkel (trygg å eksponere til nettleseren) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role-nøkkel — kun server, eksponeres aldri til nettleseren |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL to the Supabase project |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public anon key (safe to expose to browser) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key — server only, never expose to browser |
 
 ### SIF / Public 360°
 
-| Variabel | Beskrivelse |
+| Variable | Description |
 |----------|-------------|
-| `SIF_BASE_URL` | Basis-URL til 360°-instansen, f.eks. `https://kunde.public360online.com` |
-| `SIF_RPC_PATH` | RPC-sti, typisk `/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC` |
-| `SIF_AUTH_MODE` | `authkey` eller `combined_daemon` |
-| `SIF_AUTHKEY` | API-nøkkel (GUID) for authkey-modus |
-| `SIF_BEARER_TOKEN_URL` | Azure AD token-endepunkt (combined_daemon) |
-| `SIF_CLIENT_ID` | OAuth2 klient-ID, sendes som `ClientID`-header |
-| `SIF_CLIENT_SECRET` | OAuth2 klient-hemmelighet |
-| `SIF_CLIENT_ID_OAUTH` | OAuth2 applikasjons-ID for tokenforespørsler |
-| `SIF_SCOPE` | OAuth2 scope, f.eks. `api://…/.default` |
-| `SIF_TIMEOUT_MS` | Timeout for API-kall i ms (standard: `30000`) |
+| `SIF_BASE_URL` | Base URL of the 360° instance, e.g. `https://customer.public360online.com` |
+| `SIF_RPC_PATH` | RPC path, typically `/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC` |
+| `SIF_AUTH_MODE` | `authkey` or `combined_daemon` |
+| `SIF_AUTHKEY` | API key (GUID) for authkey mode |
+| `SIF_BEARER_TOKEN_URL` | Azure AD token endpoint (combined_daemon) |
+| `SIF_CLIENT_ID` | OAuth2 client ID sent as `ClientID` header |
+| `SIF_CLIENT_SECRET` | OAuth2 client secret |
+| `SIF_CLIENT_ID_OAUTH` | OAuth2 application ID used for token requests |
+| `SIF_SCOPE` | OAuth2 scope, e.g. `api://.../.default` |
+| `SIF_TIMEOUT_MS` | API call timeout in milliseconds (default: `30000`) |
 
-### Annet
+### Other
 
-| Variabel | Beskrivelse |
+| Variable | Description |
 |----------|-------------|
-| `NEXT_PUBLIC_APP_URL` | Produksjons-URL (brukes av Vercel) |
+| `NEXT_PUBLIC_APP_URL` | Production URL (used by Vercel) |
 
-> SIF-innstillinger kan også konfigureres via admin-grensesnittet (`/dashboard/admin/sif-config`). Innstillinger i databasen overstyrer miljøvariabler. En intern cache (60 sek TTL) unngår gjentatte DB-oppslag per RPC-kall.
+> SIF settings can also be configured via the admin interface (`/dashboard/admin/sif-config`). Settings stored in the database take precedence over environment variables. An in-process cache (60 s TTL) prevents repeated DB round-trips on every RPC call.
 
 ---
 
-## Databasemigrasjoner
+## Database migrations
 
-Migrasjoner ligger i `supabase/migrations/` og kjøres via Supabase CLI:
+Migrations are in `supabase/migrations/` and run via the Supabase CLI:
 
 ```bash
-supabase db push          # Kjør migrasjoner mot remote-prosjekt
-supabase db reset         # Nullstill lokal database og kjør alle migrasjoner på nytt
+supabase db push          # Apply migrations to remote project
+supabase db reset         # Reset local database and re-apply all migrations
 ```
 
-### Migrasjonshistorikk
+### Migration history
 
-| Fil | Innhold |
-|-----|---------|
-| `001_initial.sql` | Kjernetabeller: `inspections`, `inspection_answers`, `attachments`, `list_items` |
-| `002_sif_settings.sql` | SIF-konfigurasjonstabell (`sif_settings`) |
-| `005_external_participants.sql` | Eksterne deltakere (ikke del av byggesaken) |
-| `010_sif_stage.sql` | Behandlingstrinn-felt på tilsyn |
-| `013_auto_dispatch.sql` | Auto-dispatch-flagg i SIF-innstillinger |
-| `015_checkpoint_definitions.sql` | Dynamisk sjekkpunkt-bibliotek i databasen |
-| `017_applicant_recno.sql` | Søkers 360°-recno lagret på befaringen |
-| `020_audit_log.sql` | Audit-logg for admin-handlinger (ISO 27001 A.12.4.1) |
-| `021_befaring_rename.sql` | Nye felt `befaringsomrade text[]` og `tiltakstype text[]` på `inspections`; `applies_to_omrade` og `applies_to_type_codes` på `checkpoint_definitions` |
-| `022_measure_type_optional.sql` | `measure_type_id` gjøres valgfri (nullable) etter fjerning av Step 2 i ny-befaring-flyten |
-| `023_checkpoint_omrade_mapping.sql` | Setter `applies_to_omrade` på sjekkpunkter basert på faglig innhold (første utkast, erstattes av 024) |
-| `024_checkpoint_full_mapping.sql` | Fullstendig mapping mot bekreftet SIF-kodetabell: retter feil navn fra 023, setter alle befaringsområder (Plassering, Planløsning UU, Produkter til byggverk, Installasjoner og anlegg, Sluttdokumentasjon, Avfallsplaner) og setter `applies_to_type_codes` for fasade-, bruksendring-, riving-, blokkbygg- og VA-spesifikke sjekkpunkter |
-| `025_checkpoint_tiltakstype_extended.sql` | Utvidet tiltakstype-mapping basert på PBL, TEK17 og SAK10: FF004/FF005 (ansvarlige foretak), UK001/KS001 (TK2+), BR003 (brannteknisk TK2+), BF001 (UU-pliktige bygg), PRD001 (CE-krav ved byggevareprodukter), RAD001 (grunnkontakt-tiltak), KO001 (geotekniske tiltak) — **rullet tilbake pga. null-feil** |
-| `026_fix_missing_checkpoints_and_025.sql` | Setter inn 5 manglende sjekkpunkter (UK001, PRD001, KS001, LB001, NB001) som bare fantes i TypeScript og gjentar alle 025-oppdateringer med eksplisitte ARRAY-verdier (ingen subqueries) |
-| `027_inspection_avvik_frist.sql` | Legger til `avvik_frist DATE` på `inspections` — frist for lukking av avvik, jf. SAK10 § 15-3 |
-| `028_answer_frist.sql` | Legger til `frist DATE` på `inspection_answers` — per-avvik-frist for retting, vises i sjekkliste, HTML-rapport og PDF |
+| File | Contents |
+|------|----------|
+| `001_initial.sql` | Core tables: `inspections`, `inspection_answers`, `attachments`, `list_items` |
+| `002_sif_settings.sql` | SIF configuration table (`sif_settings`) |
+| `005_external_participants.sql` | External participants (people not in the PNB case) |
+| `010_sif_stage.sql` | Case stage field on inspections |
+| `013_auto_dispatch.sql` | Auto-dispatch flag in SIF settings |
+| `015_checkpoint_definitions.sql` | Dynamic checkpoint library in the database |
+| `017_applicant_recno.sql` | Applicant 360° recno stored on site visit |
+| `020_audit_log.sql` | Audit log for admin actions (ISO 27001 A.12.4.1) |
+| `021_befaring_rename.sql` | New fields `befaringsomrade text[]` and `tiltakstype text[]` on `inspections`; `applies_to_omrade` and `applies_to_type_codes` on `checkpoint_definitions` |
+| `022_measure_type_optional.sql` | `measure_type_id` made nullable after removal of Step 2 in the new inspection flow |
+| `023_checkpoint_omrade_mapping.sql` | Sets `applies_to_omrade` on checkpoints based on subject area (first draft, superseded by 024) |
+| `024_checkpoint_full_mapping.sql` | Full mapping against confirmed SIF code table: fixes incorrect names from 023, sets all supervision areas and `applies_to_type_codes` for facade, change-of-use, demolition, block-building, and VA-specific checkpoints |
+| `025_checkpoint_tiltakstype_extended.sql` | Extended measure-type mapping based on PBL, TEK17 and SAK10 — **rolled back due to null constraint error** |
+| `026_fix_missing_checkpoints_and_025.sql` | Inserts 5 missing checkpoints (UK001, PRD001, KS001, LB001, NB001) that only existed in TypeScript and re-applies all 025 updates using explicit ARRAY values |
+| `027_inspection_avvik_frist.sql` | Adds `avvik_frist DATE` to `inspections` — deadline for closing deviations, per SAK10 § 15-3 |
+| `028_answer_frist.sql` | Adds `frist DATE` to `inspection_answers` — per-deviation correction deadline, shown in checklist, HTML report and PDF |
 
 ---
 
-## Arkitektur
+## Architecture
 
 ```
 app/
 ├── api/                        # Next.js Route Handlers (server-side)
-│   ├── archive/                # POST /api/archive — fullstendig arkiveringsflyt
-│   │   └── preview/            # POST /api/archive/preview — forhåndsvisning uten arkivering
-│   ├── inspections/            # CRUD for befaringer + svar + vedlegg
-│   ├── inspection-codetables/  # GET — henter befaringsomrade / tiltakstype fra PNB-kodetabell
-│   ├── admin/                  # Admin-endepunkter (krever is_admin = true)
-│   │   ├── users/              # Brukeradministrasjon
-│   │   ├── checkpoints/        # Sjekkpunkt-definisjoner
-│   │   ├── inspection-config/  # Konfigurerbare lister (bakgrunn)
-│   │   └── archivals/          # Arkiveringslogg
-│   └── sif/                    # SIF-proxy-endepunkter (20+)
-│       ├── case-lookup/        # Enkelt saksoppslag (saksnummer / uid / externalId)
-│       ├── case-search/        # Søk etter saker på del av nummer eller tittel
-│       ├── case-contacts/      # Parter på en sak
-│       ├── case-stages/        # Behandlingstrinn
-│       ├── case-documents/     # Eksisterende dokumenter på saken
-│       ├── case-estates/       # Eiendommer knyttet til saken
-│       ├── enterprise-search/  # Foretakssøk (GetEnterprises)
-│       ├── my-cases/           # GET — henter PNB-saker der bruker er ansvarlig (filtrert på ResponsiblePersonName)
-│       ├── pnb-case/[recno]/   # GET — henter én PNB-sak med full detalj (kontakter, trinn, milepæler)
-│       ├── code-tables/        # Arkivkoder, kategorier, statuser (admin)
-│       ├── settings/           # Les gjeldende SIF-konfigurasjon
-│       ├── health/             # Tilkoblingskontroll
-│       └── debug-raw/          # Rå RPC-kall for testing
-├── dashboard/                  # Autentiserte sider
-│   ├── inspections/[id]/       # Befaringsarbeidsrom (sjekkliste, vedlegg, arkivering)
-│   ├── inspections/new/        # Skjema for ny befaring
-│   ├── pnb-cases/[recno]/      # Detaljside for én PNB-sak (kontakter, trinn, milepæler)
-│   └── admin/                  # Administrasjonssider
-│       ├── checkpoints/        # Sjekkpunkt-editor
-│       ├── users/              # Brukeradministrasjon
-│       ├── sif-config/         # SIF-innstillingsskjema
-│       ├── sif-test/           # SIF-tilkoblingstester
-│       ├── tilsyn-config/      # Befaringskonfigurasjon (bakgrunn-liste)
-│       └── archivals/          # Arkiverings-audit-logg
-└── login/                      # Innloggingsside
+│   ├── archive/                # POST /api/archive — full archival orchestration
+│   │   └── preview/            # POST /api/archive/preview — preview without archiving
+│   ├── inspections/            # CRUD for site visits + answers + attachments
+│   ├── inspection-codetables/  # GET — fetch survey area / measure type from PNB code table
+│   ├── admin/                  # Admin endpoints (require is_admin = true)
+│   │   ├── users/              # User management
+│   │   ├── checkpoints/        # Checkpoint definitions
+│   │   ├── inspection-config/  # Configurable lists (background reasons)
+│   │   └── archivals/          # Archival log
+│   └── sif/                    # SIF proxy endpoints (20+)
+│       ├── case-lookup/        # Single case lookup (caseNumber / uid / externalId)
+│       ├── case-search/        # Search cases by partial number or title
+│       ├── case-contacts/      # Parties on a case
+│       ├── case-stages/        # Case stages (behandlingstrinn)
+│       ├── case-documents/     # Documents already on a case
+│       ├── case-estates/       # Properties linked to a case
+│       ├── enterprise-search/  # Company search (GetEnterprises)
+│       ├── my-cases/           # GET — fetch PNB cases where user is responsible (filtered by ResponsiblePersonName)
+│       ├── pnb-case/[recno]/   # GET — fetch a single PNB case with full detail (contacts, stages, milestones)
+│       ├── code-tables/        # Archive codes, categories, statuses (admin only)
+│       ├── settings/           # Read current SIF config
+│       ├── health/             # Connectivity check
+│       └── debug-raw/          # Raw RPC call for testing
+├── dashboard/                  # Authenticated pages
+│   ├── inspections/[id]/       # Site visit workspace (checklist, attachments, archive)
+│   ├── inspections/new/        # New site visit form
+│   ├── pnb-cases/[recno]/      # Detail page for a single PNB case (contacts, stages, milestones)
+│   └── admin/                  # Administration pages
+│       ├── checkpoints/        # Checkpoint editor (inc. codetable filter config)
+│       ├── users/              # User management
+│       ├── sif-config/         # SIF settings form
+│       ├── sif-test/           # SIF connection tester
+│       ├── tilsyn-config/      # Site visit config (background-reason list)
+│       └── archivals/          # Archival audit log
+└── login/                      # Login page
 
 lib/
-├── sif/                        # SIF API-klient og tjenester
-│   ├── client.ts               # Lavnivå RPC-dispatcher (autentisering, retry, feilmapping)
-│   ├── auth.ts                 # AuthKey / OAuth2 token-håndtering (med caching)
-│   ├── settings.ts             # Last og cache SIF-konfig fra DB eller env-variabler
-│   ├── archival.ts             # Arkiveringsorkestrator (sak → opplasting → dokument)
-│   ├── case-service.ts         # GetCases (oppslag + søk)
+├── sif/                        # SIF API client and services
+│   ├── client.ts               # Low-level RPC dispatcher (auth, retry, error mapping)
+│   ├── auth.ts                 # AuthKey / OAuth2 token management (with caching)
+│   ├── settings.ts             # Load + cache SIF config from DB or env vars
+│   ├── archival.ts             # Archival orchestrator (case → upload → document)
+│   ├── case-service.ts         # GetCases (lookup + search)
 │   ├── contact-service.ts      # SynchronizeContactPerson, GetEnterprises
 │   ├── document-service.ts     # CreateDocument, UpdateDocument, GetDocuments, DispatchDocuments
-│   ├── file-service.ts         # FileService/Upload (enkelt + batch)
-│   ├── errors.ts               # Typede domenefeil (SifCaseNotFoundError, osv.)
-│   ├── types.ts                # Fullstendige SIF API-typedefinisjoer (~1000 linjer)
-│   └── extensions/             # Høynivå-verktøy (ikke integrert i appen)
-│       ├── referred-cases.ts   # Hent refererte saker og godkjente dokumenter
-│       ├── file-download.ts    # Last ned filer fra 360° via SIF-autentisering
+│   ├── file-service.ts         # FileService/Upload (single + batch)
+│   ├── errors.ts               # Typed domain errors (SifCaseNotFoundError, etc.)
+│   ├── types.ts                # Full SIF API type definitions (~1000 lines)
+│   └── extensions/             # Higher-level utilities (not integrated into app)
+│       ├── referred-cases.ts   # Fetch referring cases and their approved documents
+│       ├── file-download.ts    # Download files from 360° via SIF auth
 │       ├── user-service.ts     # UserService/GetUsers
-│       └── search-service.ts   # SearchService/Search + dokument-/sakssøk
+│       └── search-service.ts   # SearchService/Search + document/case search
 ├── pdf/
-│   ├── generate.ts             # PDF-rapportgenerator (jsPDF) + JSON-eksport
-│   ├── map-image.ts            # Hent statisk kart fra Kartverket WMS
-│   └── map-capture.ts          # Klient-side OSM-flisopptak (canvas → JPEG)
+│   ├── generate.ts             # PDF report generator (jsPDF) + JSON export
+│   ├── map-image.ts            # Fetch static map from Kartverket WMS
+│   └── map-capture.ts          # Client-side OSM tile capture (canvas → JPEG)
 ├── checklist/
-│   └── filter-engine.ts        # Filtrering, gruppering og oppsummering av sjekkpunkter
-├── i18n/                       # Norske/engelske oversettelser
-├── supabase/                   # Supabase server-/nettleserklient-fabrikker
-├── api-auth.ts                 # JWT-vakter: requireUser() / requireAdmin()
-├── audit-log.ts                # Strukturert logging av admin-handlinger
-└── legal-reference.ts          # Lovdata URL-bygger fra lovhenvisningsstrenger
+│   └── filter-engine.ts        # Checkpoint filtering, grouping, summary calculation
+├── i18n/                       # Norwegian/English translations
+├── supabase/                   # Supabase server/browser client factories
+├── api-auth.ts                 # JWT guards: requireUser() / requireAdmin()
+├── audit-log.ts                # Structured admin action logging
+└── legal-reference.ts          # Lovdata URL builder from legal reference strings
 
 config/
-└── sif-mapping.ts              # Dokumentarkivkoder, kontaktroller, tittelmal
+└── sif-mapping.ts              # Document archive codes, contact roles, title template
 
 data/seed/
-├── checkpoint-definitions.ts   # 100+ sjekkpunkt-definisjoner med lovhenvisninger
-└── measure-types.ts            # 10 tiltakstyper (enebolig, tilbygg m.fl.)
+├── checkpoint-definitions.ts   # 100+ checkpoint definitions with legal references
+└── measure-types.ts            # 10 building measure types (enebolig, tilbygg, etc.)
 
 types/
-└── index.ts                    # Kjernedomenetyper (Inspection, CheckpointDefinition, osv.)
+└── index.ts                    # Core domain types (Inspection, CheckpointDefinition, etc.)
 ```
 
 ---
 
-## SIF-integrasjon
+## SIF integration
 
-### Autentisering
+### Authentication
 
-To modi støttes, konfigurert via `SIF_AUTH_MODE`:
+Two modes are supported, configured via `SIF_AUTH_MODE`:
 
-**`authkey`** — API-nøkkelen (GUID) legges til som query-parameter:
+**`authkey`** — the API key (GUID) is appended as a query parameter:
 ```
-POST https://kunde.public360online.com/Biz/v2/api/call/SI.Data.RPC/CaseService/GetCases?authkey=<guid>
+POST https://customer.public360online.com/Biz/v2/api/call/SI.Data.RPC/CaseService/GetCases?authkey=<guid>
 ```
 
 **`combined_daemon`** — OAuth2 Client Credentials Grant (Azure AD):
-- Henter bearer-token fra konfigurert token-endepunkt
-- Token caches i prosessen med 60 sekunders buffer før utløp
-- Sender `Authorization: Bearer <token>` + valgfri `ClientID`-header
+- Fetches a bearer token from the configured token endpoint
+- Token is cached in-process with a 60-second buffer before expiry
+- Sends `Authorization: Bearer <token>` + optional `ClientID` header
 
-### Feilhåndtering og retry
+### Rate limiting and retry
 
-RPC-klienten (`lib/sif/client.ts`) gjenprøver automatisk ved HTTP 429 med eksponentiell backoff:
-- Forsøk 1: 2 sek
-- Forsøk 2: 4 sek
-- Forsøk 3: 8 sek
-- Respekterer `Retry-After`-headeren hvis tilstede
+The RPC client (`lib/sif/client.ts`) automatically retries on HTTP 429 with exponential backoff:
+- Retry 1: 2 s
+- Retry 2: 4 s
+- Retry 3: 8 s
+- Respects `Retry-After` header if present
 
-### SIF-mappingskonfigurasjon
+### SIF mapping configuration
 
-`config/sif-mapping.ts` inneholder dokumentarkivkoder som må konfigureres for hver 360°-installasjon. Erstatt plassholderverdiene før deployment:
+`config/sif-mapping.ts` contains the document archive codes that must be configured for each 360° installation. Replace the placeholder values before deployment:
 
 ```ts
 inspectionReport: {
-  archive: "recno:2",       // TODO: Bytt ut med korrekt arkiv-recno
-  category: "recno:111",    // TODO: Bytt ut med korrekt kategori
+  archive: "recno:2",       // TODO: Replace with correct archive recno
+  category: "recno:111",    // TODO: Replace with correct category
   status: "J",              // J = Journalført
   titleTemplate: "{{title}} - Tilsynsrapport - {{date}}",
-  mainFileRelationType: "H",      // H = hoveddokument
-  attachmentRelationType: "V",    // V = vedlegg
+  mainFileRelationType: "H",      // H = main document
+  attachmentRelationType: "V",    // V = attachment
 },
 contactRoles: {
   applicantRecipientRole: "Mottaker",
@@ -297,109 +297,109 @@ contactRoles: {
 },
 ```
 
-Finn korrekte verdier via `SupportService/GetCodeTableRows` eller 360°-admin-portalen. Alle verdier kan også overstyres via admin-grensesnittet (`/dashboard/admin/sif-config`).
+Find the correct values using `SupportService/GetCodeTableRows` or the 360° admin portal. All values can also be overridden at runtime via the admin UI (`/dashboard/admin/sif-config`).
 
-### Tittelmal-variabler
+### Title template variables
 
-Dokumenttittelen i 360° genereres fra en konfigurerbar mal. Tilgjengelige variabler:
+The document title in 360° is generated from a configurable template. Available variables:
 
-| Variabel | Beskrivelse |
+| Variable | Description |
 |----------|-------------|
-| `{{propertyAddress}}` | Eiendomsadresse fra tilsynet |
-| `{{caseNumber}}` | Saksnummer fra PNB |
-| `{{title}}` | Sakstittel fra PNB |
-| `{{date}}` | Tilsynsdato (DD.MM.ÅÅÅÅ) |
-| `{{year}}` | Tilsynsår (ÅÅÅÅ) |
-| `{{inspectorName}}` | Tilsynsmannens navn |
-| `{{applicantName}}` | Søkers navn |
-| `{{gnrBnr}}` | Gårds-/bruksnummer |
-| `{{measureType}}` | Tiltakstype |
-| `{{inspectionId}}` | Intern tilsyns-UUID |
+| `{{propertyAddress}}` | Property address from the inspection |
+| `{{caseNumber}}` | Case number from PNB |
+| `{{title}}` | Case title from PNB |
+| `{{date}}` | Inspection date (DD.MM.YYYY) |
+| `{{year}}` | Inspection year (YYYY) |
+| `{{inspectorName}}` | Name of the inspector |
+| `{{applicantName}}` | Applicant (søker) name |
+| `{{gnrBnr}}` | Land register number (gnr/bnr) |
+| `{{measureType}}` | Measure type (tiltakstype) |
+| `{{inspectionId}}` | Internal inspection UUID |
 
-Eksempel: `{{title}} - Tilsynsrapport - {{date}}`
-
----
-
-## Arkiveringsflyt
-
-Arkiveringsendepunktet (`POST /api/archive`) orkestrerer følgende steg, optimalisert med parallell kjøring:
-
-```
-1. (parallelt)
-   ├── Start SIF-saksoppslag (findCaseInSif) — trenger kun request-body-data
-   ├── Last inn tilsyn + svar + vedlegg fra DB
-   └── (etter DB-lasting, parallelt)
-       ├── Last ned vedleggsfilene fra Supabase Storage
-       └── Hent statisk kartbilde fra Kartverket WMS
-
-2. (parallelt)
-   ├── Generer PDF-rapport (jsPDF + innebygde bilder)
-   └── Sett inn ventende arkiveringspost i DB
-
-3. archiveInspectionToSif() — (parallelt)
-   ├── Last opp filer til SIF (PDF + JSON + vedlegg)
-   └── Synkroniser eksterne deltakere via SynchronizeContactPerson
-
-4. Opprett (eller oppdater) dokument i 360° via DocumentService/CreateDocument
-
-5. (valgfritt) Auto-dispatch av dokument til mottakere
-
-6. (parallelt)
-   ├── Oppdater arkiveringspost i DB (success / failed)
-   └── Oppdater befaringsstatus til "archived"
-```
-
-Det pre-hentede SIF-tilfellet (steg 1) sendes direkte til `archiveInspectionToSif()` for å hoppe over et redundant oppslag.
+Example: `{{title}} - Tilsynsrapport - {{date}}`
 
 ---
 
-## Admin-funksjonalitet
+## Archival flow
 
-Admin-brukere får tilgang til `/dashboard/admin/`:
+The archival endpoint (`POST /api/archive`) orchestrates the following steps, optimised with parallel execution:
 
-| Side | Funksjon |
+```
+1. (parallel)
+   ├── Start SIF case lookup (findCaseInSif) — needs only request body data
+   ├── Load inspection + answers + attachments from DB
+   └── (after DB load, parallel)
+       ├── Download attachment files from Supabase Storage
+       └── Fetch static map image from Kartverket WMS
+
+2. (parallel)
+   ├── Generate PDF report (jsPDF + inline images)
+   └── Insert pending archival record in DB
+
+3. archiveInspectionToSif() — (parallel)
+   ├── Upload files to SIF (PDF + JSON + attachments)
+   └── Sync external participants via SynchronizeContactPerson
+
+4. Create (or update) document in 360° via DocumentService/CreateDocument
+
+5. (optional) Auto-dispatch document to recipients
+
+6. (parallel)
+   ├── Update archival record in DB (success / failed)
+   └── Update site visit status to "archived"
+```
+
+The pre-fetched SIF case (step 1) is passed directly to `archiveInspectionToSif()` to skip a redundant lookup.
+
+---
+
+## Admin functionality
+
+Admin users have access to `/dashboard/admin/`:
+
+| Page | Function |
 |------|----------|
-| Brukere | Opprett brukere, gi/fjern admin-tilgang, endre visningsnavn |
-| Sjekkpunkter | Se, rediger, aktiver/deaktiver sjekkpunkt-definisjoner; konfigurer `applies_to_omrade` og `applies_to_type_codes` for kodetabell-basert filtrering |
-| Befaringskonfigurasjon | Konfigurer bakgrunn-listen (befaringsområde og tiltakstype hentes fra PNB-kodetabell) |
-| SIF-konfigurasjon | Konfigurer SIF-endepunkt, autentisering, arkivmapping og tittelmal |
-| SIF-test | Test SIF-tilkobling og inspiser rå RPC-svar |
-| Arkiveringslogg | Alle arkiveringsforsøk med status, dokumentnumre og feilmeldinger |
+| Users | Create users, grant/revoke admin access, update display names |
+| Checkpoints | View, edit, activate/deactivate checkpoint definitions; configure `applies_to_omrade` and `applies_to_type_codes` for code-table-based filtering |
+| Site visit configuration | Configure the background-reason list (survey area and measure type are fetched from PNB code tables) |
+| SIF configuration | Configure SIF endpoint, authentication, archive mapping, and title template |
+| SIF test | Test SIF connectivity and inspect raw RPC responses |
+| Archival log | All archival attempts with status, document numbers, and error messages |
 
-### Audit-logging
+### Audit logging
 
-Alle admin-handlinger logges automatisk til `audit_logs`-tabellen (ISO 27001 A.12.4.1):
+All admin actions are automatically logged to the `audit_logs` table (ISO 27001 A.12.4.1):
 
-| Handling | Trigger |
-|----------|---------|
-| `user.create` | Ny bruker opprettet |
-| `user.set_admin` | Admin-tilgang gitt eller fjernet |
-| `user.update_name` | Visningsnavn oppdatert |
-| `checkpoint.create/update/deactivate/delete` | Sjekkpunkt-definisjon endret |
-| `inspection_config.create/delete` | Dropdown-listeelement lagt til eller slettet |
-| `sif_settings.update` | SIF-innstillinger lagret (sensitive felt utelatt fra logg) |
-
----
-
-## Universell utforming (WCAG 2.1 AA)
-
-- **Skip-to-content-lenke** — tastaturfokus hopper direkte til hovedinnhold (WCAG 2.4.1)
-- **Fargekontrast** — alle tekstelementer møter 4,5:1-kravet i både lyst og mørkt tema
-- **Synlige fokusindikatorer** — `focus-visible`-ringer på alle interaktive elementer
-- **ARIA-attributter** — `aria-expanded`, `aria-haspopup`, `aria-pressed`, `aria-live`, `role="dialog"`, `role="alert"` brukt gjennomgående
-- **Semantisk HTML** — `<nav aria-label>`, `role="menu"`, `role="listbox"`, `role="group"` på relevante elementer
-- **Tastaturnavigasjon** — dropdowns og modaler lukkes med Escape-tasten
-- **Skjermleserstøtte** — `aria-label` på alle ikon-knapper, `aria-hidden` på dekorative elementer
+| Action | Trigger |
+|--------|---------|
+| `user.create` | New user created |
+| `user.set_admin` | Admin access granted or revoked |
+| `user.update_name` | Display name updated |
+| `checkpoint.create/update/deactivate/delete` | Checkpoint definition changed |
+| `inspection_config.create/delete` | Dropdown list item added or removed |
+| `sif_settings.update` | SIF settings saved (sensitive fields excluded from log) |
 
 ---
 
-## Sikkerhet
+## Accessibility (WCAG 2.1 AA)
 
-- **Row Level Security (RLS)** på alle Supabase-tabeller — brukere kan kun aksessere egne data
-- **JWT-validering** på alle API-ruter via `requireUser()` / `requireAdmin()`
-- **Admin-rolle** lagret i `app_metadata.is_admin` — kan kun settes server-side via service role-nøkkel
-- **Hemmeligheter logges aldri** — authkey, client_secret og bearer-tokens maskeres i all loggutdata
-- **CSP-headers** konfigurert i `next.config.mjs`
+- **Skip-to-content link** — keyboard focus jumps directly to main content (WCAG 2.4.1)
+- **Colour contrast** — all text meets the 4.5:1 ratio in both light and dark themes
+- **Visible focus indicators** — `focus-visible` rings on all interactive elements
+- **ARIA attributes** — `aria-expanded`, `aria-haspopup`, `aria-pressed`, `aria-live`, `role="dialog"`, `role="alert"` used throughout
+- **Semantic HTML** — `<nav aria-label>`, `role="menu"`, `role="listbox"`, `role="group"` on relevant elements
+- **Keyboard navigation** — dropdowns and modals close with the Escape key
+- **Screen reader support** — `aria-label` on all icon-only buttons, `aria-hidden` on decorative elements
+
+---
+
+## Security
+
+- **Row Level Security (RLS)** on all Supabase tables — users can only access their own data
+- **JWT validation** on every API route via `requireUser()` / `requireAdmin()`
+- **Admin role** stored in `app_metadata.is_admin` — can only be set server-side via the service role key
+- **Secrets never logged** — authkey, client_secret, and bearer tokens are masked in all log output
+- **CSP headers** configured in `next.config.mjs`
 - **HSTS**, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`
-- **SIF-legitimasjon** lagret kryptert i Supabase DB — eksponeres aldri til nettleseren
-- **Audit-logg** fanger alle privilegerte handlinger med bruker-ID og tidsstempel
+- **SIF credentials** stored encrypted in Supabase DB — never exposed to the browser
+- **Audit log** captures all privileged actions with user ID and timestamp
