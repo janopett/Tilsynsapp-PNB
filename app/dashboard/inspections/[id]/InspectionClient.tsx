@@ -1021,10 +1021,10 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
       {/* Summary bar */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {[
-          { label: t.inspection.total, value: summary.total, color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300" },
-          { label: t.inspection.ok, value: summary.ok, color: "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400" },
-          { label: t.inspection.deviations, value: summary.deviations, color: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400" },
-          { label: t.inspection.notChecked, value: summary.not_checked, color: "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400" },
+          { label: t.inspection.total, value: summary.total, color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-transparent" },
+          { label: t.inspection.ok, value: summary.ok, color: "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-transparent" },
+          { label: t.inspection.deviations, value: summary.deviations, color: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-transparent" },
+          { label: t.inspection.notChecked, value: summary.not_checked, color: "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-transparent" },
         ].map((s) => (
           <div key={s.label} className={`${s.color} rounded-xl p-3 text-center`}>
             <p className="text-2xl font-bold">{s.value}</p>
@@ -1034,7 +1034,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
       </div>
 
       {/* Tabs — hide "files" tab when no case is linked */}
-      <div className="flex gap-1 bg-gray-100 dark:bg-slate-700/50 rounded-xl p-1 mb-5">
+      <div className="flex gap-1 bg-gray-100 dark:bg-slate-700/50 border border-gray-200 dark:border-transparent rounded-xl p-1 mb-5">
         {TABS.filter((tab) => tab !== "files" || !!inspection.case_number).map((tab) => (
           <button
             key={tab}

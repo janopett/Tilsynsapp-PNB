@@ -33,7 +33,7 @@ interface Props {
 const STATUS_CONFIG: Record<CheckpointStatus, { label: string; cls: string; icon: string }> = {
   not_checked: {
     label: "Ikke relevant",
-    cls: "border-gray-200 bg-white dark:border-slate-600 dark:bg-slate-800",
+    cls: "border-gray-300 bg-white dark:border-slate-600 dark:bg-slate-800",
     icon: "⬜",
   },
   ok: {
