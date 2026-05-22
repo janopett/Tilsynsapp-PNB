@@ -306,7 +306,16 @@ export async function generateInspectionPdf(
     (i) => i.answer?.latitude != null && i.answer?.longitude != null
   );
   if (coordItems.length > 0) {
-    y = ensurePageSpace(doc, y, 24);
+    // Pre-compute map height so we can reserve page space for heading + image together
+    let overviewH = 0;
+    if (overviewMapImage) {
+      const props = doc.getImageProperties(overviewMapImage);
+      const naturalH = Math.round((contentWidth * props.height) / props.width);
+      // Cap at 150 mm so the map never fills an entire page alone
+      overviewH = Math.min(naturalH, 150);
+    }
+
+    y = ensurePageSpace(doc, y, 9 + overviewH + 2);
     doc.setFontSize(9);
     doc.setFont("helvetica", "bold");
     doc.setTextColor(...BRAND_MID);
@@ -315,11 +324,11 @@ export async function generateInspectionPdf(
     y += 9;
 
     // Embed client-captured overview map with numbered pins (if provided)
-    if (overviewMapImage) {
+    if (overviewMapImage && overviewH > 0) {
       const props = doc.getImageProperties(overviewMapImage);
-      const MAP_H = Math.round((contentWidth * props.height) / props.width);
-      doc.addImage(overviewMapImage, "JPEG", L, y, contentWidth, MAP_H);
-      y += MAP_H + 3;
+      const mapW = Math.round(overviewH * (props.width / props.height));
+      doc.addImage(overviewMapImage, "JPEG", L, y, mapW, overviewH);
+      y += overviewH + 3;
     }
 
     // Numbered coordinate table — matches pin numbers in the map
