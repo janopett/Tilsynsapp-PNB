@@ -125,7 +125,7 @@ export default function ArkiveringsloggPage() {
           {archivals.map((a) => (
             <div
               key={a.id}
-              className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-5"
+              className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5"
             >
               {/* Header row */}
               <div className="flex items-start gap-4 justify-between">

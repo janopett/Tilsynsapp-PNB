@@ -163,9 +163,9 @@ export default async function ReportPage({ params }: Props) {
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { label: "Kontrollert", value: summary.ok + summary.deviations, cls: "bg-gray-50" },
-            { label: "OK", value: summary.ok, cls: "bg-green-50 text-green-800" },
-            { label: "Avvik", value: summary.deviations, cls: "bg-red-50 text-red-800" },
+            { label: "Kontrollert", value: summary.ok + summary.deviations, cls: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-transparent" },
+            { label: "OK", value: summary.ok, cls: "bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-transparent" },
+            { label: "Avvik", value: summary.deviations, cls: "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-transparent" },
           ].map((s) => (
             <div key={s.label} className={`${s.cls} rounded-xl p-3 text-center`}>
               <p className="text-2xl font-bold">{s.value}</p>

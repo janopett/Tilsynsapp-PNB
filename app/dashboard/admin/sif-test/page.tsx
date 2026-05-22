@@ -336,7 +336,7 @@ export default function SifTestPage() {
       <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6">SIF Admin – Testverktøy</h1>
 
       {/* Connection test */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mb-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-5">
         <h2 className="text-base font-semibold mb-4">Tilkoblingstest</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller SupportService/GetSIFVersion for å verifisere at SIF-endepunktet er nåbart og at
@@ -376,7 +376,7 @@ export default function SifTestPage() {
       </div>
 
       {/* Case lookup */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <h2 className="text-base font-semibold mb-4">Saksoppslag</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Slå opp en sak i Plan &amp; Build ved hjelp av saksnummer.
@@ -416,7 +416,7 @@ export default function SifTestPage() {
       </div>
 
       {/* IncludeReferringCases test */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Test: IncludeReferringCases (GetCases)</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
@@ -471,7 +471,7 @@ export default function SifTestPage() {
       </div>
 
       {/* IncludeMilestones + IncludeStages test */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Test: IncludeMilestones + IncludeStages (GetCases)</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
@@ -554,7 +554,7 @@ export default function SifTestPage() {
       </div>
 
       {/* Files-in-documents test */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Test: Filer i sak (via GetDocuments)</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Henter dokumenter med tilhørende filer via{" "}
@@ -588,7 +588,7 @@ export default function SifTestPage() {
       </div>
 
       {/* SynchronizeContactPerson test */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Test: SynchronizeContactPerson</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Oppretter eller oppdaterer en kontaktperson i Plan &amp; Build via{" "}
@@ -714,7 +714,7 @@ export default function SifTestPage() {
       </div>
 
       {/* GetContactPersons lookup */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Debug: GetContactPersons</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Slår opp råsvaret fra{" "}
@@ -747,7 +747,7 @@ export default function SifTestPage() {
       </div>
 
       {/* UpdateContactPerson test */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Test: UpdateContactPerson</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
@@ -874,7 +874,7 @@ export default function SifTestPage() {
       </div>
 
       {/* GetCodeTableRows test */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Test: GetCodeTableRows</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
@@ -906,7 +906,7 @@ export default function SifTestPage() {
       </div>
 
       {/* Raw debug: estates + contacts */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mt-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
         <h2 className="text-base font-semibold mb-1">Rådata-debug: eiendommer og kontakter</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Viser det SIF faktisk returnerer fra <code>EstateService/GetEstates</code> og{" "}

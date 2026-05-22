@@ -215,7 +215,7 @@ export default function PnbCaseDetailPage() {
       </Link>
 
       {/* Header card */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mb-4">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
             <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">{c.caseTypeDescription ?? "Sak"}</p>
@@ -295,7 +295,7 @@ export default function PnbCaseDetailPage() {
         }
         const rows = Array.from(grouped.values());
         return (
-          <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-4">
+          <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 mb-4">
             <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
               Kontakter ({rows.length})
             </h2>
@@ -327,7 +327,7 @@ export default function PnbCaseDetailPage() {
 
       {/* Active stages + milestones */}
       {activeStages.length > 0 && (
-        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-4">
+        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 mb-4">
           <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-4">
             Aktive behandlingstrinn
           </h2>
@@ -354,7 +354,7 @@ export default function PnbCaseDetailPage() {
 
       {/* Closed stages */}
       {closedStages.length > 0 && (
-        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-4">
+        <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 mb-4">
           <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 mb-3">
             Avsluttede behandlingstrinn ({closedStages.length})
           </h2>

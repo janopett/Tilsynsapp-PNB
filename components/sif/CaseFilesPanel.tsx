@@ -159,7 +159,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                     key={file.Recno ?? idx}
                     href={proxyUrl(file)!}
                     download={file.Title ? `${file.Title}${file.Format ? `.${file.Format.toLowerCase()}` : ""}` : undefined}
-                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition"
+                    className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                   >
                     <span className="text-2xl leading-none flex-shrink-0">
                       {fileIcon(file.Format)}

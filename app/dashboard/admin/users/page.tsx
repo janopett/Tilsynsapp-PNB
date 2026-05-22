@@ -179,7 +179,7 @@ export default function AdminUsersPage() {
       {showCreate && (
         <form
           onSubmit={handleCreate}
-          className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 mb-6 space-y-4"
+          className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-6 space-y-4"
         >
           <h2 className="text-base font-semibold text-gray-800 dark:text-slate-200">
             Legg til ny bruker
@@ -275,7 +275,7 @@ export default function AdminUsersPage() {
           Laster brukere…
         </div>
       ) : (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
           {users.length === 0 ? (
             <p className="p-6 text-sm text-gray-400 dark:text-slate-500">Ingen brukere funnet.</p>
           ) : (
