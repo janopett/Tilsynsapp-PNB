@@ -59,7 +59,7 @@ function CategorySection({ category, title }: CategorySectionProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-100 dark:border-slate-700 shadow-sm p-5">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm p-5">
       <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100 mb-4">{title}</h2>
 
       {loading ? (

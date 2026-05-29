@@ -345,7 +345,7 @@ export default function NewInspectionPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.newInspection.title}</h1>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div className="space-y-4">
             {/* Case number */}
             <div>

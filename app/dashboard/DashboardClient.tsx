@@ -211,7 +211,7 @@ export default function DashboardClient({ list }: DashboardClientProps) {
               <Link
                 key={inspection.id}
                 href={`/dashboard/inspections/${inspection.id}`}
-                className="block bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 hover:shadow-md transition"
+                className="block bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-4 hover:shadow-md transition"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
@@ -367,7 +367,7 @@ function PnbCasesView({ cases, loading, error }: PnbCasesViewProps) {
         return (
           <div
             key={c.recno}
-            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-4"
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-4"
           >
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div className="min-w-0 flex-1">

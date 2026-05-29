@@ -22,6 +22,7 @@ import {
   filterCheckpoints,
   mergeCheckpointsWithAnswers,
   CATEGORY_LABELS,
+  CATEGORY_LABELS_EN,
   CATEGORY_ORDER,
   groupByCategory,
 } from "@/lib/checklist/filter-engine";
@@ -691,81 +692,84 @@ export function generateInspectionJson(inspection: InspectionWithAnswers): Buffe
   const merged = mergeCheckpointsWithAnswers(relevantCheckpoints, inspection.answers);
 
   const export_ = {
-    tilsyn: {
+    inspection: {
       id: inspection.id,
       status: inspection.status,
-      dato: inspection.inspection_date,
-      opprettet: inspection.created_at,
+      date: inspection.inspection_date,
+      createdAt: inspection.created_at,
     },
-    sak: {
-      saksnummer: inspection.case_number ?? null,
-      sakstittel: inspection.case_title ?? null,
-      sif_stage_recno: inspection.sif_stage_recno ?? null,
+    case: {
+      caseNumber: inspection.case_number ?? null,
+      caseTitle: inspection.case_title ?? null,
+      stageRecno: inspection.sif_stage_recno ?? null,
     },
-    eiendom: {
-      adresse: inspection.property_address,
+    property: {
+      address: inspection.property_address,
       gnr: inspection.gnr ?? null,
       bnr: inspection.bnr ?? null,
       snr: inspection.snr ?? null,
       fnr: inspection.fnr ?? null,
-      koordinater:
+      coordinates:
         inspection.latitude && inspection.longitude
           ? { lat: inspection.latitude, lng: inspection.longitude }
           : null,
     },
-    befaringsinfo: {
-      befaringsleder: inspection.inspector_name ?? null,
-      soeker: inspection.applicant_name ?? null,
-      soeker_recno: inspection.applicant_recno ?? null,
-      tiltakstype_intern: measureType?.name ?? inspection.measure_type_id,
-      befaringsomrade: inspection.befaringsomrade?.length ? inspection.befaringsomrade : null,
-      tiltakstype: inspection.tiltakstype?.length ? inspection.tiltakstype : null,
-      bakgrunn: inspection.bakgrunn?.length ? inspection.bakgrunn : null,
-      merknader: inspection.notes ?? null,
+    siteVisitInfo: {
+      inspector: inspection.inspector_name ?? null,
+      applicant: inspection.applicant_name ?? null,
+      applicantRecno: inspection.applicant_recno ?? null,
+      measureTypeInternal: measureType?.name ?? inspection.measure_type_id,
+      surveyArea: inspection.befaringsomrade?.length ? inspection.befaringsomrade : null,
+      measureType: inspection.tiltakstype?.length ? inspection.tiltakstype : null,
+      background: inspection.bakgrunn?.length ? inspection.bakgrunn : null,
+      notes: inspection.notes ?? null,
+      deviationDeadline: inspection.avvik_frist ?? null,
     },
-    selected_tags: inspection.selected_tags ?? [],
-    deltakere: inspection.participants ?? [],
-    eksterne_deltakere: (inspection.external_participants ?? []).map((ep) => ({
-      navn: ep.name,
-      fornavn: ep.firstName ?? null,
-      etternavn: ep.lastName ?? null,
-      rolle: ep.role ?? null,
-      foretak: ep.company ?? null,
-      foretak_recno: ep.companyRecno ?? null,
+    selectedTags: inspection.selected_tags ?? [],
+    participants: inspection.participants ?? [],
+    externalParticipants: (inspection.external_participants ?? []).map((ep) => ({
+      name: ep.name,
+      firstName: ep.firstName ?? null,
+      lastName: ep.lastName ?? null,
+      role: ep.role ?? null,
+      company: ep.company ?? null,
+      companyRecno: ep.companyRecno ?? null,
     })),
-    eiendommer: inspection.estates ?? [],
-    sjekkpunkter: merged.map((item) => ({
+    estates: inspection.estates ?? [],
+    checkpoints: merged.map((item) => ({
       id: item.definition.id,
-      tittel: item.definition.title,
-      kategori: CATEGORY_LABELS[item.definition.category],
-      alvorlighet: item.definition.severity,
-      lovhjemmel: item.definition.legal_reference ?? null,
-      lovhjemmel_url: item.definition.legal_reference_url ?? null,
+      title: item.definition.title,
+      category: CATEGORY_LABELS_EN[item.definition.category],
+      severity: item.definition.severity,
+      legalReference: item.definition.legal_reference ?? null,
+      legalReferenceUrl: item.definition.legal_reference_url ?? null,
       status: item.answer?.status ?? "not_checked",
-      kommentar: item.answer?.comment ?? null,
-      ansvarlig: item.answer?.responsible_contact_name ?? null,
-      ansvarlig_recno: item.answer?.responsible_contact_recno ?? null,
-      koordinater:
+      comment: item.answer?.comment ?? null,
+      responsible: item.answer?.responsible_contact_name ?? null,
+      responsibleRecno: item.answer?.responsible_contact_recno ?? null,
+      coordinates:
         item.answer?.latitude && item.answer?.longitude
           ? { lat: item.answer.latitude, lng: item.answer.longitude }
           : null,
-      vedlegg: inspection.attachments
+      correctionDeadline: item.answer?.frist ?? null,
+      attachments: inspection.attachments
         .filter((a) => a.checkpoint_definition_id === item.definition.id)
-        .map((a) => ({ filnavn: a.file_name, type: a.file_type, storrelse: a.file_size_bytes })),
+        .map((a) => ({ fileName: a.file_name, type: a.file_type, sizeBytes: a.file_size_bytes })),
     })),
-    avvik: merged
+    deviations: merged
       .filter((i) => i.answer?.status === "deviation")
       .map((item) => ({
         id: item.definition.id,
-        tittel: item.definition.title,
-        kategori: CATEGORY_LABELS[item.definition.category],
-        kommentar: item.answer?.comment ?? null,
-        ansvarlig: item.answer?.responsible_contact_name ?? null,
-        ansvarlig_recno: item.answer?.responsible_contact_recno ?? null,
-        koordinater:
+        title: item.definition.title,
+        category: CATEGORY_LABELS_EN[item.definition.category],
+        comment: item.answer?.comment ?? null,
+        responsible: item.answer?.responsible_contact_name ?? null,
+        responsibleRecno: item.answer?.responsible_contact_recno ?? null,
+        coordinates:
           item.answer?.latitude && item.answer?.longitude
             ? { lat: item.answer.latitude, lng: item.answer.longitude }
             : null,
+        correctionDeadline: item.answer?.frist ?? null,
       })),
   };
 

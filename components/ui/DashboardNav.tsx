@@ -71,7 +71,7 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                     role="menu"
                     aria-label={t.nav.adminMenuLabel}
                     className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-slate-800 rounded-xl shadow-lg
-                               border border-gray-100 dark:border-slate-700 py-1 z-20"
+                               border border-gray-200 dark:border-slate-700 py-1 z-20"
                   >
                     {[
                       { href: "/dashboard/admin/sif-config", label: t.nav.sifConfig },
@@ -144,7 +144,7 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                   role="listbox"
                   aria-label={t.nav.selectLanguage}
                   className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-slate-800 rounded-xl shadow-lg
-                             border border-gray-100 dark:border-slate-700 py-1 z-20"
+                             border border-gray-200 dark:border-slate-700 py-1 z-20"
                 >
                   {languages.map((lang) => (
                     <li key={lang.code} role="option" aria-selected={locale === lang.code}>

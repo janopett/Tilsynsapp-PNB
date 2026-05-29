@@ -79,7 +79,7 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
 
   const inp = "block w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
   const label = "block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1";
-  const section = "bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 space-y-4";
+  const section = "bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 space-y-4";
   const heading = "text-base font-semibold text-gray-800 dark:text-slate-200 mb-3";
 
   return (

@@ -270,7 +270,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-5">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5">
         <h2 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">
           {t.archive.title}
         </h2>
@@ -289,7 +289,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
           )}
 
           {/* Document picker */}
-          <div className="border border-gray-100 dark:border-slate-700 rounded-xl p-4 space-y-3">
+          <div className="border border-gray-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
                 {t.archive.documentLabel}
