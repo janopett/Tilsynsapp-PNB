@@ -31,6 +31,16 @@ export default function PnbCaseDetailPage() {
   const [caseData, setCaseData] = useState<PnbCaseItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!caseData) return;
+    const activeIndices = caseData.stages
+      .map((s, i) => ({ s, i }))
+      .filter(({ s }) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed")
+      .map(({ i }) => `active-${i}`);
+    setExpandedStages(new Set(activeIndices));
+  }, [caseData]);
 
   useEffect(() => {
     const cached = loadCaseCache(recno);
@@ -331,23 +341,46 @@ export default function PnbCaseDetailPage() {
           <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-4">
             Aktive behandlingstrinn
           </h2>
-          <div className="space-y-4">
-            {activeStages.map((s, i) => (
-              <div key={i} className="border-l-2 border-brand-300 dark:border-brand-700 pl-3">
-                <div className="flex items-center justify-between gap-3 flex-wrap">
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 dark:text-slate-200">
-                      {s.title ?? s.stageType ?? "Trinn"}
-                    </p>
-                    {s.stageStatus && (
-                      <p className="text-xs text-gray-400 dark:text-slate-500">{s.stageStatus}</p>
-                    )}
-                  </div>
-                  {s.deadlineDate && <DeadlineBadge date={s.deadlineDate} />}
+          <div className="space-y-1">
+            {activeStages.map((s, i) => {
+              const key = `active-${i}`;
+              const expanded = expandedStages.has(key);
+              return (
+                <div key={i} className="border-l-2 border-brand-300 dark:border-brand-700 pl-3">
+                  <button
+                    onClick={() => setExpandedStages((prev) => {
+                      const next = new Set(prev);
+                      next.has(key) ? next.delete(key) : next.add(key);
+                      return next;
+                    })}
+                    className="w-full flex items-center justify-between gap-3 flex-wrap text-left py-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-800 dark:text-slate-200">
+                        {s.title ?? s.stageType ?? "Trinn"}
+                      </p>
+                      {s.stageStatus && (
+                        <p className="text-xs text-gray-400 dark:text-slate-500">{s.stageStatus}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {s.deadlineDate && <DeadlineBadge date={s.deadlineDate} />}
+                      {s.milestones.length > 0 && !expanded && (
+                        <span className="text-xs text-gray-400 dark:text-slate-500">
+                          {s.milestones.length} milepæler
+                        </span>
+                      )}
+                      <span className="text-gray-400 dark:text-slate-500 text-[10px]">
+                        {expanded ? "▲" : "▼"}
+                      </span>
+                    </div>
+                  </button>
+                  {expanded && (
+                    <MilestoneTimeline milestones={s.milestones} deadlineDate={s.deadlineDate} />
+                  )}
                 </div>
-                <MilestoneTimeline milestones={s.milestones} deadlineDate={s.deadlineDate} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -358,15 +391,38 @@ export default function PnbCaseDetailPage() {
           <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-400 mb-3">
             Avsluttede behandlingstrinn ({closedStages.length})
           </h2>
-          <div className="space-y-3">
-            {closedStages.map((s, i) => (
-              <div key={i} className="border-l-2 border-gray-200 dark:border-slate-600 pl-3">
-                <p className="text-sm text-gray-500 dark:text-slate-400">
-                  {s.title ?? s.stageType ?? "Trinn"}
-                </p>
-                <MilestoneTimeline milestones={s.milestones} closed />
-              </div>
-            ))}
+          <div className="space-y-1">
+            {closedStages.map((s, i) => {
+              const key = `closed-${i}`;
+              const expanded = expandedStages.has(key);
+              return (
+                <div key={i} className="border-l-2 border-gray-200 dark:border-slate-600 pl-3">
+                  <button
+                    onClick={() => setExpandedStages((prev) => {
+                      const next = new Set(prev);
+                      next.has(key) ? next.delete(key) : next.add(key);
+                      return next;
+                    })}
+                    className="w-full flex items-center justify-between gap-2 text-left py-2"
+                  >
+                    <p className="text-sm text-gray-500 dark:text-slate-400 min-w-0 truncate">
+                      {s.title ?? s.stageType ?? "Trinn"}
+                    </p>
+                    <div className="flex items-center gap-2 shrink-0">
+                      {s.milestones.length > 0 && !expanded && (
+                        <span className="text-xs text-gray-400 dark:text-slate-500">
+                          {s.milestones.length} milepæler
+                        </span>
+                      )}
+                      <span className="text-gray-400 dark:text-slate-500 text-[10px]">
+                        {expanded ? "▲" : "▼"}
+                      </span>
+                    </div>
+                  </button>
+                  {expanded && <MilestoneTimeline milestones={s.milestones} closed />}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
