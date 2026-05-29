@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
@@ -32,15 +32,34 @@ export default function PnbCaseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedStages, setExpandedStages] = useState<Set<string>>(new Set());
+  const stagesReady = useRef(false);
+  const stagesStorageKey = `pnb_stages_${recno}`;
 
+  // Persist to localStorage whenever the state changes (after init)
   useEffect(() => {
+    if (!stagesReady.current) return;
+    try { localStorage.setItem(stagesStorageKey, JSON.stringify(Array.from(expandedStages))); }
+    catch { /* ignore */ }
+  }, [expandedStages, stagesStorageKey]);
+
+  // Initialize: restore from localStorage if available, otherwise default to active-expanded
+  useEffect(() => {
+    if (stagesReady.current) return;
+    try {
+      const raw = localStorage.getItem(stagesStorageKey);
+      if (raw) {
+        stagesReady.current = true;
+        setExpandedStages(new Set(JSON.parse(raw) as string[]));
+        return;
+      }
+    } catch { /* ignore */ }
     if (!caseData) return;
-    const activeIndices = caseData.stages
-      .map((s, i) => ({ s, i }))
-      .filter(({ s }) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed")
-      .map(({ i }) => `active-${i}`);
-    setExpandedStages(new Set(activeIndices));
-  }, [caseData]);
+    stagesReady.current = true;
+    const active = caseData.stages.filter(
+      (s) => s.stageStatus !== "Avsluttet" && s.stageStatus !== "Closed"
+    );
+    setExpandedStages(new Set(active.map((_, i) => `active-${i}`)));
+  }, [caseData, stagesStorageKey]);
 
   useEffect(() => {
     const cached = loadCaseCache(recno);
