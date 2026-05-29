@@ -38,7 +38,7 @@ export default function PnbCaseDetailPage() {
   // Persist to localStorage whenever the state changes (after init)
   useEffect(() => {
     if (!stagesReady.current) return;
-    try { localStorage.setItem(stagesStorageKey, JSON.stringify([...expandedStages])); }
+    try { localStorage.setItem(stagesStorageKey, JSON.stringify(Array.from(expandedStages))); }
     catch { /* ignore */ }
   }, [expandedStages, stagesStorageKey]);
 
