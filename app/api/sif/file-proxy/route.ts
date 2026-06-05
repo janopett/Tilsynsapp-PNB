@@ -39,7 +39,7 @@ async function resolveUser(req: NextRequest) {
     const { data: { user } } = await getAuthClient(req).auth.getUser(token);
     if (user) return user;
   }
-  const { data: { user } } = await createCookieClient().auth.getUser();
+  const { data: { user } } = await (await createCookieClient()).auth.getUser();
   return user ?? null;
 }
 

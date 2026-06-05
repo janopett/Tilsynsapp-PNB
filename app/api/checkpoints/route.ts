@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
 
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
   const { data, error } = await serviceClient
     .from("checkpoint_definitions")
     .select("id, title, category, description, applies_to, required_tags, severity, legal_reference, legal_reference_url, applies_to_omrade, applies_to_type_codes")

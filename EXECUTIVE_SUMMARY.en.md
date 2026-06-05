@@ -117,11 +117,12 @@ A case officer conducting **2 inspections per week** saves around **2.5 hours pe
 
 The application is built on modern, maintainable technology with no single points of failure:
 
-- **Web application** (Next.js / React) — works in all modern browsers, no app installation
+- **Web application** (Next.js 15 / React 19) — works in all modern browsers, no app installation
 - **Database**: Supabase (PostgreSQL) with full encryption and row-level access control (RLS)
 - **File storage**: Supabase Storage — inspection attachments stored securely with access control
 - **Hosting**: Vercel — automatic scaling, zero server administration, global CDN
 - **Security**: HTTPS everywhere, HSTS, CSP headers, audit logging, role-based access, secrets never exposed to browser
+- **Code quality**: Biome (linting + formatting), SonarQube integration, and TypeScript strict mode
 
 ### Performance
 

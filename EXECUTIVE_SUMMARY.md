@@ -117,11 +117,12 @@ En saksbehandler med **2 tilsyn per uke** sparer rundt **2,5 time per uke** — 
 
 Applikasjonen er bygget på moderne, vedlikeholdsvennlig teknologi uten enkeltpunkter for svikt:
 
-- **Webapplikasjon** (Next.js / React) — fungerer i alle moderne nettlesere, ingen app-installasjon
+- **Webapplikasjon** (Next.js 15 / React 19) — fungerer i alle moderne nettlesere, ingen app-installasjon
 - **Database**: Supabase (PostgreSQL) med full kryptering og rad-nivå tilgangskontroll (RLS)
 - **Fillagring**: Supabase Storage — vedlegg lagres sikkert med tilgangskontroll
 - **Hosting**: Vercel — automatisk skalering, ingen serveradministrasjon, globalt CDN
 - **Sikkerhet**: HTTPS overalt, HSTS, CSP-headers, audit-logging, rollebasert tilgang, hemmeligheter eksponeres aldri til nettleseren
+- **Kodekvalitet**: Biome (linting + formatering), SonarQube-integrasjon og TypeScript strict mode
 
 ### Ytelse
 

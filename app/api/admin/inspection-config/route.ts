@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "category is required" }, { status: 400 });
   }
 
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
   const { data, error } = await serviceClient
     .from("inspection_list_items")
     .select("id, label, sort_order, active")
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "category and label are required" }, { status: 400 });
   }
 
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
 
   // Place new item last in its category
   const { data: existing } = await serviceClient
@@ -77,7 +77,7 @@ export async function DELETE(req: NextRequest) {
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
   const { error } = await serviceClient
     .from("inspection_list_items")
     .delete()

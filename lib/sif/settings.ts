@@ -107,7 +107,7 @@ export function invalidateSifSettingsCache(): void {
  * Returns null if no row exists yet (not configured).
  */
 export async function loadSifSettings(): Promise<SifSettings | null> {
-  const supabase = createServiceClient();
+  const supabase = await createServiceClient();
   const { data, error } = await supabase
     .from("sif_settings")
     .select("*")

@@ -14,12 +14,13 @@ import type {
 // Fetches a single PNB case by internal recno, with full detail.
 export async function GET(
   req: NextRequest,
-  { params }: { params: { recno: string } }
+  { params }: { params: Promise<{ recno: string }> }
 ) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
 
-  const recno = parseInt(params.recno, 10);
+  const { recno: recnoStr } = await params;
+  const recno = parseInt(recnoStr, 10);
   if (isNaN(recno)) {
     return NextResponse.json({ ok: false, error: "Ugyldig recno" }, { status: 400 });
   }

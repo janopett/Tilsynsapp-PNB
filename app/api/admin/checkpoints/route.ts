@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth.error) return auth.error;
 
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
   const { data, error } = await serviceClient
     .from("checkpoint_definitions")
     .select("*")
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "title and category are required" }, { status: 400 });
   }
 
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
 
   // Find the highest sort_order in this category and place the new one last
   const { data: last } = await serviceClient
@@ -99,7 +99,7 @@ export async function PATCH(req: NextRequest) {
   }
   allowed.updated_at = new Date().toISOString();
 
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
   const { data, error } = await serviceClient
     .from("checkpoint_definitions")
     .update(allowed)
@@ -127,7 +127,7 @@ export async function DELETE(req: NextRequest) {
   const id = new URL(req.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
 
   // Check if any inspection answers reference this checkpoint
   const { count } = await serviceClient

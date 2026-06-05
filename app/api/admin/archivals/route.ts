@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
   const offset = Number(searchParams.get("offset") ?? 0);
   const status = searchParams.get("status"); // optional filter
 
-  const supabase = createServiceClient();
+  const supabase = await createServiceClient();
 
   let query = supabase
     .from("inspection_archivals")
