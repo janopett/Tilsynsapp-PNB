@@ -3,16 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import InspectionClient from "./InspectionClient";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
-/**
- * Server Component — pre-fetches inspection data during SSR so the page
- * renders its heading and content immediately, improving LCP significantly.
- */
 export default async function InspectionPage({ params }: Props) {
-  const { id } = params;
-  const supabase = createClient();
+  const { id } = await params;
+  const supabase = await createClient();
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) redirect("/login");

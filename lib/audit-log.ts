@@ -37,7 +37,7 @@ export interface AuditEvent {
  */
 export async function writeAuditLog(event: AuditEvent): Promise<void> {
   try {
-    const supabase = createServiceClient();
+    const supabase = await createServiceClient();
     const { error } = await supabase.from("audit_logs").insert({
       admin_id: event.adminId,
       action: event.action,

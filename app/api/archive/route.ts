@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
   const { user, supabase } = auth;
-  const serviceClient = createServiceClient();
+  const serviceClient = await createServiceClient();
 
   const body = await req.json().catch(() => null);
   const parsed = ArchiveRequestSchema.safeParse(body);

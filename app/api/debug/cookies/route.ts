@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdmin(req);
   if (auth.error) return auth.error;
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const all = cookieStore.getAll();
 
   const supabaseCookies = all.filter((c) => c.name.startsWith("sb-"));

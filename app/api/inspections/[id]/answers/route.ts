@@ -10,17 +10,19 @@ const AnswerSchema = z.object({
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
   const { user, supabase } = auth;
 
+  const { id } = await params;
+
   // Verify inspection ownership
   const { data: inspection } = await supabase
     .from("inspections")
     .select("id")
-    .eq("id", params.id)
+    .eq("id", id)
     .eq("user_id", user.id)
     .single();
 
@@ -40,7 +42,7 @@ export async function POST(
     .from("inspection_answers")
     .upsert(
       {
-        inspection_id: params.id,
+        inspection_id: id,
         checkpoint_definition_id,
         status,
         comment: comment || null,
@@ -58,7 +60,7 @@ export async function POST(
   const { data: answers } = await supabase
     .from("inspection_answers")
     .select("status")
-    .eq("inspection_id", params.id);
+    .eq("inspection_id", id);
 
   if (answers && answers.length > 0) {
     const hasAny = answers.some((a) => a.status !== "not_checked");
@@ -66,7 +68,7 @@ export async function POST(
       await supabase
         .from("inspections")
         .update({ status: "in_progress" })
-        .eq("id", params.id)
+        .eq("id", id)
         .eq("status", "draft");
     }
   }

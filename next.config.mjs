@@ -1,12 +1,14 @@
+import createNextIntlPlugin from "next-intl/plugin";
+
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverActions: {
-      // Include production domain via env var (set NEXT_PUBLIC_APP_URL in Vercel/hosting)
-      allowedOrigins: process.env.NEXT_PUBLIC_APP_URL
-        ? [process.env.NEXT_PUBLIC_APP_URL, "localhost:3000"]
-        : ["localhost:3000"],
-    },
+  serverActions: {
+    // Include production domain via env var (set NEXT_PUBLIC_APP_URL in Vercel/hosting)
+    allowedOrigins: process.env.NEXT_PUBLIC_APP_URL
+      ? [process.env.NEXT_PUBLIC_APP_URL, "localhost:3000"]
+      : ["localhost:3000"],
   },
 
   images: {
@@ -26,27 +28,18 @@ const nextConfig = {
       {
         source: "/:path*",
         headers: [
-          // Prevent clickjacking
           { key: "X-Frame-Options", value: "DENY" },
-          // Prevent MIME-type sniffing
           { key: "X-Content-Type-Options", value: "nosniff" },
-          // Force HTTPS for 1 year (Vercel handles TLS termination)
           { key: "Strict-Transport-Security", value: "max-age=31536000; includeSubDomains" },
-          // Limit referrer information
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          // Disable unnecessary browser features
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self)" },
-          // Content Security Policy
           {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              // Next.js inline scripts + Vercel Speed Insights + Leaflet via unpkg
               "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://unpkg.com",
               "style-src 'self' 'unsafe-inline' https://unpkg.com",
-              // Supabase storage + OSM tiles for map picker + Kartverket WMS for report maps
               `img-src 'self' data: blob: https://*.supabase.co https://*.tile.openstreetmap.org https://unpkg.com https://openwms.statkart.no`,
-              // Supabase API + own API + Nominatim geocoding + OSM tiles (fetched via fetch() for canvas map capture)
               `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org`,
               "font-src 'self'",
               "frame-ancestors 'none'",
@@ -60,4 +53,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

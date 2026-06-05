@@ -56,16 +56,21 @@ Web application for conducting and archiving building site visits (befaringer) i
 
 | Layer | Choice |
 |-------|--------|
-| Framework | Next.js 14 (App Router, TypeScript strict mode) |
-| Styling | Tailwind CSS with dark mode |
+| Framework | Next.js 15 (App Router, TypeScript strict mode) |
+| UI library | React 19 |
+| Styling | Tailwind CSS v4 with dark mode |
+| Internationalisation | next-intl (Norwegian / English via cookie) |
 | Database | Supabase (PostgreSQL) |
-| Authentication | Supabase Auth (email + password, JWT, cookie sessions) |
+| Authentication | Supabase Auth (email + password, JWT, cookie sessions via @supabase/ssr) |
 | File storage | Supabase Storage |
 | PDF generation | jsPDF + jspdf-autotable + pdf-lib (attachment merging) |
 | Map tiles | OpenStreetMap (client-side Leaflet) + Kartverket WMS (server-side static map) |
 | External integration | SIF API – Public 360° (RPC over HTTPS) |
+| Linting / formatting | Biome (replaces ESLint + Prettier) |
+| Package manager | Bun |
 | Deployment | Vercel |
 | Testing | Jest |
+| Code quality | SonarQube (`sonar-project.properties`) |
 
 ---
 
@@ -73,7 +78,7 @@ Web application for conducting and archiving building site visits (befaringer) i
 
 ### Prerequisites
 
-- Node.js 18+
+- [Bun](https://bun.sh) (replaces Node.js / npm)
 - A Supabase project (or local Supabase via `supabase start`)
 
 ### Installation
@@ -81,23 +86,25 @@ Web application for conducting and archiving building site visits (befaringer) i
 ```bash
 git clone <repo-url>
 cd Tilsynsapp-PNB
-npm install
+bun install
 cp .env.example .env.local   # Fill in values — see table below
-npm run dev                  # Starts at http://localhost:3000
+bun run dev                  # Starts at http://localhost:3000
 ```
 
 ### Available commands
 
 ```bash
-npm run dev           # Development server
-npm run build         # Production build
-npm run start         # Start production server
-npm run lint          # ESLint
-npm run test          # Run tests
-npm run test:watch    # Tests in watch mode
-npm run test:coverage # Test coverage report
-npm run db:generate   # Generate Supabase TypeScript types from schema
-npm run set-admin     # Grant admin access to a user (by email)
+bun run dev           # Development server
+bun run build         # Production build
+bun run start         # Start production server
+bun run lint          # Biome (check + fix)
+bun run format        # Biome (format only)
+bun run typecheck     # TypeScript type check (tsc --noEmit)
+bun run test          # Run tests
+bun run test:watch    # Tests in watch mode
+bun run test:coverage # Test coverage report
+bun run db:generate   # Generate Supabase TypeScript types from schema
+bun run set-admin     # Grant admin access to a user (by email)
 ```
 
 ---
@@ -235,7 +242,7 @@ lib/
 │   └── map-capture.ts          # Client-side OSM tile capture (canvas → JPEG)
 ├── checklist/
 │   └── filter-engine.ts        # Checkpoint filtering, grouping, summary calculation
-├── i18n/                       # Norwegian/English translations
+├── i18n/                       # Norwegian/English translations (next-intl compatibility adapter)
 ├── supabase/                   # Supabase server/browser client factories
 ├── api-auth.ts                 # JWT guards: requireUser() / requireAdmin()
 ├── audit-log.ts                # Structured admin action logging
@@ -250,6 +257,16 @@ data/seed/
 
 types/
 └── index.ts                    # Core domain types (Inspection, CheckpointDefinition, etc.)
+
+i18n/
+└── request.ts                  # next-intl server config (locale from cookie)
+
+messages/
+├── nb.json                     # Norwegian translations (ICU format)
+└── en.json                     # English translations (ICU format)
+
+biome.json                      # Biome linting + formatting config (replaces ESLint + Prettier)
+sonar-project.properties        # SonarQube project configuration
 ```
 
 ---

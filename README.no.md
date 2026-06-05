@@ -56,16 +56,21 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 
 | Lag | Valg |
 |-----|------|
-| Rammeverk | Next.js 14 (App Router, TypeScript strict mode) |
-| Styling | Tailwind CSS med mørkt tema |
+| Rammeverk | Next.js 15 (App Router, TypeScript strict mode) |
+| UI-bibliotek | React 19 |
+| Styling | Tailwind CSS v4 med mørkt tema |
+| Internasjonalisering | next-intl (norsk / engelsk via cookie) |
 | Database | Supabase (PostgreSQL) |
-| Autentisering | Supabase Auth (e-post + passord, JWT, cookie-sesjoner) |
+| Autentisering | Supabase Auth (e-post + passord, JWT, cookie-sesjoner via @supabase/ssr) |
 | Fillagring | Supabase Storage |
 | PDF-generering | jsPDF + jspdf-autotable + pdf-lib (sammenslåing av vedlegg) |
 | Kart | OpenStreetMap (klient-side Leaflet) + Kartverket WMS (statisk kart server-side) |
 | Ekstern integrasjon | SIF API – Public 360° (RPC over HTTPS) |
+| Linting / formatering | Biome (erstatter ESLint + Prettier) |
+| Pakkebehandler | Bun |
 | Deployment | Vercel |
 | Testing | Jest |
+| Kodekvalitet | SonarQube (`sonar-project.properties`) |
 
 ---
 
@@ -73,7 +78,7 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 
 ### Forutsetninger
 
-- Node.js 18+
+- [Bun](https://bun.sh) (erstatter Node.js / npm)
 - Et Supabase-prosjekt (eller lokal Supabase via `supabase start`)
 
 ### Installasjon
@@ -81,23 +86,25 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 ```bash
 git clone <repo-url>
 cd Tilsynsapp-PNB
-npm install
+bun install
 cp .env.example .env.local   # Fyll inn verdier, se tabellen nedenfor
-npm run dev                  # Starter på http://localhost:3000
+bun run dev                  # Starter på http://localhost:3000
 ```
 
 ### Tilgjengelige kommandoer
 
 ```bash
-npm run dev           # Utviklingsserver
-npm run build         # Produksjonsbygg
-npm run start         # Start produksjonsserver
-npm run lint          # ESLint
-npm run test          # Kjør tester
-npm run test:watch    # Tester med watch-modus
-npm run test:coverage # Testdekningsrapport
-npm run db:generate   # Generer Supabase TypeScript-typer fra schema
-npm run set-admin     # Gi admin-tilgang til en bruker (via e-post)
+bun run dev           # Utviklingsserver
+bun run build         # Produksjonsbygg
+bun run start         # Start produksjonsserver
+bun run lint          # Biome (sjekk + rett)
+bun run format        # Biome (kun formatering)
+bun run typecheck     # TypeScript-typesjekk (tsc --noEmit)
+bun run test          # Kjør tester
+bun run test:watch    # Tester med watch-modus
+bun run test:coverage # Testdekningsrapport
+bun run db:generate   # Generer Supabase TypeScript-typer fra schema
+bun run set-admin     # Gi admin-tilgang til en bruker (via e-post)
 ```
 
 ---
@@ -235,7 +242,7 @@ lib/
 │   └── map-capture.ts          # Klient-side OSM-flisopptak (canvas → JPEG)
 ├── checklist/
 │   └── filter-engine.ts        # Filtrering, gruppering og oppsummering av sjekkpunkter
-├── i18n/                       # Norske/engelske oversettelser
+├── i18n/                       # Norske/engelske oversettelser (next-intl-kompatibilitetsadapter)
 ├── supabase/                   # Supabase server-/nettleserklient-fabrikker
 ├── api-auth.ts                 # JWT-vakter: requireUser() / requireAdmin()
 ├── audit-log.ts                # Strukturert logging av admin-handlinger
@@ -250,6 +257,16 @@ data/seed/
 
 types/
 └── index.ts                    # Kjernedomenetyper (Inspection, CheckpointDefinition, osv.)
+
+i18n/
+└── request.ts                  # next-intl server-konfig (locale fra cookie)
+
+messages/
+├── nb.json                     # Norske oversettelser (ICU-format)
+└── en.json                     # Engelske oversettelser (ICU-format)
+
+biome.json                      # Biome-konfig for linting + formatering (erstatter ESLint + Prettier)
+sonar-project.properties        # SonarQube-prosjektkonfigurasjon
 ```
 
 ---

@@ -34,7 +34,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const supabase = createServiceClient();
+  const supabase = await createServiceClient();
 
   // Load existing row so we can preserve secrets when masked placeholder is sent
   const existing = await loadSifSettings();

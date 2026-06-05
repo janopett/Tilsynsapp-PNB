@@ -7,7 +7,7 @@ export default async function HomePage() {
   ) {
     const { createClient } = await import("@/lib/supabase/server");
     try {
-      const supabase = createClient();
+      const supabase = await createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (user) redirect("/dashboard");
     } catch {

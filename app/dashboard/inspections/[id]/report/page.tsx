@@ -16,18 +16,19 @@ import CheckpointOverviewMap, { type MapPoint } from "@/components/ui/Checkpoint
 import PolygonMap from "@/components/ui/PolygonMap";
 
 interface Props {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }
 
 const STORAGE_BUCKET = "inspection-attachments";
 
 export default async function ReportPage({ params }: Props) {
-  const supabase = createClient();
+  const { id } = await params;
+  const supabase = await createClient();
 
   const [inspectionRes, answersRes, attachmentsRes] = await Promise.all([
-    supabase.from("inspections").select("*").eq("id", params.id).single(),
-    supabase.from("inspection_answers").select("*").eq("inspection_id", params.id),
-    supabase.from("attachments").select("*").eq("inspection_id", params.id),
+    supabase.from("inspections").select("*").eq("id", id).single(),
+    supabase.from("inspection_answers").select("*").eq("inspection_id", id),
+    supabase.from("attachments").select("*").eq("inspection_id", id),
   ]);
 
   if (inspectionRes.error || !inspectionRes.data) notFound();
@@ -117,7 +118,7 @@ export default async function ReportPage({ params }: Props) {
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center justify-between mb-6 print:hidden">
         <Link
-          href={`/dashboard/inspections/${params.id}`}
+          href={`/dashboard/inspections/${id}`}
           className="text-brand-600 hover:text-brand-800 dark:text-brand-400 dark:hover:text-brand-300 text-sm"
         >
           ← Tilbake til befaring
