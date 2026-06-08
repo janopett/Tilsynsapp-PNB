@@ -205,6 +205,10 @@ export interface Translations {
     dispatchFailed: (err: string) => string;
     unknownError: string;
     archivingError: string;
+    stageLabel: string;
+    selectStage: string;
+    loadingStages: string;
+    noStages: string;
   };
   checkpoint: {
     responsible: string;
@@ -475,6 +479,10 @@ export function useLanguage() {
       dispatchFailed: (err) => tArch("dispatchFailed", { err }),
       unknownError: tArch("unknownError"),
       archivingError: tArch("archivingError"),
+      stageLabel: tArch("stageLabel"),
+      selectStage: tArch("selectStage"),
+      loadingStages: tArch("loadingStages"),
+      noStages: tArch("noStages"),
     },
     checkpoint: {
       responsible: tCp("responsible"),

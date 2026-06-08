@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { InspectionWithAnswers, ArchivalStatus } from "@/types";
+import type { InspectionWithAnswers, ArchivalStatus, SifCaseStage } from "@/types";
 import { authFetch } from "@/lib/auth-fetch";
 import { createClient } from "@/lib/supabase/client";
 import { captureMapImage, captureOverviewMapImage, capturePolygonMapImage, type OverviewPoint } from "@/lib/pdf/map-capture";
@@ -31,6 +31,13 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   const [loading, setLoading] = useState(false);
   const [completing, setCompleting] = useState(false);
   const isCompleted = inspection.status === "completed";
+
+  // Stage picker state
+  const [stages, setStages] = useState<SifCaseStage[] | null>(null);
+  const [stagesLoading, setStagesLoading] = useState(false);
+  const [selectedStageRecno, setSelectedStageRecno] = useState<number | null>(
+    inspection.sif_stage_recno ?? null
+  );
 
   // Document picker state
   const [docMode, setDocMode] = useState<"new" | "update">("new");
@@ -96,6 +103,24 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   useEffect(() => {
     if (caseNumber.trim()) fetchDocuments(caseNumber);
   }, [caseNumber, fetchDocuments]);
+
+  const fetchStages = useCallback(async (cn: string) => {
+    if (!cn.trim()) return;
+    setStagesLoading(true);
+    try {
+      const res = await authFetch(`/api/sif/case-stages?caseNumber=${encodeURIComponent(cn.trim())}`);
+      const data = await res.json();
+      setStages(data.stages ?? []);
+    } catch {
+      setStages([]);
+    } finally {
+      setStagesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (caseNumber.trim()) fetchStages(caseNumber);
+  }, [caseNumber, fetchStages]);
 
   function switchToUpdateMode() {
     setDocMode("update");
@@ -172,6 +197,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         caseNumber: caseNumber.trim() || undefined,
         externalId: externalId.trim() || undefined,
         uid: uid.trim() || undefined,
+        stageRecno: selectedStageRecno ?? undefined,
         existingDocumentNumber:
           docMode === "update" && selectedDocNumber ? selectedDocNumber : undefined,
         checkpointMapImages: Object.keys(checkpointMapImages).length > 0
@@ -285,6 +311,33 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               <span className="font-mono bg-gray-100 dark:bg-slate-700 px-2 py-0.5 rounded-lg text-gray-900 dark:text-slate-100">
                 {caseNumber}
               </span>
+            </div>
+          )}
+
+          {/* Stage picker */}
+          {caseNumber && (
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">
+                {t.archive.stageLabel}
+              </label>
+              {stagesLoading ? (
+                <p className="text-xs text-gray-400 dark:text-slate-500">{t.archive.loadingStages}</p>
+              ) : stages === null ? null : stages.length === 0 ? (
+                <p className="text-xs text-gray-500 dark:text-slate-400">{t.archive.noStages}</p>
+              ) : (
+                <select
+                  value={selectedStageRecno ?? ""}
+                  onChange={(e) => setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)}
+                  className="input text-sm"
+                >
+                  <option value="">{t.archive.selectStage}</option>
+                  {stages.map((s) => (
+                    <option key={s.recno} value={s.recno}>
+                      {s.title ?? `Trinn ${s.recno}`}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           )}
 

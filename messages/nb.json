@@ -212,7 +212,11 @@
     "dispatchStarted": "Forsendelse startet",
     "dispatchFailed": "Forsendelse feilet: {err}",
     "unknownError": "ukjent feil",
-    "archivingError": "Feil ved arkivering"
+    "archivingError": "Feil ved arkivering",
+    "stageLabel": "Behandlingstrinn (valgfritt)",
+    "selectStage": "— Kobles ikke til behandlingstrinn —",
+    "loadingStages": "Henter behandlingstrinn…",
+    "noStages": "Ingen behandlingstrinn funnet på saken."
   },
   "checkpoint": {
     "responsible": "Ansvarlig",
