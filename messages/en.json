@@ -212,7 +212,11 @@
     "dispatchStarted": "Dispatch started",
     "dispatchFailed": "Dispatch failed: {err}",
     "unknownError": "unknown error",
-    "archivingError": "Archiving error"
+    "archivingError": "Archiving error",
+    "stageLabel": "Case stage (optional)",
+    "selectStage": "— Not linked to a stage —",
+    "loadingStages": "Loading case stages…",
+    "noStages": "No case stages found."
   },
   "checkpoint": {
     "responsible": "Responsible",

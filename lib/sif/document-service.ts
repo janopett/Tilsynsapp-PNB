@@ -130,14 +130,13 @@ export async function createInspectionDocumentInSif(
           })),
         }
       : {}),
-    ...(additionalFields?.length
-      ? {
-          AdditionalFields: additionalFields.map((f) => ({
-            Name: f.name,
-            Value: f.value,
-          })),
-        }
-      : {}),
+    ...(() => {
+      const fields = [
+        ...(additionalFields?.map((f) => ({ Name: f.name, Value: f.value })) ?? []),
+        ...(stageRecno ? [{ Name: "ToStage", Value: String(stageRecno) }] : []),
+      ];
+      return fields.length ? { AdditionalFields: fields } : {};
+    })(),
   };
 
   console.info("[SIF] DocumentService/CreateDocument", {

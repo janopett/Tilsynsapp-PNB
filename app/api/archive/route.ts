@@ -15,6 +15,7 @@ const ArchiveRequestSchema = z.object({
   externalId: z.string().optional(),
   uid: z.string().optional(),
   additionalFields: z.array(z.object({ name: z.string(), value: z.string() })).optional(),
+  stageRecno: z.number().int().positive().optional(),
   existingDocumentNumber: z.string().min(1).optional(),
   /** Base64 JPEG data URLs keyed by checkpoint_definition_id, captured client-side. */
   checkpointMapImages: z.record(z.string(), z.string().startsWith("data:image/")).optional(),
@@ -36,7 +37,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Invalid request" } satisfies ArchiveInspectionResponse, { status: 400 });
   }
 
-  const { inspectionId, caseNumber, externalId, uid, additionalFields, existingDocumentNumber, checkpointMapImages, overviewMapImage, areaMapImage } = parsed.data;
+  const { inspectionId, caseNumber, externalId, uid, additionalFields, stageRecno, existingDocumentNumber, checkpointMapImages, overviewMapImage, areaMapImage } = parsed.data;
 
   // Start SIF case lookup in parallel with DB queries — findCaseInSif only needs the case number
   // from the request body, not any DB data, so it can run immediately. On failure we fall back to
@@ -148,7 +149,7 @@ export async function POST(req: NextRequest) {
     jsonFileName,
     attachments: [...attachmentFiles, ...extraAttachments],
     additionalFields,
-    sifStageRecno: inspection.sif_stage_recno ?? undefined,
+    sifStageRecno: stageRecno ?? inspection.sif_stage_recno ?? undefined,
     existingDocumentNumber,
     prefetchedCase: prefetchedCase ?? undefined,
   });
