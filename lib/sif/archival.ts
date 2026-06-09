@@ -257,13 +257,6 @@ export async function archiveInspectionToSif(
 
     const allAdditionalFields = [...(ctx.additionalFields ?? []), ...extNoteFields];
 
-    // Resolve stage title from case stages (already fetched with IncludeStages: true)
-    let stageName: string | undefined;
-    if (ctx.sifStageRecno) {
-      const caseStages = ((sifCase.raw as SifCaseResult | undefined)?.Stages ?? []);
-      stageName = caseStages.find((s) => s.Recno === ctx.sifStageRecno)?.Title;
-    }
-
     // Step 6: Create or update document.
     // UpdateDocument: contacts are passed but stageRecno (AdditionalListFields) is excluded —
     // AdditionalListFields.Value as a number causes "Incorrect JSON format" in UpdateDocument.
@@ -288,7 +281,6 @@ export async function archiveInspectionToSif(
           contacts: docContacts.length > 0 ? docContacts : undefined,
           additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
           stageRecno: ctx.sifStageRecno,
-          stageName,
           documentDate: ctx.inspectionDate,
           accessCode: settings.docAccessCode || undefined,
           correlationId,

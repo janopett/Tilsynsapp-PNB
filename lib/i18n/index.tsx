@@ -199,7 +199,7 @@ export interface Translations {
     inspectionCompleted: string;
     alertNoCase: string;
     alertSelectDocument: string;
-    cantComplete: string;
+    cantComplete: (error: string) => string;
     archivedAs: (docNum: string) => string;
     dispatchStarted: string;
     dispatchFailed: (err: string) => string;
@@ -228,12 +228,12 @@ export interface Translations {
     noGps: string;
     attachmentsLabel: string;
     positionLabel: (title: string) => string;
-    uploadError: string;
-    saveError: string;
+    uploadError: (error: string) => string;
+    saveError: (error: string) => string;
   };
   caseFiles: {
     loading: string;
-    error: string;
+    error: (message: string) => string;
     empty: string;
     images: (n: number) => string;
     linkedCase: string;
@@ -473,7 +473,7 @@ export function useLanguage() {
       inspectionCompleted: tArch("inspectionCompleted"),
       alertNoCase: tArch("alertNoCase"),
       alertSelectDocument: tArch("alertSelectDocument"),
-      cantComplete: tArch("cantComplete", { error: "" }).replace(": ", ": "),
+      cantComplete: (error) => tArch("cantComplete", { error }),
       archivedAs: (docNum) => tArch("archivedAs", { docNum }),
       dispatchStarted: tArch("dispatchStarted"),
       dispatchFailed: (err) => tArch("dispatchFailed", { err }),
@@ -502,12 +502,12 @@ export function useLanguage() {
       noGps: tCp("noGps"),
       attachmentsLabel: tCp("attachmentsLabel"),
       positionLabel: (title) => tCp("positionLabel", { title }),
-      uploadError: tCp("uploadError", { error: "" }),
-      saveError: tCp("saveError", { error: "" }),
+      uploadError: (error) => tCp("uploadError", { error }),
+      saveError: (error) => tCp("saveError", { error }),
     },
     caseFiles: {
       loading: tFiles("loading"),
-      error: tFiles("error", { message: "" }),
+      error: (message) => tFiles("error", { message }),
       empty: tFiles("empty"),
       images: (n) => tFiles("images", { n }),
       linkedCase: tFiles("linkedCase"),

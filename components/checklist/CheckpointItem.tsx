@@ -227,7 +227,7 @@ const CheckpointItem = memo(function CheckpointItem({
       .upload(filePath, uploadBlob, { contentType: fileType, upsert: false });
 
     if (storageError) {
-      setUploadError(t.checkpoint.uploadError + storageError.message);
+      setUploadError(t.checkpoint.uploadError(storageError.message));
       setUploading(false);
       return;
     }
@@ -247,7 +247,7 @@ const CheckpointItem = memo(function CheckpointItem({
 
     setUploading(false);
     if (dbError || !data) {
-      setUploadError(t.checkpoint.saveError + (dbError?.message ?? t.archive.unknownError));
+      setUploadError(t.checkpoint.saveError(dbError?.message ?? t.archive.unknownError));
       await supabase.storage.from(STORAGE_BUCKET).remove([filePath]);
       return;
     }
