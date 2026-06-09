@@ -35,6 +35,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   // Stage picker state
   const [stages, setStages] = useState<SifCaseStage[] | null>(null);
   const [stagesLoading, setStagesLoading] = useState(false);
+  const [stagesError, setStagesError] = useState<string | null>(null);
   const [selectedStageRecno, setSelectedStageRecno] = useState<number | null>(
     inspection.sif_stage_recno ?? null
   );
@@ -60,7 +61,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       return { status: existingArchival.status as ArchivalStatus, message: `${t.archive.archivedAs(String(docNum))}${dispatchNote}`, url: existingArchival.sif_document_url ?? undefined, documentNumber: existingArchival.sif_document_number ?? undefined };
     }
     return { status: existingArchival.status as ArchivalStatus, message: existingArchival.error_message ?? t.archive.archivingError, url: existingArchival.sif_document_url ?? undefined, documentNumber: existingArchival.sif_document_number ?? undefined };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const [result, setResult] = useState<{
     status: ArchivalStatus;
@@ -97,7 +98,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     } finally {
       setDocsLoading(false);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Pre-fetch documents in the background as soon as a case number is available
   useEffect(() => {
@@ -107,11 +108,14 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   const fetchStages = useCallback(async (cn: string) => {
     if (!cn.trim()) return;
     setStagesLoading(true);
+    setStagesError(null);
     try {
       const res = await authFetch(`/api/sif/case-stages?caseNumber=${encodeURIComponent(cn.trim())}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? t.archive.archivingError);
       setStages(data.stages ?? []);
-    } catch {
+    } catch (err) {
+      setStagesError(err instanceof Error ? err.message : t.archive.unknownError);
       setStages([]);
     } finally {
       setStagesLoading(false);
@@ -136,7 +140,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       .eq("id", inspection.id);
     setCompleting(false);
     if (error) {
-      alert(t.archive.cantComplete + error.message);
+      alert(t.archive.cantComplete(error.message));
     } else {
       onMarkCompleted?.();
     }
@@ -322,6 +326,8 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               </label>
               {stagesLoading ? (
                 <p className="text-xs text-gray-400 dark:text-slate-500">{t.archive.loadingStages}</p>
+              ) : stagesError ? (
+                <p className="text-xs text-red-600 dark:text-red-400">{stagesError}</p>
               ) : stages === null ? null : stages.length === 0 ? (
                 <p className="text-xs text-gray-500 dark:text-slate-400">{t.archive.noStages}</p>
               ) : (
@@ -331,7 +337,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                   className="input text-sm"
                 >
                   <option value="">{t.archive.selectStage}</option>
-                  {stages.map((s) => (
+                  {stages.filter((s) => s.recno != null).map((s) => (
                     <option key={s.recno} value={s.recno}>
                       {s.title ?? `Trinn ${s.recno}`}
                     </option>

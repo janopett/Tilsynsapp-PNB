@@ -91,7 +91,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
   if (error) {
     return (
       <div className="py-10 text-center text-red-500 dark:text-red-400 text-sm">
-        {t.caseFiles.error}{error}
+        {t.caseFiles.error(error)}
       </div>
     );
   }

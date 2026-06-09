@@ -5,10 +5,13 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverActions: {
-    // Include production domain via env var (set NEXT_PUBLIC_APP_URL in Vercel/hosting)
-    allowedOrigins: process.env.NEXT_PUBLIC_APP_URL
-      ? [process.env.NEXT_PUBLIC_APP_URL, "localhost:3000"]
-      : ["localhost:3000"],
+    // NEXT_PUBLIC_APP_URL = production domain (set manually in Vercel project settings)
+    // VERCEL_URL = auto-set by Vercel for every deployment (preview + production)
+    allowedOrigins: [
+      "localhost:3000",
+      ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL] : []),
+      ...(process.env.VERCEL_URL ? [process.env.VERCEL_URL] : []),
+    ],
   },
 
   images: {

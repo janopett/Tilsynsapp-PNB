@@ -69,10 +69,8 @@ export interface CreateInspectionDocumentInput {
     relationType?: string;       // e.g. "H" for main document
   }>;
   additionalFields?: Array<{ name: string; value: string }>;
-  /** Recno of the case stage to link the document to. Sent as AdditionalListFields if provided. */
+  /** Recno of the case stage to link the document to. Sent as ToStage in AdditionalFields. */
   stageRecno?: number;
-  /** Title of the stage — used as the Name in AdditionalListFields. */
-  stageName?: string;
   documentDate?: string;         // ISO date
   /** Explicit access code (tilgangskode). When set, 360° skips access-code inheritance from file sub-items. */
   accessCode?: string;
@@ -97,7 +95,6 @@ export async function createInspectionDocumentInSif(
     files,
     additionalFields,
     stageRecno,
-    stageName,
     documentDate,
     accessCode,
     correlationId,
@@ -205,16 +202,12 @@ export async function fetchCaseDocumentsFromSif(
 
   if (!result.Successful || !result.Documents?.length) return [];
 
-  const settings = await loadSifSettingsWithEnvFallback();
-  const baseUrl = settings.baseUrl.replace(/\/$/, "");
-
-  // Resolve relative URLs to absolute — SIF returns paths like "/Cases/Document/123"
-  return result.Documents.map((d) => ({
-    ...d,
-    URL: d.URL
-      ? (d.URL.startsWith("/") ? `${baseUrl}${d.URL}` : d.URL)
-      : undefined,
-  }));
+  return await Promise.all(
+    result.Documents.map(async (d) => ({
+      ...d,
+      URL: await resolveUrl(d.URL),
+    }))
+  );
 }
 
 export interface UpdateInspectionDocumentInput {
@@ -229,7 +222,6 @@ export interface UpdateInspectionDocumentInput {
   contacts?: Array<{ role: string; recno?: number }>;
   additionalFields?: Array<{ name: string; value: string }>;
   stageRecno?: number;
-  stageName?: string;
   correlationId?: string;
 }
 
@@ -241,7 +233,7 @@ export interface UpdateInspectionDocumentInput {
 export async function updateInspectionDocumentInSif(
   input: UpdateInspectionDocumentInput
 ): Promise<SifDocument> {
-  const { documentNumber, files, contacts, additionalFields, stageRecno, stageName, correlationId } = input;
+  const { documentNumber, files, contacts, additionalFields, stageRecno, correlationId } = input;
 
   const sifFiles: SifFileInput[] = files.map((f, idx) => ({
     Title: f.title,
