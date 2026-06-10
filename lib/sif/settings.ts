@@ -3,10 +3,10 @@
 // Server-side only (uses service role client).
 // ============================================================
 
-import { createServiceClient } from "@/lib/supabase/server";
-import type { SifClientConfig } from "./client";
-import type { SifAuthConfig, SifAuthMode } from "./auth";
 import { sifMapping } from "@/config/sif-mapping";
+import { createServiceClient } from "@/lib/supabase/server";
+import type { SifAuthConfig, SifAuthMode } from "./auth";
+import type { SifClientConfig } from "./client";
 
 export interface SifSettings {
   // Connection
@@ -108,10 +108,7 @@ export function invalidateSifSettingsCache(): void {
  */
 export async function loadSifSettings(): Promise<SifSettings | null> {
   const supabase = await createServiceClient();
-  const { data, error } = await supabase
-    .from("sif_settings")
-    .select("*")
-    .maybeSingle();
+  const { data, error } = await supabase.from("sif_settings").select("*").maybeSingle();
 
   if (error) {
     console.error("[SIF settings] Failed to load from DB:", error.message);
@@ -140,42 +137,27 @@ export async function loadSifSettingsWithEnvFallback(): Promise<SifSettings> {
 
   const value: SifSettings = {
     baseUrl: db?.baseUrl || process.env.SIF_BASE_URL || "",
-    rpcPath:
-      db?.rpcPath ||
-      process.env.SIF_RPC_PATH ||
-      "/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC",
-    authMode: (db?.authMode ||
-      process.env.SIF_AUTH_MODE ||
-      "authkey") as SifAuthMode,
+    rpcPath: db?.rpcPath || process.env.SIF_RPC_PATH || "/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC",
+    authMode: (db?.authMode || process.env.SIF_AUTH_MODE || "authkey") as SifAuthMode,
     authkey: db?.authkey || process.env.SIF_AUTHKEY || "",
-    timeoutMs:
-      db?.timeoutMs || Number(process.env.SIF_TIMEOUT_MS ?? "30000"),
+    timeoutMs: db?.timeoutMs || Number(process.env.SIF_TIMEOUT_MS ?? "30000"),
     oauthClientId: db?.oauthClientId || process.env.SIF_CLIENT_ID || "",
-    oauthClientSecret:
-      db?.oauthClientSecret || process.env.SIF_CLIENT_SECRET || "",
-    oauthTokenUrl:
-      db?.oauthTokenUrl || process.env.SIF_BEARER_TOKEN_URL || "",
+    oauthClientSecret: db?.oauthClientSecret || process.env.SIF_CLIENT_SECRET || "",
+    oauthTokenUrl: db?.oauthTokenUrl || process.env.SIF_BEARER_TOKEN_URL || "",
     oauthScope: db?.oauthScope || process.env.SIF_SCOPE || "",
     docArchive: db?.docArchive || sifMapping.inspectionReport.archive,
     docCategory: db?.docCategory || sifMapping.inspectionReport.category,
     docStatus: db?.docStatus || sifMapping.inspectionReport.status,
-    docTitleTemplate:
-      db?.docTitleTemplate || sifMapping.inspectionReport.titleTemplate,
+    docTitleTemplate: db?.docTitleTemplate || sifMapping.inspectionReport.titleTemplate,
     docMainFileRelationType:
-      db?.docMainFileRelationType ||
-      sifMapping.inspectionReport.mainFileRelationType,
+      db?.docMainFileRelationType || sifMapping.inspectionReport.mainFileRelationType,
     docAttachmentRelationType:
-      db?.docAttachmentRelationType ||
-      sifMapping.inspectionReport.attachmentRelationType,
+      db?.docAttachmentRelationType || sifMapping.inspectionReport.attachmentRelationType,
     roleMunicipalitySender:
-      db?.roleMunicipalitySender ||
-      sifMapping.contactRoles.municipalitySenderRole,
+      db?.roleMunicipalitySender || sifMapping.contactRoles.municipalitySenderRole,
     roleApplicantRecipient:
-      db?.roleApplicantRecipient ||
-      sifMapping.contactRoles.applicantRecipientRole,
-    roleCopyRecipient:
-      db?.roleCopyRecipient ||
-      sifMapping.contactRoles.copyRecipientRole,
+      db?.roleApplicantRecipient || sifMapping.contactRoles.applicantRecipientRole,
+    roleCopyRecipient: db?.roleCopyRecipient || sifMapping.contactRoles.copyRecipientRole,
     responsiblePersonRecno:
       db?.responsiblePersonRecno ?? sifMapping.defaults.responsiblePersonRecno,
     docAccessCode: db?.docAccessCode ?? "",
@@ -209,9 +191,10 @@ export function toSifClientConfig(
 }
 
 /** Sanitised view of settings – strips sensitive secrets for the admin UI */
-export function sanitizeForClient(
-  settings: SifSettings
-): Omit<SifSettings, "authkey" | "oauthClientSecret"> & {
+export function sanitizeForClient(settings: SifSettings): Omit<
+  SifSettings,
+  "authkey" | "oauthClientSecret"
+> & {
   authkey: string; // masked
   oauthClientSecret: string; // masked
   hasAuthkey: boolean;

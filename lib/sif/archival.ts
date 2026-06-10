@@ -4,21 +4,29 @@
 // ============================================================
 
 import { v4 as uuidv4 } from "uuid";
+import { buildDocumentTitle } from "@/config/sif-mapping";
+import type {
+  ArchiveInspectionRequest,
+  ArchiveInspectionResponse,
+  InspectionArchival,
+} from "@/types";
 import { findCaseInSif } from "./case-service";
 import { synchronizeContactPerson } from "./contact-service";
-import { uploadFilesToSif } from "./file-service";
-import { createInspectionDocumentInSif, updateInspectionDocumentInSif, dispatchDocumentsInSif } from "./document-service";
-import { loadSifSettingsWithEnvFallback } from "./settings";
-import { buildDocumentTitle } from "@/config/sif-mapping";
 import {
-  SifError,
+  createInspectionDocumentInSif,
+  dispatchDocumentsInSif,
+  updateInspectionDocumentInSif,
+} from "./document-service";
+import {
   SifCaseNotFoundError,
+  SifCreateDocumentError,
+  SifError,
   SifMultipleCasesFoundError,
   SifUploadError,
-  SifCreateDocumentError,
 } from "./errors";
+import { uploadFilesToSif } from "./file-service";
+import { loadSifSettingsWithEnvFallback } from "./settings";
 import type { SifCaseResult } from "./types";
-import type { ArchiveInspectionRequest, ArchiveInspectionResponse, InspectionArchival } from "@/types";
 
 export interface ArchivalContext {
   inspectionId: string;
@@ -152,9 +160,7 @@ export async function archiveInspectionToSif(
     }
 
     if (filesToUpload.length === 0) {
-      throw new SifCreateDocumentError(
-        "No files to archive. At least a PDF report is required."
-      );
+      throw new SifCreateDocumentError("No files to archive. At least a PDF report is required.");
     }
 
     // Upload files and sync external participants in parallel (independent operations)
@@ -175,27 +181,21 @@ export async function archiveInspectionToSif(
     ]);
 
     // Step 4: Build document title
-    const gnrBnr =
-      ctx.gnr && ctx.bnr
-        ? `${ctx.gnr}/${ctx.bnr}`
-        : ctx.gnr ?? ctx.bnr ?? "";
+    const gnrBnr = ctx.gnr && ctx.bnr ? `${ctx.gnr}/${ctx.bnr}` : (ctx.gnr ?? ctx.bnr ?? "");
     const year = ctx.inspectionDate?.slice(0, 4) ?? "";
 
-    const title = buildDocumentTitle(
-      settings.docTitleTemplate,
-      {
-        propertyAddress: ctx.propertyAddress,
-        caseNumber: sifCase.caseNumber,
-        caseTitle: ctx.caseTitle,
-        date: ctx.inspectionDate,
-        inspectorName: ctx.inspectorName,
-        applicantName: ctx.applicantName,
-        gnrBnr,
-        measureType: ctx.measureTypeName,
-        year,
-        inspectionId: ctx.inspectionId,
-      }
-    );
+    const title = buildDocumentTitle(settings.docTitleTemplate, {
+      propertyAddress: ctx.propertyAddress,
+      caseNumber: sifCase.caseNumber,
+      caseTitle: ctx.caseTitle,
+      date: ctx.inspectionDate,
+      inspectorName: ctx.inspectorName,
+      applicantName: ctx.applicantName,
+      gnrBnr,
+      measureType: ctx.measureTypeName,
+      year,
+      inspectionId: ctx.inspectionId,
+    });
 
     // Build files list for CreateDocument
     const docFiles = uploadedRefs.map((ref, idx) => {
@@ -219,7 +219,7 @@ export async function archiveInspectionToSif(
     //   1. Explicitly stored applicant_recno on the inspection (best)
     //   2. Name-match against inspection participants (fallback for old inspections)
     //   3. Name-match against SIF case contacts fetched with IncludeCaseContacts (last resort)
-    const caseContacts = ((sifCase.raw as SifCaseResult | undefined)?.Contacts ?? []);
+    const caseContacts = (sifCase.raw as SifCaseResult | undefined)?.Contacts ?? [];
     const resolvedApplicantRecno =
       ctx.applicantRecno ??
       (ctx.applicantName
@@ -274,9 +274,7 @@ export async function archiveInspectionToSif(
           category: settings.docCategory,
           status: settings.docStatus,
           responsiblePersonRecno:
-            settings.responsiblePersonRecno > 0
-              ? settings.responsiblePersonRecno
-              : undefined,
+            settings.responsiblePersonRecno > 0 ? settings.responsiblePersonRecno : undefined,
           files: docFiles,
           contacts: docContacts.length > 0 ? docContacts : undefined,
           additionalFields: allAdditionalFields.length > 0 ? allAdditionalFields : undefined,
@@ -302,10 +300,7 @@ export async function archiveInspectionToSif(
         const docIdentifier = sifDocument.recno
           ? { recno: sifDocument.recno }
           : { documentNumber: sifDocument.documentNumber };
-        const dispatchResult = await dispatchDocumentsInSif(
-          [docIdentifier],
-          correlationId
-        );
+        const dispatchResult = await dispatchDocumentsInSif([docIdentifier], correlationId);
         dispatched = dispatchResult.Successful;
         if (!dispatchResult.Successful) {
           dispatchError =
@@ -315,10 +310,7 @@ export async function archiveInspectionToSif(
         }
       } catch (dispatchErr) {
         dispatched = false;
-        dispatchError =
-          dispatchErr instanceof Error
-            ? dispatchErr.message
-            : String(dispatchErr);
+        dispatchError = dispatchErr instanceof Error ? dispatchErr.message : String(dispatchErr);
         console.error("[SIF] DispatchDocuments failed", {
           correlationId,
           dispatchError,
@@ -341,10 +333,8 @@ export async function archiveInspectionToSif(
       archived_at: new Date().toISOString(),
     };
   } catch (err) {
-    const errorMessage =
-      err instanceof Error ? err.message : String(err);
-    const errorCode =
-      err instanceof SifError ? err.code : "UNKNOWN_ERROR";
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorCode = err instanceof SifError ? err.code : "UNKNOWN_ERROR";
 
     console.error("[SIF] Archival failed", {
       correlationId,

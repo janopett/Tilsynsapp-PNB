@@ -1,48 +1,67 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 import type {
   Attachment,
-  InspectionWithAnswers,
-  CheckpointWithAnswer,
-  CheckpointStatus,
   CheckpointCategory,
+  CheckpointStatus,
+  CheckpointWithAnswer,
+  ExternalParticipant,
+  InspectionWithAnswers,
+  SifCaseStage,
   SifContact,
   SifEstate,
-  SifCaseStage,
-  ExternalParticipant,
 } from "@/types";
 
 const EMPTY_ATTACHMENTS: Attachment[] = [];
-import {
-  filterCheckpoints,
-  mergeCheckpointsWithAnswers,
-  groupByCategory,
-  getCategoryLabel,
-  CATEGORY_ORDER,
-  calculateSummary,
-} from "@/lib/checklist/filter-engine";
-import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
-import type { CheckpointDefinition } from "@/types";
-import CheckpointItem from "@/components/checklist/CheckpointItem";
+
 import ArchivePanel from "@/components/archive/ArchivePanel";
+import CheckpointItem from "@/components/checklist/CheckpointItem";
 import CaseFilesPanel from "@/components/sif/CaseFilesPanel";
-import StatusBadge from "@/components/ui/StatusBadge";
-import MapPickerModal from "@/components/ui/MapPickerModal";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
 import EnterpriseSearchInput from "@/components/sif/EnterpriseSearchInput";
-import type { SifEnterpriseResult } from "@/lib/sif/types";
-import { useLanguage } from "@/lib/i18n";
+import MapPickerModal from "@/components/ui/MapPickerModal";
 import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
+import StatusBadge from "@/components/ui/StatusBadge";
+import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
+import {
+  CATEGORY_ORDER,
+  calculateSummary,
+  filterCheckpoints,
+  getCategoryLabel,
+  groupByCategory,
+  mergeCheckpointsWithAnswers,
+} from "@/lib/checklist/filter-engine";
+import { useLanguage } from "@/lib/i18n";
+import type { SifEnterpriseResult } from "@/lib/sif/types";
+import type { CheckpointDefinition } from "@/types";
 
 // Dummy contacts shown when case contacts can't be loaded from PNB
 const DUMMY_CONTACTS: SifContact[] = [
-  { recno: 1, name: "Ola Byggesen", role: "SØK", roleDescription: "Ansvarlig søker", type: "enterprise" },
-  { recno: 2, name: "Kari Tiltakshaver", role: "TILT", roleDescription: "Tiltakshaver", type: "privatePerson" },
-  { recno: 3, name: "Per Foretak AS", role: "UTF", roleDescription: "Ansvarlig utførende", type: "enterprise" },
+  {
+    recno: 1,
+    name: "Ola Byggesen",
+    role: "SØK",
+    roleDescription: "Ansvarlig søker",
+    type: "enterprise",
+  },
+  {
+    recno: 2,
+    name: "Kari Tiltakshaver",
+    role: "TILT",
+    roleDescription: "Tiltakshaver",
+    type: "privatePerson",
+  },
+  {
+    recno: 3,
+    name: "Per Foretak AS",
+    role: "UTF",
+    roleDescription: "Ansvarlig utførende",
+    type: "enterprise",
+  },
 ];
 
 type Tab = "checklist" | "summary" | "archive" | "files";
@@ -62,10 +81,18 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [propertyAddress, setPropertyAddress] = useState(inspection.property_address);
 
   // Configurable lists
-  const [befaringsomradeItems, setBefaringsomradeItems] = useState<{ code: string; description: string }[]>([]);
-  const [tiltakstypeItems, setTiltakstypeItems] = useState<{ code: string; description: string }[]>([]);
-  const [bakgrunnItems, setBakgrunnItems] = useState<{ label: string; en_label: string | null }[]>([]);
-  const [befaringsomrade, setBefaringsomrade] = useState<string[]>(inspection.befaringsomrade ?? []);
+  const [befaringsomradeItems, setBefaringsomradeItems] = useState<
+    { code: string; description: string }[]
+  >([]);
+  const [tiltakstypeItems, setTiltakstypeItems] = useState<{ code: string; description: string }[]>(
+    []
+  );
+  const [bakgrunnItems, setBakgrunnItems] = useState<{ label: string; en_label: string | null }[]>(
+    []
+  );
+  const [befaringsomrade, setBefaringsomrade] = useState<string[]>(
+    inspection.befaringsomrade ?? []
+  );
   const [tiltakstype, setTiltakstype] = useState<string[]>(inspection.tiltakstype ?? []);
   const [selectedBakgrunn, setSelectedBakgrunn] = useState<string[]>(inspection.bakgrunn ?? []);
 
@@ -75,7 +102,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
       if (!session) return;
       const headers = { Authorization: `Bearer ${session.access_token}` };
       Promise.all([
-        fetch("/api/inspection-codetables?type=supervision-area", { headers }).then((r) => r.json()),
+        fetch("/api/inspection-codetables?type=supervision-area", { headers }).then((r) =>
+          r.json()
+        ),
         fetch("/api/inspection-codetables?type=measure-type", { headers }).then((r) => r.json()),
         fetch("/api/inspection-config?category=bakgrunn", { headers }).then((r) => r.json()),
       ]).then(([a, b, c]) => {
@@ -90,7 +119,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [gnr, setGnr] = useState(inspection.gnr ?? "");
   const [bnr, setBnr] = useState(inspection.bnr ?? "");
   const [applicantName, setApplicantName] = useState(inspection.applicant_name ?? "");
-  const [applicantRecno, setApplicantRecno] = useState<number | null>(inspection.applicant_recno ?? null);
+  const [applicantRecno, setApplicantRecno] = useState<number | null>(
+    inspection.applicant_recno ?? null
+  );
   const [inspectorName, setInspectorName] = useState(inspection.inspector_name ?? "");
   const [inspectionDate, setInspectionDate] = useState(inspection.inspection_date);
   const [notes, setNotes] = useState(inspection.notes ?? "");
@@ -99,15 +130,11 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [error, setError] = useState("");
 
   // Participants
-  const [participants, setParticipants] = useState<SifContact[]>(
-    inspection.participants ?? []
-  );
+  const [participants, setParticipants] = useState<SifContact[]>(inspection.participants ?? []);
   const [participantDropdown, setParticipantDropdown] = useState<number | "">("");
 
   // Estates
-  const [selectedEstates, setSelectedEstates] = useState<SifEstate[]>(
-    inspection.estates ?? []
-  );
+  const [selectedEstates, setSelectedEstates] = useState<SifEstate[]>(inspection.estates ?? []);
 
   // External participants
   const [externalParticipants, setExternalParticipants] = useState<ExternalParticipant[]>(
@@ -182,7 +209,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
   const [showMap, setShowMap] = useState(false);
   const [latitude, setLatitude] = useState<number | null>(inspection.latitude ?? null);
   const [longitude, setLongitude] = useState<number | null>(inspection.longitude ?? null);
-  const [areaGeojson, setAreaGeojson] = useState<import("@/types").GeoJsonPolygon | null>(inspection.area_geojson ?? null);
+  const [areaGeojson, setAreaGeojson] = useState<import("@/types").GeoJsonPolygon | null>(
+    inspection.area_geojson ?? null
+  );
 
   function addParticipant() {
     if (!participantDropdown) return;
@@ -255,7 +284,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
     <div className="fixed inset-0 bg-black/50 z-40 flex items-center justify-center p-4 overflow-y-auto">
       <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-xl shadow-xl my-4">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
-          <h2 className="font-semibold text-gray-900 dark:text-slate-100">{t.inspection.editTitle}</h2>
+          <h2 className="font-semibold text-gray-900 dark:text-slate-100">
+            {t.inspection.editTitle}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 text-xl leading-none"
@@ -267,15 +298,28 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
         <div className="px-5 py-4 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Case number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.caseNumber}</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              {t.inspection.caseNumber}
+            </label>
             <CaseSearchInput
               value={caseNumber}
-              onChange={(val) => { setCaseNumber(val); if (!val) setCaseTitle(""); }}
-              onSelect={(c) => { setCaseNumber(c.caseNumber); setCaseTitle(c.title); }}
+              onChange={(val) => {
+                setCaseNumber(val);
+                if (!val) setCaseTitle("");
+              }}
+              onSelect={(c) => {
+                setCaseNumber(c.caseNumber);
+                setCaseTitle(c.title);
+              }}
               placeholder={t.inspection.caseSearchPlaceholder}
             />
             {caseTitle && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-slate-400 truncate" title={caseTitle}>{caseTitle}</p>
+              <p
+                className="mt-1 text-xs text-gray-500 dark:text-slate-400 truncate"
+                title={caseTitle}
+              >
+                {caseTitle}
+              </p>
             )}
           </div>
 
@@ -286,11 +330,15 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 {t.inspection.behandlingstrinn}
               </label>
               {stagesLoading ? (
-                <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">{t.inspection.loadingTreatmentSteps}</p>
+                <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">
+                  {t.inspection.loadingTreatmentSteps}
+                </p>
               ) : (
                 <select
                   value={selectedStageRecno ?? ""}
-                  onChange={(e) => setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) =>
+                    setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)
+                  }
                   className="input"
                 >
                   <option value="">{t.inspection.selectTreatmentStep}</option>
@@ -320,7 +368,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Date + Inspector */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.date}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                {t.inspection.date}
+              </label>
               <input
                 type="date"
                 value={inspectionDate}
@@ -329,7 +379,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.inspector}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                {t.inspection.inspector}
+              </label>
               <input
                 type="text"
                 value={inspectorName}
@@ -342,18 +394,36 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Gnr/Bnr */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Gnr</label>
-              <input type="text" value={gnr} onChange={(e) => setGnr(e.target.value)} placeholder="123" className="input" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                Gnr
+              </label>
+              <input
+                type="text"
+                value={gnr}
+                onChange={(e) => setGnr(e.target.value)}
+                placeholder="123"
+                className="input"
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Bnr</label>
-              <input type="text" value={bnr} onChange={(e) => setBnr(e.target.value)} placeholder="45" className="input" />
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                Bnr
+              </label>
+              <input
+                type="text"
+                value={bnr}
+                onChange={(e) => setBnr(e.target.value)}
+                placeholder="45"
+                className="input"
+              />
             </div>
           </div>
 
           {/* Applicant */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.applicantName}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t.inspection.applicantName}
+            </label>
             {caseContacts.length > 0 ? (
               <select
                 value={applicantName}
@@ -368,7 +438,8 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 <option value="">{t.inspection.selectOrType}</option>
                 {caseContacts.map((c) => (
                   <option key={c.recno} value={c.name}>
-                    {c.name}{c.role ? ` (${c.role})` : ""}
+                    {c.name}
+                    {c.role ? ` (${c.role})` : ""}
                   </option>
                 ))}
               </select>
@@ -385,7 +456,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 
           {/* Participants */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.participants}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t.inspection.participants}
+            </label>
             {participants.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
                 {participants.map((p) => (
@@ -407,7 +480,8 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 ))}
               </div>
             )}
-            {caseContacts.filter((c) => !participants.find((p) => p.recno === c.recno)).length > 0 ? (
+            {caseContacts.filter((c) => !participants.find((p) => p.recno === c.recno)).length >
+            0 ? (
               <div className="flex gap-2">
                 <select
                   value={participantDropdown}
@@ -421,7 +495,8 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                     .filter((c) => !participants.find((p) => p.recno === c.recno))
                     .map((c) => (
                       <option key={c.recno} value={c.recno}>
-                        {c.name}{c.role ? ` (${c.role})` : ""}
+                        {c.name}
+                        {c.role ? ` (${c.role})` : ""}
                       </option>
                     ))}
                 </select>
@@ -434,7 +509,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 </button>
               </div>
             ) : caseContacts.length === 0 ? (
-              <p className="text-xs text-gray-400 dark:text-slate-500">{t.inspection.linkCaseForParticipants}</p>
+              <p className="text-xs text-gray-400 dark:text-slate-500">
+                {t.inspection.linkCaseForParticipants}
+              </p>
             ) : null}
           </div>
 
@@ -442,7 +519,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Eksterne deltakere
-              <span className="ml-1 text-xs font-normal text-gray-400 dark:text-slate-500">(f.eks. Brannvernleder, Verneombud)</span>
+              <span className="ml-1 text-xs font-normal text-gray-400 dark:text-slate-500">
+                (f.eks. Brannvernleder, Verneombud)
+              </span>
             </label>
             {externalParticipants.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-2">
@@ -492,21 +571,37 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 />
                 <EnterpriseSearchInput
                   value={extDraft.company}
-                  onChange={(name) => setExtDraft((d) => ({ ...d, company: name, companyRecno: undefined }))}
-                  onSelect={(e: SifEnterpriseResult) => setExtDraft((d) => ({ ...d, company: e.Name, companyRecno: e.Recno }))}
+                  onChange={(name) =>
+                    setExtDraft((d) => ({ ...d, company: name, companyRecno: undefined }))
+                  }
+                  onSelect={(e: SifEnterpriseResult) =>
+                    setExtDraft((d) => ({ ...d, company: e.Name, companyRecno: e.Recno }))
+                  }
                   placeholder="Foretak * (søk i Plan & Build)"
                   className="input w-full text-sm"
                 />
                 <div className="flex gap-2">
                   <button
                     onClick={addExternalParticipant}
-                    disabled={(!extDraft.firstName.trim() && !extDraft.lastName.trim()) || !extDraft.companyRecno}
+                    disabled={
+                      (!extDraft.firstName.trim() && !extDraft.lastName.trim()) ||
+                      !extDraft.companyRecno
+                    }
                     className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
                   >
                     Legg til
                   </button>
                   <button
-                    onClick={() => { setShowExtForm(false); setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined }); }}
+                    onClick={() => {
+                      setShowExtForm(false);
+                      setExtDraft({
+                        firstName: "",
+                        lastName: "",
+                        role: "",
+                        company: "",
+                        companyRecno: undefined,
+                      });
+                    }}
                     className="px-3 py-2 text-gray-500 dark:text-slate-400 text-sm hover:text-gray-700 dark:hover:text-slate-200"
                   >
                     Avbryt
@@ -526,7 +621,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Estates */}
           {selectedEstates.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t.inspection.estates}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                {t.inspection.estates}
+              </label>
               <div className="flex flex-wrap gap-2">
                 {selectedEstates.map((e) => (
                   <span
@@ -549,10 +646,15 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           {/* Befaringsområde (multi-select fra PNB-kodetabell) */}
           {befaringsomradeItems.length > 0 && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">{t.inspection.befaringsomrade}</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                {t.inspection.befaringsomrade}
+              </label>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 {befaringsomradeItems.map((item) => (
-                  <label key={item.code} className="flex items-center gap-2 cursor-pointer select-none">
+                  <label
+                    key={item.code}
+                    className="flex items-center gap-2 cursor-pointer select-none"
+                  >
                     <input
                       type="checkbox"
                       checked={befaringsomrade.includes(item.code)}
@@ -565,7 +667,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                       }
                       className="w-4 h-4 accent-brand-600 flex-shrink-0"
                     />
-                    <span className="text-sm text-gray-700 dark:text-slate-300">{item.description}</span>
+                    <span className="text-sm text-gray-700 dark:text-slate-300">
+                      {item.description}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -618,7 +722,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.notes}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t.inspection.notes}
+            </label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -645,7 +751,9 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
 
           {/* Map */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t.inspection.mapPosition}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t.inspection.mapPosition}
+            </label>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setShowMap(true)}
@@ -658,7 +766,10 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
                 <span className="text-xs text-gray-500 dark:text-slate-400">
                   {latitude.toFixed(5)}°N, {longitude.toFixed(5)}°Ø
                   <button
-                    onClick={() => { setLatitude(null); setLongitude(null); }}
+                    onClick={() => {
+                      setLatitude(null);
+                      setLongitude(null);
+                    }}
                     className="ml-2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
                   >
                     ✕
@@ -668,9 +779,7 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
             </div>
           </div>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</p>
-          )}
+          {error && <p className="text-sm text-red-600 bg-red-50 rounded-xl px-3 py-2">{error}</p>}
         </div>
 
         <div className="flex justify-end gap-2 px-5 py-4 border-t border-gray-100 dark:border-slate-700">
@@ -695,11 +804,11 @@ function EditModal({ inspection, caseContacts, onSaved, onClose }: EditModalProp
           initialLat={latitude}
           initialLng={longitude}
           initialPolygon={areaGeojson}
-          addressHint={[
-            propertyAddress,
-            inspection.estates?.[0]?.zipCode,
-            inspection.estates?.[0]?.zipPlace,
-          ].filter(Boolean).join(" ") || undefined}
+          addressHint={
+            [propertyAddress, inspection.estates?.[0]?.zipCode, inspection.estates?.[0]?.zipPlace]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
           title={t.inspection.mapTitle}
           allowPolygon
           onSave={(lat, lng, polygon) => {
@@ -736,22 +845,37 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
   const [activeCategory, setActiveCategory] = useState<CheckpointCategory | "all">("all");
   const [caseContacts, setCaseContacts] = useState<SifContact[]>([]);
   const [showEdit, setShowEdit] = useState(false);
-  const [checkpointDefs, setCheckpointDefs] = useState<CheckpointDefinition[]>(CHECKPOINT_DEFINITIONS);
+  const [checkpointDefs, setCheckpointDefs] =
+    useState<CheckpointDefinition[]>(CHECKPOINT_DEFINITIONS);
   const checkpointsFetched = useRef(false);
 
   const fetchInspection = useCallback(async () => {
     const supabase = createClient();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { router.push("/dashboard"); return; }
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) {
+      router.push("/dashboard");
+      return;
+    }
 
     const [inspRes, answersRes, attachRes, archivalRes] = await Promise.all([
       supabase.from("inspections").select("*").eq("id", id).eq("user_id", session.user.id).single(),
       supabase.from("inspection_answers").select("*").eq("inspection_id", id),
       supabase.from("attachments").select("*").eq("inspection_id", id),
-      supabase.from("inspection_archivals").select("*").eq("inspection_id", id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      supabase
+        .from("inspection_archivals")
+        .select("*")
+        .eq("inspection_id", id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
-    if (inspRes.error || !inspRes.data) { router.push("/dashboard"); return; }
+    if (inspRes.error || !inspRes.data) {
+      router.push("/dashboard");
+      return;
+    }
 
     const insp = {
       ...inspRes.data,
@@ -798,7 +922,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         })
         .catch(() => setCaseContacts(DUMMY_CONTACTS));
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch checkpoint definitions from DB (falls back to hardcoded if unavailable)
@@ -815,79 +939,82 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
           setCheckpointDefs(d.checkpoints);
         }
       })
-      .catch(() => { /* keep hardcoded fallback */ });
+      .catch(() => {
+        /* keep hardcoded fallback */
+      });
   }, []);
 
-  const updateAnswer = useCallback(async (
-    checkpointId: string,
-    status: CheckpointStatus,
-    comment: string,
-    contactRecno: number | null = null,
-    contactName: string | null = null,
-    lat: number | null = null,
-    lng: number | null = null,
-    frist: string | null = null
-  ) => {
-    if (!inspection) return;
-    setSavingId(checkpointId);
+  const updateAnswer = useCallback(
+    async (
+      checkpointId: string,
+      status: CheckpointStatus,
+      comment: string,
+      contactRecno: number | null = null,
+      contactName: string | null = null,
+      lat: number | null = null,
+      lng: number | null = null,
+      frist: string | null = null
+    ) => {
+      if (!inspection) return;
+      setSavingId(checkpointId);
 
-    const supabase = createClient();
-    await supabase.from("inspection_answers").upsert(
-      {
-        inspection_id: id,
-        checkpoint_definition_id: checkpointId,
-        status,
-        comment: comment || null,
-        responsible_contact_recno: contactRecno,
-        responsible_contact_name: contactName,
-        latitude: lat,
-        longitude: lng,
-        frist: frist || null,
-      },
-      { onConflict: "inspection_id,checkpoint_definition_id" }
-    );
-
-    // Auto-update inspection status – check locally instead of an extra DB query
-    const otherAnswersChecked = inspection.answers.some(
-      (a) => a.checkpoint_definition_id !== checkpointId && a.status !== "not_checked"
-    );
-    if (status !== "not_checked" || otherAnswersChecked) {
-      await supabase
-        .from("inspections")
-        .update({ status: "in_progress" })
-        .eq("id", id)
-        .eq("status", "draft");
-    }
-
-    // Optimistic update
-    setInspection((prev) => {
-      if (!prev) return prev;
-      const existing = prev.answers.findIndex(
-        (a) => a.checkpoint_definition_id === checkpointId
+      const supabase = createClient();
+      await supabase.from("inspection_answers").upsert(
+        {
+          inspection_id: id,
+          checkpoint_definition_id: checkpointId,
+          status,
+          comment: comment || null,
+          responsible_contact_recno: contactRecno,
+          responsible_contact_name: contactName,
+          latitude: lat,
+          longitude: lng,
+          frist: frist || null,
+        },
+        { onConflict: "inspection_id,checkpoint_definition_id" }
       );
-      const newAnswer = {
-        id: existing >= 0 ? prev.answers[existing].id : checkpointId,
-        inspection_id: id,
-        checkpoint_definition_id: checkpointId,
-        status,
-        comment,
-        responsible_contact_recno: contactRecno,
-        responsible_contact_name: contactName,
-        latitude: lat,
-        longitude: lng,
-        frist: frist || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      const newAnswers =
-        existing >= 0
-          ? prev.answers.map((a, i) => (i === existing ? newAnswer : a))
-          : [...prev.answers, newAnswer];
-      return { ...prev, answers: newAnswers };
-    });
 
-    setSavingId(null);
-  }, [id, inspection]); // eslint-disable-line react-hooks/exhaustive-deps
+      // Auto-update inspection status – check locally instead of an extra DB query
+      const otherAnswersChecked = inspection.answers.some(
+        (a) => a.checkpoint_definition_id !== checkpointId && a.status !== "not_checked"
+      );
+      if (status !== "not_checked" || otherAnswersChecked) {
+        await supabase
+          .from("inspections")
+          .update({ status: "in_progress" })
+          .eq("id", id)
+          .eq("status", "draft");
+      }
+
+      // Optimistic update
+      setInspection((prev) => {
+        if (!prev) return prev;
+        const existing = prev.answers.findIndex((a) => a.checkpoint_definition_id === checkpointId);
+        const newAnswer = {
+          id: existing >= 0 ? prev.answers[existing].id : checkpointId,
+          inspection_id: id,
+          checkpoint_definition_id: checkpointId,
+          status,
+          comment,
+          responsible_contact_recno: contactRecno,
+          responsible_contact_name: contactName,
+          latitude: lat,
+          longitude: lng,
+          frist: frist || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        const newAnswers =
+          existing >= 0
+            ? prev.answers.map((a, i) => (i === existing ? newAnswer : a))
+            : [...prev.answers, newAnswer];
+        return { ...prev, answers: newAnswers };
+      });
+
+      setSavingId(null);
+    },
+    [id, inspection]
+  ); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Must be before any conditional returns (rules of hooks)
   const attachmentsByCheckpoint = useMemo(() => {
@@ -915,9 +1042,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
   const usedCategories = CATEGORY_ORDER.filter((c) => grouped.has(c));
 
   const displayItems: CheckpointWithAnswer[] =
-    activeCategory === "all"
-      ? merged
-      : grouped.get(activeCategory) ?? [];
+    activeCategory === "all" ? merged : (grouped.get(activeCategory) ?? []);
 
   const participants: SifContact[] = inspection.participants ?? [];
   const externalParticipantsDisplay: ExternalParticipant[] = inspection.external_participants ?? [];
@@ -935,18 +1060,25 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
             {t.inspection.back}
           </Link>
           <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 truncate">
-            {inspection.case_number
-              ? <>
-                  {inspection.case_number}
-                  {inspection.case_title && (
-                    <span className="font-normal text-gray-500 dark:text-slate-400"> · {inspection.case_title}</span>
-                  )}
-                </>
-              : inspection.property_address}
+            {inspection.case_number ? (
+              <>
+                {inspection.case_number}
+                {inspection.case_title && (
+                  <span className="font-normal text-gray-500 dark:text-slate-400">
+                    {" "}
+                    · {inspection.case_title}
+                  </span>
+                )}
+              </>
+            ) : (
+              inspection.property_address
+            )}
           </h1>
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400 mt-1 flex-wrap">
             <span>
-              {new Date(inspection.inspection_date).toLocaleDateString(locale === "en" ? "en-GB" : "nb-NO")}
+              {new Date(inspection.inspection_date).toLocaleDateString(
+                locale === "en" ? "en-GB" : "nb-NO"
+              )}
             </span>
             <StatusBadge status={inspection.status} />
           </div>
@@ -975,8 +1107,12 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
                   className="inline-flex items-center bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full px-2 py-0.5 text-xs"
                 >
                   {ep.name}
-                  {ep.role && <span className="text-amber-500 dark:text-amber-400 ml-1">· {ep.role}</span>}
-                  {ep.company && <span className="text-amber-500 dark:text-amber-400 ml-1">· {ep.company}</span>}
+                  {ep.role && (
+                    <span className="text-amber-500 dark:text-amber-400 ml-1">· {ep.role}</span>
+                  )}
+                  {ep.company && (
+                    <span className="text-amber-500 dark:text-amber-400 ml-1">· {ep.company}</span>
+                  )}
                 </span>
               ))}
             </div>
@@ -990,7 +1126,10 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
                   className="inline-flex items-center bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 rounded-full px-2 py-0.5 text-xs"
                 >
                   🏠{" "}
-                  {e.address ?? (e.gnr && e.bnr ? `Gnr/Bnr ${e.gnr}/${e.bnr}` : `${t.inspection.estates} ${e.recno}`)}
+                  {e.address ??
+                    (e.gnr && e.bnr
+                      ? `Gnr/Bnr ${e.gnr}/${e.bnr}`
+                      : `${t.inspection.estates} ${e.recno}`)}
                 </span>
               ))}
             </div>
@@ -1021,10 +1160,30 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
       {/* Summary bar */}
       <div className="grid grid-cols-4 gap-3 mb-5">
         {[
-          { label: t.inspection.total, value: summary.total, color: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-transparent" },
-          { label: t.inspection.ok, value: summary.ok, color: "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-transparent" },
-          { label: t.inspection.deviations, value: summary.deviations, color: "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-transparent" },
-          { label: t.inspection.notChecked, value: summary.not_checked, color: "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-transparent" },
+          {
+            label: t.inspection.total,
+            value: summary.total,
+            color:
+              "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-transparent",
+          },
+          {
+            label: t.inspection.ok,
+            value: summary.ok,
+            color:
+              "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-200 dark:border-transparent",
+          },
+          {
+            label: t.inspection.deviations,
+            value: summary.deviations,
+            color:
+              "bg-red-50 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-transparent",
+          },
+          {
+            label: t.inspection.notChecked,
+            value: summary.not_checked,
+            color:
+              "bg-yellow-50 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-transparent",
+          },
         ].map((s) => (
           <div key={s.label} className={`${s.color} rounded-xl p-3 text-center`}>
             <p className="text-2xl font-bold">{s.value}</p>
@@ -1038,7 +1197,13 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         {TABS.filter((tab) => tab !== "files" || !!inspection.case_number).map((tab) => (
           <button
             key={tab}
-            onClick={() => { setActiveTab(tab); if (tab === "archive") { setArchivePanelMounted(true); fetchInspection(); } }}
+            onClick={() => {
+              setActiveTab(tab);
+              if (tab === "archive") {
+                setArchivePanelMounted(true);
+                fetchInspection();
+              }
+            }}
             className={`flex-1 py-2 rounded-lg text-sm font-medium transition ${
               activeTab === tab
                 ? "bg-white dark:bg-slate-800 shadow text-gray-900 dark:text-slate-100"
@@ -1113,7 +1278,11 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
                 ↑ {t.inspection.scrollToTop}
               </button>
               <button
-                onClick={() => { setActiveTab("archive"); setArchivePanelMounted(true); fetchInspection(); }}
+                onClick={() => {
+                  setActiveTab("archive");
+                  setArchivePanelMounted(true);
+                  fetchInspection();
+                }}
                 className="flex-1 flex items-center justify-center gap-2 py-3 bg-brand-600 text-white rounded-xl text-sm font-medium hover:bg-brand-700 transition"
               >
                 {t.inspection.tabArchive} →
@@ -1129,7 +1298,9 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
           {summary.deviations === 0 ? (
             <div className="text-center py-16 text-gray-400 dark:text-slate-500">
               <p className="text-5xl mb-3">✅</p>
-              <p className="text-lg font-medium text-gray-600 dark:text-slate-400">{t.inspection.noDeviations}</p>
+              <p className="text-lg font-medium text-gray-600 dark:text-slate-400">
+                {t.inspection.noDeviations}
+              </p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -1171,7 +1342,11 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
       {/* Archive tab — kept in DOM once opened so the document list stays cached */}
       {archivePanelMounted && (
         <div className={activeTab !== "archive" ? "hidden" : ""}>
-          <ArchivePanel inspection={inspection} onArchived={fetchInspection} onMarkCompleted={fetchInspection} />
+          <ArchivePanel
+            inspection={inspection}
+            onArchived={fetchInspection}
+            onMarkCompleted={fetchInspection}
+          />
         </div>
       )}
 

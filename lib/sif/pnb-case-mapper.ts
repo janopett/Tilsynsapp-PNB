@@ -74,11 +74,7 @@ export function mapPnbCase(raw: SifCaseResult, baseUrl = ""): PnbCaseItem {
     date: raw.Date,
     lastChangedDate: raw.LastChangedDate,
     caseTypeDescription: raw.CaseTypeDescription,
-    url: raw.URL
-      ? raw.URL.startsWith("/")
-        ? `${baseUrl}${raw.URL}`
-        : raw.URL
-      : undefined,
+    url: raw.URL ? (raw.URL.startsWith("/") ? `${baseUrl}${raw.URL}` : raw.URL) : undefined,
     contacts: (raw.Contacts ?? []).map((c) => ({
       name: c.ContactName ?? "",
       role: c.Role,
@@ -103,8 +99,12 @@ export function mapPnbCase(raw: SifCaseResult, baseUrl = ""): PnbCaseItem {
     })),
     milestones: mapMilestones(raw.Milestones),
     progressPlanDates: (raw.ProgressPlan?.ActivePhases ?? []).flatMap((p) =>
-      [p.DeadlineDate, p.DueDate, p.EndDate, ...mapMilestones(p.Milestones).map((m) => m.date)]
-        .filter((d): d is string => !!d)
+      [
+        p.DeadlineDate,
+        p.DueDate,
+        p.EndDate,
+        ...mapMilestones(p.Milestones).map((m) => m.date),
+      ].filter((d): d is string => !!d)
     ),
   };
 }

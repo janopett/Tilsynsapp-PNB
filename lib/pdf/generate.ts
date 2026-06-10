@@ -15,17 +15,17 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { PDFDocument } from "pdf-lib";
-import type { InspectionWithAnswers } from "@/types";
 import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import {
-  filterCheckpoints,
-  mergeCheckpointsWithAnswers,
   CATEGORY_LABELS,
   CATEGORY_LABELS_EN,
   CATEGORY_ORDER,
+  filterCheckpoints,
   groupByCategory,
+  mergeCheckpointsWithAnswers,
 } from "@/lib/checklist/filter-engine";
+import type { InspectionWithAnswers } from "@/types";
 
 /** Resolve a single (non-compound) legal reference string to a Lovdata URL. */
 function legalReferenceUrl(ref: string): string | null {
@@ -36,7 +36,8 @@ function legalReferenceUrl(ref: string): string | null {
   const tek17SecMatch = r.match(/^TEK17\s*§\s*([\d-]+)/i);
   if (tek17SecMatch) return `https://lovdata.no/forskrift/2017-06-19-840/§${tek17SecMatch[1]}`;
   const tek17KapMatch = r.match(/^TEK17\s*kap\.?\s*(\d+)/i);
-  if (tek17KapMatch) return `https://lovdata.no/forskrift/2017-06-19-840/KAPITTEL_${tek17KapMatch[1]}`;
+  if (tek17KapMatch)
+    return `https://lovdata.no/forskrift/2017-06-19-840/KAPITTEL_${tek17KapMatch[1]}`;
   if (/^TEK17$/i.test(r)) return "https://lovdata.no/forskrift/2017-06-19-840";
   const sak10Match = r.match(/^SAK10\s*§\s*([\d-]+)/i);
   if (sak10Match) return `https://lovdata.no/forskrift/2010-03-26-488/§${sak10Match[1]}`;
@@ -56,13 +57,14 @@ function parseHjemmelParts(ref: string): Array<{ text: string; url: string | nul
   let lastLawPrefix = "";
   return parts.map((raw) => {
     const part = raw.trim();
-    const lawMatch = part.match(/^(pbl|TEK17|SAK10|Forurensningsloven|el-tilsynsloven|DOK-forskriften)/i);
+    const lawMatch = part.match(
+      /^(pbl|TEK17|SAK10|Forurensningsloven|el-tilsynsloven|DOK-forskriften)/i
+    );
     if (lawMatch) lastLawPrefix = lawMatch[1];
 
     // Bare section like "§ 11-4" — prefix with the last seen law so it resolves correctly
-    const fullRef = !lawMatch && /^§/.test(part) && lastLawPrefix
-      ? `${lastLawPrefix} ${part}`
-      : part;
+    const fullRef =
+      !lawMatch && /^§/.test(part) && lastLawPrefix ? `${lastLawPrefix} ${part}` : part;
 
     return { text: part, url: legalReferenceUrl(fullRef) };
   });
@@ -227,11 +229,16 @@ export async function generateInspectionPdf(
     ["Dato", inspection.inspection_date ?? ""],
   ];
 
-  if (inspection.befaringsomrade?.length) metaRows.push(["Befaringsområde", inspection.befaringsomrade.join(", ")]);
-  if (inspection.tiltakstype?.length) metaRows.push(["Tiltakstype", inspection.tiltakstype.join(", ")]);
+  if (inspection.befaringsomrade?.length)
+    metaRows.push(["Befaringsområde", inspection.befaringsomrade.join(", ")]);
+  if (inspection.tiltakstype?.length)
+    metaRows.push(["Tiltakstype", inspection.tiltakstype.join(", ")]);
   if (inspection.bakgrunn?.length) metaRows.push(["Bakgrunn", inspection.bakgrunn.join(", ")]);
   if (inspection.latitude && inspection.longitude) {
-    metaRows.push(["Koordinater", `${inspection.latitude.toFixed(6)}, ${inspection.longitude.toFixed(6)}`]);
+    metaRows.push([
+      "Koordinater",
+      `${inspection.latitude.toFixed(6)}, ${inspection.longitude.toFixed(6)}`,
+    ]);
   }
 
   autoTable(doc, {
@@ -239,7 +246,11 @@ export async function generateInspectionPdf(
     head: [],
     body: metaRows,
     theme: "plain",
-    styles: { fontSize: 9.5, cellPadding: { top: 2.2, bottom: 2.2, left: 3, right: 3 }, overflow: "linebreak" },
+    styles: {
+      fontSize: 9.5,
+      cellPadding: { top: 2.2, bottom: 2.2, left: 3, right: 3 },
+      overflow: "linebreak",
+    },
     columnStyles: {
       0: { fontStyle: "bold", cellWidth: 38, textColor: [60, 70, 90] },
       1: { cellWidth: contentWidth - 38 },
@@ -343,7 +354,11 @@ export async function generateInspectionPdf(
         STATUS_LABELS[item.answer?.status ?? "not_checked"],
       ]),
       styles: { fontSize: 8, cellPadding: 2, overflow: "linebreak" },
-      headStyles: { fillColor: [...BRAND_MID] as [number, number, number], textColor: [255, 255, 255], fontSize: 8 },
+      headStyles: {
+        fillColor: [...BRAND_MID] as [number, number, number],
+        textColor: [255, 255, 255],
+        fontSize: 8,
+      },
       columnStyles: {
         0: { cellWidth: 7 },
         1: { cellWidth: contentWidth - 65 },
@@ -381,7 +396,6 @@ export async function generateInspectionPdf(
     y += 11;
 
     for (const item of items) {
-
       const checkpointImages = imagesByCheckpoint.get(item.definition.id) ?? [];
       const checkpointPdfs = pdfsByCheckpoint.get(item.definition.id) ?? [];
       const isDeviation = item.answer?.status === "deviation";
@@ -390,9 +404,7 @@ export async function generateInspectionPdf(
       y = ensurePageSpace(doc, y, 18);
 
       const hasCoords = !!(item.answer?.latitude && item.answer?.longitude);
-      const mapDataUri = hasCoords
-        ? (checkpointMapImages?.[item.definition.id] ?? null)
-        : null;
+      const mapDataUri = hasCoords ? (checkpointMapImages?.[item.definition.id] ?? null) : null;
       // Fallback: show coordinate text when no map image was provided
       const coordFallbackText =
         hasCoords && !mapDataUri
@@ -439,7 +451,8 @@ export async function generateInspectionPdf(
         },
       });
 
-      const tableEnd = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
+      const tableEnd = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable
+        .finalY;
 
       // Left accent bar for deviations
       if (isDeviation) {

@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
-import { sifRpcCall } from "@/lib/sif/client";
 import { findCaseInSif } from "@/lib/sif/case-service";
+import { sifRpcCall } from "@/lib/sif/client";
 
 /**
  * Debug endpoint: returns raw (unmapped) SIF responses for estates and contacts.
@@ -42,19 +42,25 @@ export async function GET(req: NextRequest) {
       try {
         const sifCase = await findCaseInSif({ caseNumber: caseNumber ?? undefined });
         caseRecno = sifCase.recno;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
 
       // Try CaseRecno first, then CaseNumber, collect both results for comparison
       const results: Record<string, unknown> = {};
       if (caseRecno) {
         try {
-          results.byRecno = await sifRpcCall("CaseService", "GetCaseContacts", { CaseRecno: caseRecno });
+          results.byRecno = await sifRpcCall("CaseService", "GetCaseContacts", {
+            CaseRecno: caseRecno,
+          });
         } catch (e) {
           results.byRecnoError = String(e);
         }
       }
       try {
-        results.byNumber = await sifRpcCall("CaseService", "GetCaseContacts", { CaseNumber: caseNumber });
+        results.byNumber = await sifRpcCall("CaseService", "GetCaseContacts", {
+          CaseNumber: caseNumber,
+        });
       } catch (e) {
         results.byNumberError = String(e);
       }
@@ -87,13 +93,19 @@ export async function GET(req: NextRequest) {
       if (!codetable) {
         return NextResponse.json({ error: "codetable param is required" }, { status: 400 });
       }
-      const { loadSifSettingsWithEnvFallback, toSifClientConfig } = await import("@/lib/sif/settings");
+      const { loadSifSettingsWithEnvFallback, toSifClientConfig } = await import(
+        "@/lib/sif/settings"
+      );
       const { sifRpcCallWithConfig } = await import("@/lib/sif/client");
       const config = toSifClientConfig(await loadSifSettingsWithEnvFallback());
       raw = await sifRpcCallWithConfig(
-        config, "SupportService", "GetCodeTableRows",
+        config,
+        "SupportService",
+        "GetCodeTableRows",
         { CodeTableName: codetable, IncludeExpiredValues: false },
-        undefined, 0, true
+        undefined,
+        0,
+        true
       );
     } else {
       return NextResponse.json({ error: "unknown service" }, { status: 400 });

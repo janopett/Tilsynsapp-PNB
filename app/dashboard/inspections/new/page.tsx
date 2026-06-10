@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { SifContact, SifEstate, SifCaseStage, ExternalParticipant } from "@/types";
-import type { SifEnterpriseResult } from "@/lib/sif/types";
-import { createClient } from "@/lib/supabase/client";
+import { useCallback, useEffect, useState } from "react";
 import CaseSearchInput from "@/components/sif/CaseSearchInput";
 import EnterpriseSearchInput from "@/components/sif/EnterpriseSearchInput";
 import MapPickerModal from "@/components/ui/MapPickerModal";
-import { useLanguage } from "@/lib/i18n";
 import SearchableMultiSelect from "@/components/ui/SearchableMultiSelect";
+import { useLanguage } from "@/lib/i18n";
+import type { SifEnterpriseResult } from "@/lib/sif/types";
+import { createClient } from "@/lib/supabase/client";
+import type { ExternalParticipant, SifCaseStage, SifContact, SifEstate } from "@/types";
 
 export default function NewInspectionPage() {
   const router = useRouter();
@@ -29,9 +29,7 @@ export default function NewInspectionPage() {
   const [fnr, setFnr] = useState("");
   const [applicantName, setApplicantName] = useState("");
   const [inspectorName, setInspectorName] = useState("");
-  const [inspectionDate, setInspectionDate] = useState(
-    new Date().toISOString().slice(0, 10)
-  );
+  const [inspectionDate, setInspectionDate] = useState(new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState("");
 
   // Contacts from case (for participants + ansvarlig)
@@ -45,7 +43,13 @@ export default function NewInspectionPage() {
 
   // External participants
   const [externalParticipants, setExternalParticipants] = useState<ExternalParticipant[]>([]);
-  const [extDraft, setExtDraft] = useState<{ firstName: string; lastName: string; role: string; company: string; companyRecno?: number }>({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
+  const [extDraft, setExtDraft] = useState<{
+    firstName: string;
+    lastName: string;
+    role: string;
+    company: string;
+    companyRecno?: number;
+  }>({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
   const [showExtForm, setShowExtForm] = useState(false);
 
   // Stages from case
@@ -70,9 +74,15 @@ export default function NewInspectionPage() {
   const [areaGeojson, setAreaGeojson] = useState<import("@/types").GeoJsonPolygon | null>(null);
 
   // Configurable lists
-  const [befaringsomradeItems, setBefaringsomradeItems] = useState<{ code: string; description: string }[]>([]);
-  const [tiltakstypeItems, setTiltakstypeItems] = useState<{ code: string; description: string }[]>([]);
-  const [bakgrunnItems, setBakgrunnItems] = useState<{ label: string; en_label: string | null }[]>([]);
+  const [befaringsomradeItems, setBefaringsomradeItems] = useState<
+    { code: string; description: string }[]
+  >([]);
+  const [tiltakstypeItems, setTiltakstypeItems] = useState<{ code: string; description: string }[]>(
+    []
+  );
+  const [bakgrunnItems, setBakgrunnItems] = useState<{ label: string; en_label: string | null }[]>(
+    []
+  );
   const [befaringsomrade, setBefaringsomrade] = useState<string[]>([]);
   const [tiltakstype, setTiltakstype] = useState<string[]>([]);
   const [selectedBakgrunn, setSelectedBakgrunn] = useState<string[]>([]);
@@ -81,36 +91,42 @@ export default function NewInspectionPage() {
 
   // Fetch configurable lists on mount
   useEffect(() => {
-    createClient().auth.getSession().then(({ data: { session } }) => {
-      if (!session) return;
-      const headers = { Authorization: `Bearer ${session.access_token}` };
-      Promise.all([
-        fetch("/api/inspection-codetables?type=supervision-area", { headers }).then((r) => r.json()),
-        fetch("/api/inspection-codetables?type=measure-type", { headers }).then((r) => r.json()),
-        fetch("/api/inspection-config?category=bakgrunn", { headers }).then((r) => r.json()),
-      ]).then(([a, b, c]) => {
-        setBefaringsomradeItems(a.items ?? []);
-        setTiltakstypeItems(b.items ?? []);
-        setBakgrunnItems(c.items ?? []);
+    createClient()
+      .auth.getSession()
+      .then(({ data: { session } }) => {
+        if (!session) return;
+        const headers = { Authorization: `Bearer ${session.access_token}` };
+        Promise.all([
+          fetch("/api/inspection-codetables?type=supervision-area", { headers }).then((r) =>
+            r.json()
+          ),
+          fetch("/api/inspection-codetables?type=measure-type", { headers }).then((r) => r.json()),
+          fetch("/api/inspection-config?category=bakgrunn", { headers }).then((r) => r.json()),
+        ]).then(([a, b, c]) => {
+          setBefaringsomradeItems(a.items ?? []);
+          setTiltakstypeItems(b.items ?? []);
+          setBakgrunnItems(c.items ?? []);
+        });
       });
-    });
   }, []);
 
   // Auto-fill inspector name
   useEffect(() => {
-    createClient().auth.getUser().then(({ data: { user } }) => {
-      if (!user) return;
-      const meta = user.user_metadata ?? {};
-      const name =
-        (meta.first_name && meta.last_name
-          ? `${meta.first_name} ${meta.last_name}`
-          : meta.first_name ?? meta.last_name ?? null) ??
-        meta.full_name ??
-        meta.name ??
-        user.email ??
-        "";
-      setInspectorName(name);
-    });
+    createClient()
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) return;
+        const meta = user.user_metadata ?? {};
+        const name =
+          (meta.first_name && meta.last_name
+            ? `${meta.first_name} ${meta.last_name}`
+            : (meta.first_name ?? meta.last_name ?? null)) ??
+          meta.full_name ??
+          meta.name ??
+          user.email ??
+          "";
+        setInspectorName(name);
+      });
   }, []);
 
   // Fetch contacts + estates when case number changes
@@ -138,18 +154,15 @@ export default function NewInspectionPage() {
 
       // Fetch contacts, estates and stages in parallel
       const [contactsRes, estatesRes, stagesRes] = await Promise.allSettled([
-        fetch(
-          `/api/sif/case-contacts?caseNumber=${encodeURIComponent(cn)}`,
-          { headers }
-        ).then((r) => r.json()),
-        fetch(
-          `/api/sif/case-estates?caseNumber=${encodeURIComponent(cn)}`,
-          { headers }
-        ).then((r) => r.json()),
-        fetch(
-          `/api/sif/case-stages?caseNumber=${encodeURIComponent(cn)}`,
-          { headers }
-        ).then((r) => r.json()),
+        fetch(`/api/sif/case-contacts?caseNumber=${encodeURIComponent(cn)}`, { headers }).then(
+          (r) => r.json()
+        ),
+        fetch(`/api/sif/case-estates?caseNumber=${encodeURIComponent(cn)}`, { headers }).then((r) =>
+          r.json()
+        ),
+        fetch(`/api/sif/case-stages?caseNumber=${encodeURIComponent(cn)}`, { headers }).then((r) =>
+          r.json()
+        ),
       ]);
 
       setContactsLoading(false);
@@ -214,7 +227,9 @@ export default function NewInspectionPage() {
       setSelectedStageRecno(null);
       return;
     }
-    const timer = setTimeout(() => { fetchCaseData(caseNumber); }, 400);
+    const timer = setTimeout(() => {
+      fetchCaseData(caseNumber);
+    }, 400);
     return () => clearTimeout(timer);
   }, [caseNumber]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -222,8 +237,10 @@ export default function NewInspectionPage() {
     if (estate.address) setPropertyAddress(estate.address);
     if (estate.gnr) setGnr(estate.gnr);
     if (estate.bnr) setBnr(estate.bnr);
-    if (estate.snr) setSnr(estate.snr); else setSnr("");
-    if (estate.fnr) setFnr(estate.fnr); else setFnr("");
+    if (estate.snr) setSnr(estate.snr);
+    else setSnr("");
+    if (estate.fnr) setFnr(estate.fnr);
+    else setFnr("");
     setEstateZipCode(estate.zipCode ?? "");
     setEstateZipPlace(estate.zipPlace ?? "");
   }
@@ -260,15 +277,18 @@ export default function NewInspectionPage() {
     if ((!extDraft.firstName.trim() && !extDraft.lastName.trim()) || !extDraft.companyRecno) return;
     const firstName = extDraft.firstName.trim();
     const lastName = extDraft.lastName.trim();
-    setExternalParticipants((prev) => [...prev, {
-      id: crypto.randomUUID(),
-      name: [firstName, lastName].filter(Boolean).join(" "),
-      firstName,
-      lastName,
-      role: extDraft.role.trim() || undefined,
-      company: extDraft.company.trim(),
-      companyRecno: extDraft.companyRecno,
-    }]);
+    setExternalParticipants((prev) => [
+      ...prev,
+      {
+        id: crypto.randomUUID(),
+        name: [firstName, lastName].filter(Boolean).join(" "),
+        firstName,
+        lastName,
+        role: extDraft.role.trim() || undefined,
+        company: extDraft.company.trim(),
+        companyRecno: extDraft.companyRecno,
+      },
+    ]);
     setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined });
     setShowExtForm(false);
   }
@@ -298,9 +318,7 @@ export default function NewInspectionPage() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(session?.access_token
-          ? { Authorization: `Bearer ${session.access_token}` }
-          : {}),
+        ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
       },
       body: JSON.stringify({
         property_address: propertyAddress,
@@ -342,516 +360,567 @@ export default function NewInspectionPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">{t.newInspection.title}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+          {t.newInspection.title}
+        </h1>
       </div>
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <div className="space-y-4">
-            {/* Case number */}
+          {/* Case number */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              {t.newInspection.caseNumber}
+            </label>
+            <CaseSearchInput
+              value={caseNumber}
+              onChange={(val) => {
+                setCaseNumber(val);
+                if (!val) setCaseTitle("");
+              }}
+              onSelect={(c) => {
+                setCaseNumber(c.caseNumber);
+                setCaseTitle(c.title);
+              }}
+              placeholder={t.newInspection.caseSearchPlaceholder}
+            />
+            {caseTitle && (
+              <p
+                className="mt-1 text-xs text-gray-500 dark:text-slate-400 truncate"
+                title={caseTitle}
+              >
+                {caseTitle}
+              </p>
+            )}
+          </div>
+
+          {/* Estates section */}
+          {(estatesLoading || estates.length > 0) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                {t.newInspection.caseNumber}
+                {t.newInspection.estates}
               </label>
-              <CaseSearchInput
-                value={caseNumber}
-                onChange={(val) => { setCaseNumber(val); if (!val) setCaseTitle(""); }}
-                onSelect={(c) => { setCaseNumber(c.caseNumber); setCaseTitle(c.title); }}
-                placeholder={t.newInspection.caseSearchPlaceholder}
-              />
-              {caseTitle && (
-                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400 truncate" title={caseTitle}>
-                  {caseTitle}
+              {estatesLoading ? (
+                <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">
+                  {t.newInspection.loadingEstates}
                 </p>
+              ) : (
+                <>
+                  {/* Selected estates */}
+                  {selectedEstates.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {selectedEstates.map((e) => (
+                        <span
+                          key={e.recno}
+                          className="inline-flex items-center gap-1 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-800 rounded-full px-3 py-1 text-xs font-medium"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => fillFromEstate(e)}
+                            className="hover:underline text-left"
+                            title={t.newInspection.fillFromEstate}
+                          >
+                            {estateLabel(e)}
+                          </button>
+                          <button
+                            onClick={() => removeEstate(e.recno)}
+                            className="ml-1 text-brand-400 dark:text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 leading-none"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {/* Add estate dropdown */}
+                  {estates.some((e) => !selectedEstates.find((s) => s.recno === e.recno)) && (
+                    <div className="flex gap-2">
+                      <select
+                        value={estateDropdown}
+                        onChange={(ev) =>
+                          setEstateDropdown(ev.target.value ? Number(ev.target.value) : "")
+                        }
+                        className="flex-1 input text-sm"
+                      >
+                        <option value="">{t.newInspection.addEstateOption}</option>
+                        {estates
+                          .filter((e) => !selectedEstates.find((s) => s.recno === e.recno))
+                          .map((e) => (
+                            <option key={e.recno} value={e.recno}>
+                              {estateLabel(e)}
+                            </option>
+                          ))}
+                      </select>
+                      <button
+                        onClick={addEstate}
+                        disabled={!estateDropdown}
+                        className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
+                      >
+                        {t.newInspection.add}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
+          )}
 
-            {/* Estates section */}
-            {(estatesLoading || estates.length > 0) && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  {t.newInspection.estates}
-                </label>
-                {estatesLoading ? (
-                  <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">
-                    {t.newInspection.loadingEstates}
-                  </p>
-                ) : (
-                  <>
-                    {/* Selected estates */}
-                    {selectedEstates.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {selectedEstates.map((e) => (
-                          <span
-                            key={e.recno}
-                            className="inline-flex items-center gap-1 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 border border-brand-200 dark:border-brand-800 rounded-full px-3 py-1 text-xs font-medium"
-                          >
-                            <button
-                              type="button"
-                              onClick={() => fillFromEstate(e)}
-                              className="hover:underline text-left"
-                              title={t.newInspection.fillFromEstate}
-                            >
-                              {estateLabel(e)}
-                            </button>
-                            <button
-                              onClick={() => removeEstate(e.recno)}
-                              className="ml-1 text-brand-400 dark:text-brand-500 hover:text-brand-700 dark:hover:text-brand-300 leading-none"
-                            >
-                              ✕
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    {/* Add estate dropdown */}
-                    {estates.some(
-                      (e) => !selectedEstates.find((s) => s.recno === e.recno)
-                    ) && (
-                      <div className="flex gap-2">
-                        <select
-                          value={estateDropdown}
-                          onChange={(ev) =>
-                            setEstateDropdown(
-                              ev.target.value ? Number(ev.target.value) : ""
-                            )
-                          }
-                          className="flex-1 input text-sm"
-                        >
-                          <option value="">{t.newInspection.addEstateOption}</option>
-                          {estates
-                            .filter(
-                              (e) =>
-                                !selectedEstates.find((s) => s.recno === e.recno)
-                            )
-                            .map((e) => (
-                              <option key={e.recno} value={e.recno}>
-                                {estateLabel(e)}
-                              </option>
-                            ))}
-                        </select>
-                        <button
-                          onClick={addEstate}
-                          disabled={!estateDropdown}
-                          className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
-                        >
-                          {t.newInspection.add}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Stage (behandlingstrinn) */}
-            {(stagesLoading || stages.length > 0) && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  {t.inspection.behandlingstrinn}
-                </label>
-                {stagesLoading ? (
-                  <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">{t.inspection.loadingTreatmentSteps}</p>
-                ) : (
-                  <select
-                    value={selectedStageRecno ?? ""}
-                    onChange={(e) =>
-                      setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)
-                    }
-                    className="input"
-                  >
-                    <option value="">{t.inspection.selectTreatmentStep}</option>
-                    {stages.map((s) => (
-                      <option key={s.recno} value={s.recno}>
-                        {s.title ?? `Trinn ${s.recno}`}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-            )}
-
-            {/* Eiendomsinformasjon – grouped card */}
-            <div className="rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/30 p-4 space-y-3">
-              <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
-                {t.newInspection.propertyInfo}
-              </p>
-
-              {/* Address */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  {t.newInspection.propertyAddress} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={propertyAddress}
-                  onChange={(e) => setPropertyAddress(e.target.value)}
-                  required
-                  placeholder="Storgata 1, 0001 Oslo"
-                  className="input"
-                />
-              </div>
-
-              {/* Matrikkel: Gnr / Bnr / Snr / Fnr */}
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Gnr</label>
-                  <input type="text" value={gnr} onChange={(e) => setGnr(e.target.value)} placeholder="123" className="input text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Bnr</label>
-                  <input type="text" value={bnr} onChange={(e) => setBnr(e.target.value)} placeholder="45" className="input text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Snr</label>
-                  <input type="text" value={snr} onChange={(e) => setSnr(e.target.value)} placeholder="0" className="input text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Fnr</label>
-                  <input type="text" value={fnr} onChange={(e) => setFnr(e.target.value)} placeholder="0" className="input text-sm" />
-                </div>
-              </div>
-            </div>
-
-            {/* Date + Inspector */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  {t.newInspection.inspectionDate} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={inspectionDate}
-                  onChange={(e) => setInspectionDate(e.target.value)}
-                  className="input"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  {t.newInspection.inspector}
-                </label>
-                <input
-                  type="text"
-                  value={inspectorName}
-                  onChange={(e) => setInspectorName(e.target.value)}
-                  placeholder={t.newInspection.inspectorPlaceholder}
-                  className="input"
-                />
-              </div>
-            </div>
-
-            {/* Applicant */}
+          {/* Stage (behandlingstrinn) */}
+          {(stagesLoading || stages.length > 0) && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                {t.newInspection.applicantName}
+                {t.inspection.behandlingstrinn}
               </label>
-              {caseContacts.length > 0 ? (
+              {stagesLoading ? (
+                <p className="text-sm text-gray-400 dark:text-slate-500 animate-pulse">
+                  {t.inspection.loadingTreatmentSteps}
+                </p>
+              ) : (
                 <select
-                  value={applicantName}
-                  onChange={(e) => {
-                    const name = e.target.value;
-                    setApplicantName(name);
-                    const contact = caseContacts.find((c) => c.name === name);
-                    setApplicantRecno(contact ? contact.recno : null);
-                  }}
+                  value={selectedStageRecno ?? ""}
+                  onChange={(e) =>
+                    setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)
+                  }
                   className="input"
                 >
-                  <option value="">{t.newInspection.selectFromCaseOrType}</option>
-                  {caseContacts.map((c) => (
-                    <option key={c.recno} value={c.name}>
-                      {c.name}
-                      {c.role ? ` (${c.role})` : ""}
+                  <option value="">{t.inspection.selectTreatmentStep}</option>
+                  {stages.map((s) => (
+                    <option key={s.recno} value={s.recno}>
+                      {s.title ?? `Trinn ${s.recno}`}
                     </option>
                   ))}
                 </select>
-              ) : (
+              )}
+            </div>
+          )}
+
+          {/* Eiendomsinformasjon – grouped card */}
+          <div className="rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/30 p-4 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+              {t.newInspection.propertyInfo}
+            </p>
+
+            {/* Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                {t.newInspection.propertyAddress} <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={propertyAddress}
+                onChange={(e) => setPropertyAddress(e.target.value)}
+                required
+                placeholder="Storgata 1, 0001 Oslo"
+                className="input"
+              />
+            </div>
+
+            {/* Matrikkel: Gnr / Bnr / Snr / Fnr */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Gnr</label>
                 <input
                   type="text"
-                  value={applicantName}
-                  onChange={(e) => setApplicantName(e.target.value)}
-                  placeholder={
-                    contactsLoading ? t.newInspection.loadingContacts : "Ola Nordmann"
-                  }
-                  className="input"
+                  value={gnr}
+                  onChange={(e) => setGnr(e.target.value)}
+                  placeholder="123"
+                  className="input text-sm"
                 />
-              )}
-            </div>
-
-            {/* Participants */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                {t.newInspection.participants}
-              </label>
-              {participants.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {participants.map((p) => (
-                    <span
-                      key={p.recno}
-                      className="inline-flex items-center gap-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-full px-3 py-1 text-xs font-medium"
-                    >
-                      {p.name}
-                      {p.role && (
-                        <span className="text-gray-400 dark:text-slate-500"> · {p.role}</span>
-                      )}
-                      <button
-                        onClick={() => removeParticipant(p.recno)}
-                        className="ml-1 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 leading-none"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {caseContacts.length > 0 ? (
-                <div className="flex gap-2">
-                  <select
-                    value={participantDropdown}
-                    onChange={(e) =>
-                      setParticipantDropdown(
-                        e.target.value ? Number(e.target.value) : ""
-                      )
-                    }
-                    className="flex-1 input text-sm"
-                  >
-                    <option value="">{t.newInspection.selectParticipant}</option>
-                    {caseContacts
-                      .filter(
-                        (c) => !participants.find((p) => p.recno === c.recno)
-                      )
-                      .map((c) => (
-                        <option key={c.recno} value={c.recno}>
-                          {c.name}
-                          {c.role ? ` (${c.role})` : ""}
-                        </option>
-                      ))}
-                  </select>
-                  <button
-                    onClick={addParticipant}
-                    disabled={!participantDropdown}
-                    className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
-                  >
-                    {t.newInspection.add}
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400 dark:text-slate-500">
-                  {contactsLoading
-                    ? t.newInspection.loadingCaseContacts
-                    : caseNumber
-                    ? t.newInspection.noContactsFound
-                    : t.newInspection.selectCaseForContacts}
-                </p>
-              )}
-            </div>
-
-            {/* External participants */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                Eksterne deltakere{" "}
-                <span className="text-gray-400 dark:text-slate-500 font-normal text-xs">(f.eks. Brannvernleder, Verneombud)</span>
-              </label>
-              {externalParticipants.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {externalParticipants.map((ep) => (
-                    <span
-                      key={ep.id}
-                      className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full px-3 py-1 text-xs font-medium"
-                    >
-                      {ep.name}
-                      {ep.role && <span className="text-amber-500 dark:text-amber-400"> · {ep.role}</span>}
-                      {ep.company && <span className="text-amber-500 dark:text-amber-400"> · {ep.company}</span>}
-                      <button
-                        onClick={() => removeExternalParticipant(ep.id)}
-                        className="ml-1 text-amber-400 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 leading-none"
-                      >
-                        ✕
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              )}
-              {showExtForm ? (
-                <div className="border border-gray-200 dark:border-slate-600 rounded-xl p-3 space-y-2 bg-gray-50 dark:bg-slate-700/50">
-                  <div className="grid grid-cols-2 gap-2">
-                    <input
-                      type="text"
-                      placeholder="Fornavn"
-                      value={extDraft.firstName}
-                      onChange={(e) => setExtDraft((d) => ({ ...d, firstName: e.target.value }))}
-                      className="input text-sm"
-                    />
-                    <input
-                      type="text"
-                      placeholder="Etternavn"
-                      value={extDraft.lastName}
-                      onChange={(e) => setExtDraft((d) => ({ ...d, lastName: e.target.value }))}
-                      className="input text-sm"
-                    />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Rolle (valgfri)"
-                    value={extDraft.role}
-                    onChange={(e) => setExtDraft((d) => ({ ...d, role: e.target.value }))}
-                    className="input text-sm"
-                  />
-                  <EnterpriseSearchInput
-                    value={extDraft.company}
-                    onChange={(name) => setExtDraft((d) => ({ ...d, company: name, companyRecno: undefined }))}
-                    onSelect={(enterprise: SifEnterpriseResult) =>
-                      setExtDraft((d) => ({ ...d, company: enterprise.Name, companyRecno: enterprise.Recno }))
-                    }
-                    placeholder="Foretak * (søk i Plan & Build)"
-                    className="input text-sm"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      type="button"
-                      onClick={() => { setShowExtForm(false); setExtDraft({ firstName: "", lastName: "", role: "", company: "", companyRecno: undefined }); }}
-                      className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
-                    >
-                      Avbryt
-                    </button>
-                    <button
-                      type="button"
-                      onClick={addExternalParticipant}
-                      disabled={(!extDraft.firstName.trim() && !extDraft.lastName.trim()) || !extDraft.companyRecno}
-                      className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-sm disabled:opacity-40 hover:bg-brand-700 transition"
-                    >
-                      Legg til
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setShowExtForm(true)}
-                  className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium"
-                >
-                  {t.inspection.addExternalParticipant}
-                </button>
-              )}
-            </div>
-
-            {/* Befaringsområde (multi-select fra PNB-kodetabell) */}
-            {befaringsomradeItems.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t.inspection.befaringsomrade}
-                </label>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  {befaringsomradeItems.map((item) => (
-                    <label key={item.code} className="flex items-center gap-2 cursor-pointer select-none">
-                      <input
-                        type="checkbox"
-                        checked={befaringsomrade.includes(item.code)}
-                        onChange={() =>
-                          setBefaringsomrade((prev) =>
-                            prev.includes(item.code)
-                              ? prev.filter((v) => v !== item.code)
-                              : [...prev, item.code]
-                          )
-                        }
-                        className="w-4 h-4 accent-brand-600 flex-shrink-0"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-slate-300">{item.description}</span>
-                    </label>
-                  ))}
-                </div>
               </div>
-            )}
-
-            {/* Tiltakstype (søkbart multi-select fra PNB-kodetabell) */}
-            {tiltakstypeItems.length > 0 && (
-              <SearchableMultiSelect
-                label={t.inspection.tiltakstype}
-                items={tiltakstypeItems}
-                selected={tiltakstype}
-                onChange={setTiltakstype}
-                placeholder="Søk etter tiltakstype..."
-              />
-            )}
-
-            {/* Bakgrunn for tilsynet */}
-            {bakgrunnItems.length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t.inspection.bakgrunn}
-                </label>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                  {bakgrunnItems.map((item) => (
-                    <label
-                      key={item.label}
-                      className="flex items-center gap-2 cursor-pointer select-none"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedBakgrunn.includes(item.label)}
-                        onChange={() =>
-                          setSelectedBakgrunn((prev) =>
-                            prev.includes(item.label)
-                              ? prev.filter((v) => v !== item.label)
-                              : [...prev, item.label]
-                          )
-                        }
-                        className="w-4 h-4 accent-brand-600 flex-shrink-0"
-                      />
-                      <span className="text-sm text-gray-700 dark:text-slate-300">
-                        {locale === "en" && item.en_label ? item.en_label : item.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Bnr</label>
+                <input
+                  type="text"
+                  value={bnr}
+                  onChange={(e) => setBnr(e.target.value)}
+                  placeholder="45"
+                  className="input text-sm"
+                />
               </div>
-            )}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Snr</label>
+                <input
+                  type="text"
+                  value={snr}
+                  onChange={(e) => setSnr(e.target.value)}
+                  placeholder="0"
+                  className="input text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Fnr</label>
+                <input
+                  type="text"
+                  value={fnr}
+                  onChange={(e) => setFnr(e.target.value)}
+                  placeholder="0"
+                  className="input text-sm"
+                />
+              </div>
+            </div>
+          </div>
 
-            {/* Notes */}
+          {/* Date + Inspector */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                {t.newInspection.notes}
+                {t.newInspection.inspectionDate} <span className="text-red-500">*</span>
               </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={3}
-                className="input resize-none"
-                placeholder={t.newInspection.notesPlaceholder}
+              <input
+                type="date"
+                value={inspectionDate}
+                onChange={(e) => setInspectionDate(e.target.value)}
+                className="input"
               />
             </div>
-
-            {/* Map */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                {t.newInspection.mapPosition}
+                {t.newInspection.inspector}
               </label>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setShowMap(true)}
-                  type="button"
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition text-gray-700 dark:text-slate-300"
-                >
-                  🗺️{" "}
-                  {latitude != null
-                    ? t.newInspection.changePosition
-                    : t.newInspection.selectPosition}
-                </button>
-                {latitude != null && longitude != null && (
-                  <span className="text-xs text-gray-500 dark:text-slate-400">
-                    {latitude.toFixed(5)}°N, {longitude.toFixed(5)}°Ø
+              <input
+                type="text"
+                value={inspectorName}
+                onChange={(e) => setInspectorName(e.target.value)}
+                placeholder={t.newInspection.inspectorPlaceholder}
+                className="input"
+              />
+            </div>
+          </div>
+
+          {/* Applicant */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              {t.newInspection.applicantName}
+            </label>
+            {caseContacts.length > 0 ? (
+              <select
+                value={applicantName}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setApplicantName(name);
+                  const contact = caseContacts.find((c) => c.name === name);
+                  setApplicantRecno(contact ? contact.recno : null);
+                }}
+                className="input"
+              >
+                <option value="">{t.newInspection.selectFromCaseOrType}</option>
+                {caseContacts.map((c) => (
+                  <option key={c.recno} value={c.name}>
+                    {c.name}
+                    {c.role ? ` (${c.role})` : ""}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={applicantName}
+                onChange={(e) => setApplicantName(e.target.value)}
+                placeholder={contactsLoading ? t.newInspection.loadingContacts : "Ola Nordmann"}
+                className="input"
+              />
+            )}
+          </div>
+
+          {/* Participants */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              {t.newInspection.participants}
+            </label>
+            {participants.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {participants.map((p) => (
+                  <span
+                    key={p.recno}
+                    className="inline-flex items-center gap-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 rounded-full px-3 py-1 text-xs font-medium"
+                  >
+                    {p.name}
+                    {p.role && (
+                      <span className="text-gray-400 dark:text-slate-500"> · {p.role}</span>
+                    )}
                     <button
-                      onClick={() => {
-                        setLatitude(null);
-                        setLongitude(null);
-                      }}
-                      className="ml-2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
+                      onClick={() => removeParticipant(p.recno)}
+                      className="ml-1 text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300 leading-none"
                     >
                       ✕
                     </button>
                   </span>
-                )}
+                ))}
+              </div>
+            )}
+            {caseContacts.length > 0 ? (
+              <div className="flex gap-2">
+                <select
+                  value={participantDropdown}
+                  onChange={(e) =>
+                    setParticipantDropdown(e.target.value ? Number(e.target.value) : "")
+                  }
+                  className="flex-1 input text-sm"
+                >
+                  <option value="">{t.newInspection.selectParticipant}</option>
+                  {caseContacts
+                    .filter((c) => !participants.find((p) => p.recno === c.recno))
+                    .map((c) => (
+                      <option key={c.recno} value={c.recno}>
+                        {c.name}
+                        {c.role ? ` (${c.role})` : ""}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  onClick={addParticipant}
+                  disabled={!participantDropdown}
+                  className="px-3 py-2 bg-brand-600 text-white rounded-xl text-sm disabled:opacity-40 hover:bg-brand-700 transition"
+                >
+                  {t.newInspection.add}
+                </button>
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400 dark:text-slate-500">
+                {contactsLoading
+                  ? t.newInspection.loadingCaseContacts
+                  : caseNumber
+                    ? t.newInspection.noContactsFound
+                    : t.newInspection.selectCaseForContacts}
+              </p>
+            )}
+          </div>
+
+          {/* External participants */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              Eksterne deltakere{" "}
+              <span className="text-gray-400 dark:text-slate-500 font-normal text-xs">
+                (f.eks. Brannvernleder, Verneombud)
+              </span>
+            </label>
+            {externalParticipants.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {externalParticipants.map((ep) => (
+                  <span
+                    key={ep.id}
+                    className="inline-flex items-center gap-1 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 rounded-full px-3 py-1 text-xs font-medium"
+                  >
+                    {ep.name}
+                    {ep.role && (
+                      <span className="text-amber-500 dark:text-amber-400"> · {ep.role}</span>
+                    )}
+                    {ep.company && (
+                      <span className="text-amber-500 dark:text-amber-400"> · {ep.company}</span>
+                    )}
+                    <button
+                      onClick={() => removeExternalParticipant(ep.id)}
+                      className="ml-1 text-amber-400 dark:text-amber-500 hover:text-amber-700 dark:hover:text-amber-300 leading-none"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {showExtForm ? (
+              <div className="border border-gray-200 dark:border-slate-600 rounded-xl p-3 space-y-2 bg-gray-50 dark:bg-slate-700/50">
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Fornavn"
+                    value={extDraft.firstName}
+                    onChange={(e) => setExtDraft((d) => ({ ...d, firstName: e.target.value }))}
+                    className="input text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Etternavn"
+                    value={extDraft.lastName}
+                    onChange={(e) => setExtDraft((d) => ({ ...d, lastName: e.target.value }))}
+                    className="input text-sm"
+                  />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Rolle (valgfri)"
+                  value={extDraft.role}
+                  onChange={(e) => setExtDraft((d) => ({ ...d, role: e.target.value }))}
+                  className="input text-sm"
+                />
+                <EnterpriseSearchInput
+                  value={extDraft.company}
+                  onChange={(name) =>
+                    setExtDraft((d) => ({ ...d, company: name, companyRecno: undefined }))
+                  }
+                  onSelect={(enterprise: SifEnterpriseResult) =>
+                    setExtDraft((d) => ({
+                      ...d,
+                      company: enterprise.Name,
+                      companyRecno: enterprise.Recno,
+                    }))
+                  }
+                  placeholder="Foretak * (søk i Plan & Build)"
+                  className="input text-sm"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowExtForm(false);
+                      setExtDraft({
+                        firstName: "",
+                        lastName: "",
+                        role: "",
+                        company: "",
+                        companyRecno: undefined,
+                      });
+                    }}
+                    className="text-sm text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200"
+                  >
+                    Avbryt
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addExternalParticipant}
+                    disabled={
+                      (!extDraft.firstName.trim() && !extDraft.lastName.trim()) ||
+                      !extDraft.companyRecno
+                    }
+                    className="px-3 py-1.5 bg-brand-600 text-white rounded-lg text-sm disabled:opacity-40 hover:bg-brand-700 transition"
+                  >
+                    Legg til
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowExtForm(true)}
+                className="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium"
+              >
+                {t.inspection.addExternalParticipant}
+              </button>
+            )}
+          </div>
+
+          {/* Befaringsområde (multi-select fra PNB-kodetabell) */}
+          {befaringsomradeItems.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                {t.inspection.befaringsomrade}
+              </label>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {befaringsomradeItems.map((item) => (
+                  <label
+                    key={item.code}
+                    className="flex items-center gap-2 cursor-pointer select-none"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={befaringsomrade.includes(item.code)}
+                      onChange={() =>
+                        setBefaringsomrade((prev) =>
+                          prev.includes(item.code)
+                            ? prev.filter((v) => v !== item.code)
+                            : [...prev, item.code]
+                        )
+                      }
+                      className="w-4 h-4 accent-brand-600 flex-shrink-0"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-slate-300">
+                      {item.description}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
+          )}
+
+          {/* Tiltakstype (søkbart multi-select fra PNB-kodetabell) */}
+          {tiltakstypeItems.length > 0 && (
+            <SearchableMultiSelect
+              label={t.inspection.tiltakstype}
+              items={tiltakstypeItems}
+              selected={tiltakstype}
+              onChange={setTiltakstype}
+              placeholder="Søk etter tiltakstype..."
+            />
+          )}
+
+          {/* Bakgrunn for tilsynet */}
+          {bakgrunnItems.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                {t.inspection.bakgrunn}
+              </label>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                {bakgrunnItems.map((item) => (
+                  <label
+                    key={item.label}
+                    className="flex items-center gap-2 cursor-pointer select-none"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedBakgrunn.includes(item.label)}
+                      onChange={() =>
+                        setSelectedBakgrunn((prev) =>
+                          prev.includes(item.label)
+                            ? prev.filter((v) => v !== item.label)
+                            : [...prev, item.label]
+                        )
+                      }
+                      className="w-4 h-4 accent-brand-600 flex-shrink-0"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-slate-300">
+                      {locale === "en" && item.en_label ? item.en_label : item.label}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Notes */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              {t.newInspection.notes}
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="input resize-none"
+              placeholder={t.newInspection.notesPlaceholder}
+            />
           </div>
+
+          {/* Map */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+              {t.newInspection.mapPosition}
+            </label>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowMap(true)}
+                type="button"
+                className="flex items-center gap-2 px-4 py-2 border border-gray-200 dark:border-slate-600 rounded-xl text-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition text-gray-700 dark:text-slate-300"
+              >
+                🗺️{" "}
+                {latitude != null ? t.newInspection.changePosition : t.newInspection.selectPosition}
+              </button>
+              {latitude != null && longitude != null && (
+                <span className="text-xs text-gray-500 dark:text-slate-400">
+                  {latitude.toFixed(5)}°N, {longitude.toFixed(5)}°Ø
+                  <button
+                    onClick={() => {
+                      setLatitude(null);
+                      setLongitude(null);
+                    }}
+                    className="ml-2 text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300"
+                  >
+                    ✕
+                  </button>
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
 
         {error && (
           <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-xl px-4 py-3 text-sm">
@@ -882,7 +951,9 @@ export default function NewInspectionPage() {
           initialLat={latitude}
           initialLng={longitude}
           initialPolygon={areaGeojson}
-          addressHint={[propertyAddress, estateZipCode, estateZipPlace].filter(Boolean).join(" ") || undefined}
+          addressHint={
+            [propertyAddress, estateZipCode, estateZipPlace].filter(Boolean).join(" ") || undefined
+          }
           title={t.newInspection.mapTitle}
           allowPolygon
           onSave={(lat, lng, polygon) => {

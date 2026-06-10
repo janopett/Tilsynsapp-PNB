@@ -1,5 +1,5 @@
-import { uploadFileToSif, mimeTypeToFormat } from "@/lib/sif/file-service";
-import { SifValidationError, SifUploadError } from "@/lib/sif/errors";
+import { SifUploadError, SifValidationError } from "@/lib/sif/errors";
+import { mimeTypeToFormat, uploadFileToSif } from "@/lib/sif/file-service";
 
 // Mock the SIF RPC client
 jest.mock("@/lib/sif/client", () => ({
@@ -7,6 +7,7 @@ jest.mock("@/lib/sif/client", () => ({
 }));
 
 import { sifRpcCall } from "@/lib/sif/client";
+
 const mockSifRpcCall = sifRpcCall as jest.MockedFunction<typeof sifRpcCall>;
 
 describe("uploadFileToSif", () => {
@@ -35,7 +36,8 @@ describe("uploadFileToSif", () => {
         FileName: "rapport.pdf",
         FileFormat: "pdf",
       }),
-      undefined
+      undefined,
+      true
     );
   });
 

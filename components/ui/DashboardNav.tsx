@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { type Locale, useLanguage } from "@/lib/i18n";
 import LogoutButton from "./LogoutButton";
 import ThemeToggle from "./ThemeToggle";
-import { useLanguage, type Locale } from "@/lib/i18n";
 
 interface DashboardNavProps {
   isAdmin: boolean;
@@ -21,7 +21,10 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
   ];
 
   return (
-    <nav aria-label="Hovednavigasjon" className="bg-brand-900 text-white shadow-lg sticky top-0 z-50">
+    <nav
+      aria-label="Hovednavigasjon"
+      className="bg-brand-900 text-white shadow-lg sticky top-0 z-50"
+    >
       <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
         <Link
           href="/dashboard"
@@ -92,7 +95,10 @@ export default function DashboardNav({ isAdmin }: DashboardNavProps) {
                         {item.label}
                       </Link>
                     ))}
-                    <div className="border-t border-gray-100 dark:border-slate-700 my-1" aria-hidden="true" />
+                    <div
+                      className="border-t border-gray-100 dark:border-slate-700 my-1"
+                      aria-hidden="true"
+                    />
                     <Link
                       href="/dashboard/admin/users"
                       role="menuitem"

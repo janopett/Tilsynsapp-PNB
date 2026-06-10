@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.2.0/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.4.16/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "ignore": [".next", "node_modules", "coverage", "public"]
+    "includes": ["**", "!**/.next", "!**/node_modules", "!**/coverage", "!**/public", "!**/*.css"]
   },
   "formatter": {
     "enabled": true,
@@ -19,8 +19,37 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "a11y": {
+        "noAutofocus": "warn",
+        "noLabelWithoutControl": "warn",
+        "noNoninteractiveElementToInteractiveRole": "warn",
+        "noSvgWithoutTitle": "warn",
+        "useAriaPropsSupportedByRole": "warn",
+        "useButtonType": "warn",
+        "useFocusableInteractive": "warn",
+        "useKeyWithClickEvents": "warn",
+        "useSemanticElements": "warn",
+        "noStaticElementInteractions": "warn"
+      },
       "correctness": {
-        "noUnusedImports": "warn"
+        "noUnusedImports": "warn",
+        "noUnusedVariables": "warn",
+        "useExhaustiveDependencies": "warn"
+      },
+      "performance": {
+        "noImgElement": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn",
+        "useNodejsImportProtocol": "warn",
+        "useTemplate": "warn"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "warn",
+        "noExplicitAny": "warn",
+        "noGlobalIsNan": "warn",
+        "noImplicitAnyLet": "warn",
+        "useIterableCallbackReturn": "warn"
       }
     }
   },
@@ -32,7 +61,10 @@
       "jsxQuoteStyle": "double"
     }
   },
-  "organizeImports": {
-    "enabled": true
-  }
+  "css": {
+    "parser": {
+      "cssModules": false
+    }
+  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } }
 }

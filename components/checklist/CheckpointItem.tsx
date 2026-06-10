@@ -1,13 +1,13 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import type { Attachment, CheckpointWithAnswer, CheckpointStatus, SifContact } from "@/types";
-import { getCategoryLabel } from "@/lib/checklist/filter-engine";
-import { buildLegalUrl } from "@/lib/legal-reference";
 import MapPickerModal from "@/components/ui/MapPickerModal";
-import { createClient } from "@/lib/supabase/client";
+import { getCategoryLabel } from "@/lib/checklist/filter-engine";
 import { useLanguage } from "@/lib/i18n";
+import { buildLegalUrl } from "@/lib/legal-reference";
 import { extractGps, reverseGeocode, stampGpsOnImage } from "@/lib/stamp-gps";
+import { createClient } from "@/lib/supabase/client";
+import type { Attachment, CheckpointStatus, CheckpointWithAnswer, SifContact } from "@/types";
 
 const STORAGE_BUCKET = "inspection-attachments";
 
@@ -70,7 +70,9 @@ function AttachmentThumb({
       .then(({ data }) => {
         if (!cancelled && data?.signedUrl) setSignedUrl(data.signedUrl);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [att.file_path, att.objectUrl, att.file_type]);
 
   const isImage = att.file_type.startsWith("image/");
@@ -85,7 +87,9 @@ function AttachmentThumb({
         />
       ) : (
         <div className="w-16 h-16 flex flex-col items-center justify-center bg-gray-100 dark:bg-slate-700 rounded-lg border border-gray-200 dark:border-slate-600 text-center px-1">
-          <span className="text-lg" aria-hidden="true">📄</span>
+          <span className="text-lg" aria-hidden="true">
+            📄
+          </span>
           <span className="text-[10px] text-gray-500 dark:text-slate-400 leading-tight truncate w-full text-center">
             {att.file_name.split(".").pop()?.toUpperCase()}
           </span>
@@ -122,7 +126,8 @@ const CheckpointItem = memo(function CheckpointItem({
 }: Props) {
   const { locale, t } = useLanguage();
   const { definition, answer } = item;
-  const displayTitle = locale === "en" && definition.en_title ? definition.en_title : definition.title;
+  const displayTitle =
+    locale === "en" && definition.en_title ? definition.en_title : definition.title;
   const currentStatus: CheckpointStatus = answer?.status ?? "not_checked";
   const [comment, setComment] = useState(answer?.comment ?? "");
   const [expanded, setExpanded] = useState(currentStatus === "deviation");
@@ -150,13 +155,31 @@ const CheckpointItem = memo(function CheckpointItem({
   }
 
   function handleStatus(status: CheckpointStatus) {
-    onUpdate(definition.id, status, comment, selectedContactRecno, currentContactName(), lat, lng, frist || null);
+    onUpdate(
+      definition.id,
+      status,
+      comment,
+      selectedContactRecno,
+      currentContactName(),
+      lat,
+      lng,
+      frist || null
+    );
     if (status === "deviation") setExpanded(true);
   }
 
   function handleCommentBlur() {
     if (comment !== (answer?.comment ?? "")) {
-      onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), lat, lng, frist || null);
+      onUpdate(
+        definition.id,
+        currentStatus,
+        comment,
+        selectedContactRecno,
+        currentContactName(),
+        lat,
+        lng,
+        frist || null
+      );
     }
   }
 
@@ -170,20 +193,47 @@ const CheckpointItem = memo(function CheckpointItem({
   function handleFristChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;
     setFrist(val);
-    onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), lat, lng, val || null);
+    onUpdate(
+      definition.id,
+      currentStatus,
+      comment,
+      selectedContactRecno,
+      currentContactName(),
+      lat,
+      lng,
+      val || null
+    );
   }
 
   function handleMapSave(newLat: number, newLng: number) {
     setLat(newLat);
     setLng(newLng);
     setShowMap(false);
-    onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), newLat, newLng, frist || null);
+    onUpdate(
+      definition.id,
+      currentStatus,
+      comment,
+      selectedContactRecno,
+      currentContactName(),
+      newLat,
+      newLng,
+      frist || null
+    );
   }
 
   function clearCoords() {
     setLat(null);
     setLng(null);
-    onUpdate(definition.id, currentStatus, comment, selectedContactRecno, currentContactName(), null, null, frist || null);
+    onUpdate(
+      definition.id,
+      currentStatus,
+      comment,
+      selectedContactRecno,
+      currentContactName(),
+      null,
+      null,
+      frist || null
+    );
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -270,12 +320,14 @@ const CheckpointItem = memo(function CheckpointItem({
     definition.severity === "critical"
       ? "bg-red-400"
       : definition.severity === "warning"
-      ? "bg-yellow-400"
-      : "bg-blue-300";
+        ? "bg-yellow-400"
+        : "bg-blue-300";
 
   return (
     <>
-      <div className={`border-2 rounded-2xl p-4 transition ${cfg.cls} ${isSaving ? "opacity-70" : ""}`}>
+      <div
+        className={`border-2 rounded-2xl p-4 transition ${cfg.cls} ${isSaving ? "opacity-70" : ""}`}
+      >
         {/* Title row */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-2 min-w-0 flex-1">
@@ -288,22 +340,26 @@ const CheckpointItem = memo(function CheckpointItem({
               </p>
               <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
                 {getCategoryLabel(definition.category, locale)}
-                {definition.legal_reference && (() => {
-                  const url = definition.legal_reference_url || buildLegalUrl(definition.legal_reference);
-                  return url ? (
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="ml-1 text-brand-600 dark:text-brand-400 hover:underline"
-                    >
-                      · {definition.legal_reference}
-                    </a>
-                  ) : (
-                    <span className="ml-1 text-gray-400 dark:text-slate-500">· {definition.legal_reference}</span>
-                  );
-                })()}
+                {definition.legal_reference &&
+                  (() => {
+                    const url =
+                      definition.legal_reference_url || buildLegalUrl(definition.legal_reference);
+                    return url ? (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="ml-1 text-brand-600 dark:text-brand-400 hover:underline"
+                      >
+                        · {definition.legal_reference}
+                      </a>
+                    ) : (
+                      <span className="ml-1 text-gray-400 dark:text-slate-500">
+                        · {definition.legal_reference}
+                      </span>
+                    );
+                  })()}
               </p>
             </div>
           </div>
@@ -336,16 +392,20 @@ const CheckpointItem = memo(function CheckpointItem({
               className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition border-2
                           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1
                           focus-visible:ring-brand-500 dark:focus-visible:ring-offset-slate-800 ${
-                currentStatus === st
-                  ? st === "ok"
-                    ? "border-green-500 bg-green-500 text-white"
-                    : st === "deviation"
-                    ? "border-red-500 bg-red-500 text-white"
-                    : "border-gray-400 bg-gray-400 text-white"
-                  : "border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500"
-              }`}
+                            currentStatus === st
+                              ? st === "ok"
+                                ? "border-green-500 bg-green-500 text-white"
+                                : st === "deviation"
+                                  ? "border-red-500 bg-red-500 text-white"
+                                  : "border-gray-400 bg-gray-400 text-white"
+                              : "border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-500"
+                          }`}
             >
-              {st === "ok" ? `✅ ${t.checklist.statusOk}` : st === "deviation" ? `⚠️ ${t.checklist.statusDeviation}` : t.checklist.statusNotChecked}
+              {st === "ok"
+                ? `✅ ${t.checklist.statusOk}`
+                : st === "deviation"
+                  ? `⚠️ ${t.checklist.statusDeviation}`
+                  : t.checklist.statusNotChecked}
             </button>
           ))}
         </div>
@@ -368,7 +428,8 @@ const CheckpointItem = memo(function CheckpointItem({
               <option value="">{t.checkpoint.notSelected}</option>
               {contacts.map((c) => (
                 <option key={c.recno} value={c.recno}>
-                  {c.name}{c.role ? ` (${c.role})` : ""}
+                  {c.name}
+                  {c.role ? ` (${c.role})` : ""}
                 </option>
               ))}
             </select>
@@ -434,7 +495,14 @@ const CheckpointItem = memo(function CheckpointItem({
             </span>
           )}
 
-          <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileSelect} />
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
           <button
             type="button"
             onClick={() => cameraInputRef.current?.click()}
@@ -447,7 +515,13 @@ const CheckpointItem = memo(function CheckpointItem({
             📷 {t.checkpoint.takePhoto}
           </button>
 
-          <input ref={fileInputRef} type="file" accept="image/*,.pdf,.doc,.docx" className="hidden" onChange={handleFileSelect} />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*,.pdf,.doc,.docx"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
@@ -463,7 +537,10 @@ const CheckpointItem = memo(function CheckpointItem({
 
         {/* Upload error */}
         {uploadError && (
-          <p role="alert" className="mt-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-lg px-3 py-1.5">
+          <p
+            role="alert"
+            className="mt-2 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-lg px-3 py-1.5"
+          >
             ⚠️ {uploadError}
           </p>
         )}

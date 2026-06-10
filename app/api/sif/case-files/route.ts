@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
-import { getDocumentsWithFiles } from "@/lib/sif/extensions/referred-cases";
-import { getReferredCasesWithDocuments } from "@/lib/sif/extensions/referred-cases";
+import {
+  getDocumentsWithFiles,
+  getReferredCasesWithDocuments,
+} from "@/lib/sif/extensions/referred-cases";
 import type { SifFileMetadata } from "@/lib/sif/types";
 
 export interface CaseFileGroup {

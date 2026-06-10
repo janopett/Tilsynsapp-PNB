@@ -49,16 +49,12 @@ export function getSifAuthConfig(): SifAuthConfig {
  * For authkey mode:  AuthKey header
  * For combined_daemon: Authorization: Bearer <token> + AuthKey + ClientID
  */
-export async function buildSifAuthHeaders(
-  config?: SifAuthConfig
-): Promise<SifAuthHeaders> {
+export async function buildSifAuthHeaders(config?: SifAuthConfig): Promise<SifAuthHeaders> {
   const cfg = config ?? getSifAuthConfig();
 
   if (cfg.mode === "authkey") {
     if (!cfg.authKey) {
-      throw new SifAuthenticationError(
-        "SIF_AUTHKEY environment variable is not set."
-      );
+      throw new SifAuthenticationError("SIF_AUTHKEY environment variable is not set.");
     }
     return {
       "Content-Type": "application/json",
@@ -118,9 +114,7 @@ async function getBearerToken(cfg: SifAuthConfig): Promise<string> {
 
   const json = await response.json();
   if (!json.access_token) {
-    throw new SifAuthenticationError(
-      "Bearer token response did not contain access_token."
-    );
+    throw new SifAuthenticationError("Bearer token response did not contain access_token.");
   }
 
   const expiresIn: number = json.expires_in ?? 3600;
@@ -133,9 +127,7 @@ async function getBearerToken(cfg: SifAuthConfig): Promise<string> {
 }
 
 /** Mask sensitive header values for logging */
-export function maskAuthHeaders(
-  headers: Record<string, string>
-): Record<string, string> {
+export function maskAuthHeaders(headers: Record<string, string>): Record<string, string> {
   const masked: Record<string, string> = {};
   for (const [key, value] of Object.entries(headers)) {
     if (

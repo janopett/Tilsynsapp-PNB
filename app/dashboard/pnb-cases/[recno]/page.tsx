@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
+import { useParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n";
 import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
+import { createClient } from "@/lib/supabase/client";
 
 const CASE_CACHE_TTL = 5 * 60 * 1000;
 
@@ -15,12 +15,17 @@ function loadCaseCache(recno: string): PnbCaseItem | null {
     if (!raw) return null;
     const { data, ts } = JSON.parse(raw) as { data: PnbCaseItem; ts: number };
     return Date.now() - ts < CASE_CACHE_TTL ? data : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 function saveCaseCache(recno: string, data: PnbCaseItem) {
-  try { sessionStorage.setItem(`pnb_case_${recno}_v1`, JSON.stringify({ data, ts: Date.now() })); }
-  catch { /* storage full or SSR */ }
+  try {
+    sessionStorage.setItem(`pnb_case_${recno}_v1`, JSON.stringify({ data, ts: Date.now() }));
+  } catch {
+    /* storage full or SSR */
+  }
 }
 
 export default function PnbCaseDetailPage() {
@@ -38,8 +43,11 @@ export default function PnbCaseDetailPage() {
   // Persist to localStorage whenever the state changes (after init)
   useEffect(() => {
     if (!stagesReady.current) return;
-    try { localStorage.setItem(stagesStorageKey, JSON.stringify(Array.from(expandedStages))); }
-    catch { /* ignore */ }
+    try {
+      localStorage.setItem(stagesStorageKey, JSON.stringify(Array.from(expandedStages)));
+    } catch {
+      /* ignore */
+    }
   }, [expandedStages, stagesStorageKey]);
 
   // Initialize: restore from localStorage if available, otherwise default to active-expanded
@@ -52,7 +60,9 @@ export default function PnbCaseDetailPage() {
         setExpandedStages(new Set(JSON.parse(raw) as string[]));
         return;
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     if (!caseData) return;
     stagesReady.current = true;
     const active = caseData.stages.filter(
@@ -63,11 +73,19 @@ export default function PnbCaseDetailPage() {
 
   useEffect(() => {
     const cached = loadCaseCache(recno);
-    if (cached) { setCaseData(cached); setLoading(false); return; }
+    if (cached) {
+      setCaseData(cached);
+      setLoading(false);
+      return;
+    }
 
     const supabase = createClient();
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) { setError("Ikke autentisert"); setLoading(false); return; }
+      if (!session) {
+        setError("Ikke autentisert");
+        setLoading(false);
+        return;
+      }
       try {
         const res = await fetch(`/api/sif/pnb-case/${recno}`, {
           headers: { Authorization: `Bearer ${session.access_token}` },
@@ -101,7 +119,10 @@ export default function PnbCaseDetailPage() {
       <div className="max-w-3xl mx-auto py-12 text-center">
         <p className="text-3xl mb-3">⚠️</p>
         <p className="text-red-600 dark:text-red-400">{error ?? "Sak ikke funnet"}</p>
-        <Link href="/dashboard" className="mt-4 inline-block text-brand-600 hover:underline text-sm">
+        <Link
+          href="/dashboard"
+          className="mt-4 inline-block text-brand-600 hover:underline text-sm"
+        >
           ← Tilbake til dashbordet
         </Link>
       </div>
@@ -117,9 +138,7 @@ export default function PnbCaseDetailPage() {
   );
 
   function DeadlineBadge({ date }: { date: string }) {
-    const daysLeft = Math.ceil(
-      (new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    );
+    const daysLeft = Math.ceil((new Date(date).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     const isOverdue = daysLeft < 0;
     const isUrgent = daysLeft >= 0 && daysLeft <= 7;
     return (
@@ -128,12 +147,12 @@ export default function PnbCaseDetailPage() {
           isOverdue
             ? "text-red-600 dark:text-red-400"
             : isUrgent
-            ? "text-orange-600 dark:text-orange-400"
-            : "text-gray-500 dark:text-slate-400"
+              ? "text-orange-600 dark:text-orange-400"
+              : "text-gray-500 dark:text-slate-400"
         }`}
       >
-        Frist: {new Date(date).toLocaleDateString(dateLocale)}
-        {" "}({daysLeft < 0 ? `${Math.abs(daysLeft)} dager på overtid` : `${daysLeft} dager igjen`})
+        Frist: {new Date(date).toLocaleDateString(dateLocale)} (
+        {daysLeft < 0 ? `${Math.abs(daysLeft)} dager på overtid` : `${daysLeft} dager igjen`})
       </span>
     );
   }
@@ -152,7 +171,9 @@ export default function PnbCaseDetailPage() {
     const isCompleted = (status?: string) => {
       if (!status) return false;
       const s = status.toLowerCase();
-      return s.includes("nådd") || s.includes("completed") || s.includes("done") || s.includes("ferdig");
+      return (
+        s.includes("nådd") || s.includes("completed") || s.includes("done") || s.includes("ferdig")
+      );
     };
 
     type TimelineItem = {
@@ -173,7 +194,13 @@ export default function PnbCaseDetailPage() {
     }));
 
     if (deadlineDate && !closed) {
-      items.push({ kind: "deadline", title: "Frist", date: deadlineDate, status: undefined, completed: false });
+      items.push({
+        kind: "deadline",
+        title: "Frist",
+        date: deadlineDate,
+        status: undefined,
+        completed: false,
+      });
     }
 
     return (
@@ -190,25 +217,38 @@ export default function PnbCaseDetailPage() {
                 ) : item.completed ? (
                   <div className="mt-0.5 w-3.5 h-3.5 rounded-full bg-green-500 dark:bg-green-600 shrink-0 flex items-center justify-center">
                     <svg className="w-2 h-2 text-white" viewBox="0 0 8 8" fill="none">
-                      <path d="M1.5 4l2 2 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M1.5 4l2 2 3.5-3.5"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </div>
                 ) : (
                   <div className="mt-0.5 w-3.5 h-3.5 rounded-full border-2 border-gray-300 dark:border-slate-500 bg-white dark:bg-slate-800 shrink-0" />
                 )}
                 {!isLast && (
-                  <div className="flex-1 w-px bg-gray-200 dark:bg-slate-600 my-1" style={{ minHeight: "14px" }} />
+                  <div
+                    className="flex-1 w-px bg-gray-200 dark:bg-slate-600 my-1"
+                    style={{ minHeight: "14px" }}
+                  />
                 )}
               </div>
               {/* Content column */}
-              <div className={`${isLast ? "pb-0" : "pb-3"} min-w-0 flex items-start gap-2 flex-wrap`}>
-                <span className={`text-xs font-medium leading-[1.4] ${
-                  isDeadline
-                    ? "text-orange-600 dark:text-orange-400"
-                    : item.completed
-                    ? "text-green-700 dark:text-green-400"
-                    : "text-gray-700 dark:text-slate-300"
-                }`}>
+              <div
+                className={`${isLast ? "pb-0" : "pb-3"} min-w-0 flex items-start gap-2 flex-wrap`}
+              >
+                <span
+                  className={`text-xs font-medium leading-[1.4] ${
+                    isDeadline
+                      ? "text-orange-600 dark:text-orange-400"
+                      : item.completed
+                        ? "text-green-700 dark:text-green-400"
+                        : "text-gray-700 dark:text-slate-300"
+                  }`}
+                >
                   {item.title}
                 </span>
                 {item.date && (
@@ -217,11 +257,13 @@ export default function PnbCaseDetailPage() {
                   </span>
                 )}
                 {item.status && (
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 leading-none ${
-                    item.completed
-                      ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                      : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
-                  }`}>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full shrink-0 leading-none ${
+                      item.completed
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
+                        : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400"
+                    }`}
+                  >
                     {item.status}
                   </span>
                 )}
@@ -247,7 +289,9 @@ export default function PnbCaseDetailPage() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-4">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">{c.caseTypeDescription ?? "Sak"}</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">
+              {c.caseTypeDescription ?? "Sak"}
+            </p>
             <h1 className="text-xl font-bold text-gray-900 dark:text-slate-100 leading-snug">
               {c.caseNumber}
             </h1>
@@ -305,54 +349,57 @@ export default function PnbCaseDetailPage() {
       </div>
 
       {/* Contacts — grouped by name, roles joined on one line */}
-      {c.contacts.length > 0 && (() => {
-        type GroupedContact = { name: string; roles: string[]; email?: string };
-        const grouped = new Map<string, GroupedContact>();
-        for (const contact of c.contacts) {
-          const role = contact.roleDescription ?? contact.role;
-          const existing = grouped.get(contact.name);
-          if (existing) {
-            if (role && !existing.roles.includes(role)) existing.roles.push(role);
-            if (contact.email && !existing.email) existing.email = contact.email;
-          } else {
-            grouped.set(contact.name, {
-              name: contact.name,
-              roles: role ? [role] : [],
-              email: contact.email,
-            });
+      {c.contacts.length > 0 &&
+        (() => {
+          type GroupedContact = { name: string; roles: string[]; email?: string };
+          const grouped = new Map<string, GroupedContact>();
+          for (const contact of c.contacts) {
+            const role = contact.roleDescription ?? contact.role;
+            const existing = grouped.get(contact.name);
+            if (existing) {
+              if (role && !existing.roles.includes(role)) existing.roles.push(role);
+              if (contact.email && !existing.email) existing.email = contact.email;
+            } else {
+              grouped.set(contact.name, {
+                name: contact.name,
+                roles: role ? [role] : [],
+                email: contact.email,
+              });
+            }
           }
-        }
-        const rows = Array.from(grouped.values());
-        return (
-          <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 mb-4">
-            <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
-              Kontakter ({rows.length})
-            </h2>
-            <div className="divide-y divide-gray-100 dark:divide-slate-700">
-              {rows.map((contact, i) => (
-                <div key={i} className="py-2 flex items-baseline justify-between gap-4 text-sm">
-                  <div className="min-w-0">
-                    <span className="font-medium text-gray-800 dark:text-slate-200">{contact.name}</span>
-                    {contact.roles.length > 0 && (
-                      <span className="ml-2 text-xs text-gray-400 dark:text-slate-500">
-                        {contact.roles.join(" · ")}
+          const rows = Array.from(grouped.values());
+          return (
+            <section className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 mb-4">
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">
+                Kontakter ({rows.length})
+              </h2>
+              <div className="divide-y divide-gray-100 dark:divide-slate-700">
+                {rows.map((contact, i) => (
+                  <div key={i} className="py-2 flex items-baseline justify-between gap-4 text-sm">
+                    <div className="min-w-0">
+                      <span className="font-medium text-gray-800 dark:text-slate-200">
+                        {contact.name}
                       </span>
+                      {contact.roles.length > 0 && (
+                        <span className="ml-2 text-xs text-gray-400 dark:text-slate-500">
+                          {contact.roles.join(" · ")}
+                        </span>
+                      )}
+                    </div>
+                    {contact.email && (
+                      <a
+                        href={`mailto:${contact.email}`}
+                        className="text-xs text-brand-600 dark:text-brand-400 hover:underline shrink-0"
+                      >
+                        {contact.email}
+                      </a>
                     )}
                   </div>
-                  {contact.email && (
-                    <a
-                      href={`mailto:${contact.email}`}
-                      className="text-xs text-brand-600 dark:text-brand-400 hover:underline shrink-0"
-                    >
-                      {contact.email}
-                    </a>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-        );
-      })()}
+                ))}
+              </div>
+            </section>
+          );
+        })()}
 
       {/* Active stages + milestones */}
       {activeStages.length > 0 && (
@@ -367,11 +414,13 @@ export default function PnbCaseDetailPage() {
               return (
                 <div key={i} className="border-l-2 border-brand-300 dark:border-brand-700 pl-3">
                   <button
-                    onClick={() => setExpandedStages((prev) => {
-                      const next = new Set(prev);
-                      next.has(key) ? next.delete(key) : next.add(key);
-                      return next;
-                    })}
+                    onClick={() =>
+                      setExpandedStages((prev) => {
+                        const next = new Set(prev);
+                        next.has(key) ? next.delete(key) : next.add(key);
+                        return next;
+                      })
+                    }
                     className="w-full flex items-center justify-between gap-3 flex-wrap text-left py-2"
                   >
                     <div className="min-w-0">
@@ -417,11 +466,13 @@ export default function PnbCaseDetailPage() {
               return (
                 <div key={i} className="border-l-2 border-gray-200 dark:border-slate-600 pl-3">
                   <button
-                    onClick={() => setExpandedStages((prev) => {
-                      const next = new Set(prev);
-                      next.has(key) ? next.delete(key) : next.add(key);
-                      return next;
-                    })}
+                    onClick={() =>
+                      setExpandedStages((prev) => {
+                        const next = new Set(prev);
+                        next.has(key) ? next.delete(key) : next.add(key);
+                        return next;
+                      })
+                    }
                     className="w-full flex items-center justify-between gap-2 text-left py-2"
                   >
                     <p className="text-sm text-gray-500 dark:text-slate-400 min-w-0 truncate">

@@ -9,9 +9,9 @@
  * then pass it here to retrieve the actual bytes for attaching to a document.
  */
 
-import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "../settings";
-import { buildSifAuthHeaders } from "../auth";
 import type { SifAuthConfig } from "../auth";
+import { buildSifAuthHeaders } from "../auth";
+import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "../settings";
 import type { SifFileMetadata } from "../types";
 
 // ── Public types ───────────────────────────────────────────────────────────
@@ -123,12 +123,7 @@ export async function downloadSifFile(
   correlationId?: string
 ): Promise<DownloadedFile | null> {
   if (!file.URL) return null;
-  return downloadFileByUrl(
-    file.URL,
-    file.Title ?? "unnamed",
-    file.Format ?? "bin",
-    correlationId
-  );
+  return downloadFileByUrl(file.URL, file.Title ?? "unnamed", file.Format ?? "bin", correlationId);
 }
 
 /**
@@ -141,16 +136,11 @@ export async function downloadSifFiles(
   correlationId?: string
 ): Promise<DownloadedFile[]> {
   const settled = await Promise.allSettled(
-    files
-      .filter((f) => f.URL)
-      .map((f) => downloadSifFile(f, correlationId))
+    files.filter((f) => f.URL).map((f) => downloadSifFile(f, correlationId))
   );
 
   return settled
-    .filter(
-      (r): r is PromiseFulfilledResult<DownloadedFile | null> =>
-        r.status === "fulfilled"
-    )
+    .filter((r): r is PromiseFulfilledResult<DownloadedFile | null> => r.status === "fulfilled")
     .map((r) => r.value)
     .filter((v): v is DownloadedFile => v !== null);
 }

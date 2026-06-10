@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 
 interface ListItem {
@@ -31,7 +31,9 @@ function CategorySection({ category, title }: CategorySectionProps) {
     setLoading(false);
   }, [category]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   async function handleAdd() {
     if (!newLabel.trim()) return;
@@ -79,7 +81,9 @@ function CategorySection({ category, title }: CategorySectionProps) {
             </li>
           ))}
           {items.length === 0 && (
-            <li className="py-3 text-sm text-gray-400 dark:text-slate-500 text-center">Ingen elementer ennå</li>
+            <li className="py-3 text-sm text-gray-400 dark:text-slate-500 text-center">
+              Ingen elementer ennå
+            </li>
           )}
         </ul>
       )}
@@ -110,10 +114,12 @@ export default function TilsynConfigPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="mb-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">Befaringskonfigurering</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100">
+          Befaringskonfigurering
+        </h1>
         <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-          Befaringsområde og tiltakstype hentes automatisk fra PNB-kodetabeller.
-          Her administrerer du kun listen for bakgrunn.
+          Befaringsområde og tiltakstype hentes automatisk fra PNB-kodetabeller. Her administrerer
+          du kun listen for bakgrunn.
         </p>
       </div>
 

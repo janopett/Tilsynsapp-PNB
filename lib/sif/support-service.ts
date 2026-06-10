@@ -2,9 +2,9 @@
 // SIF SupportService - Health check, version, connection test
 // ============================================================
 
+import type { SifVersion } from "@/types";
 import { sifRpcCall } from "./client";
 import type { SifGetVersionResult } from "./types";
-import type { SifVersion } from "@/types";
 
 /**
  * Get SIF API version (health check).

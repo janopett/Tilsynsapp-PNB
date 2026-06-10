@@ -8,20 +8,26 @@ import DashboardClient from "./DashboardClient";
  */
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session) redirect("/login");
 
   const [activeRes, restRes] = await Promise.all([
     supabase
       .from("inspections")
-      .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants, external_participants")
+      .select(
+        "id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants, external_participants"
+      )
       .eq("user_id", session.user.id)
       .in("status", ["draft", "in_progress"])
       .order("created_at", { ascending: false })
       .limit(200),
     supabase
       .from("inspections")
-      .select("id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants, external_participants")
+      .select(
+        "id, property_address, case_number, case_title, status, inspection_date, measure_type_id, gnr, bnr, snr, fnr, estates, participants, external_participants"
+      )
       .eq("user_id", session.user.id)
       .in("status", ["completed", "archived"])
       .order("created_at", { ascending: false })

@@ -1054,7 +1054,11 @@ export interface SifGetProgressPlanDetailsQuery {
   IncludeOtherActivities?: boolean;
   IncludeDecisions?: boolean;
   AdditionalFields?: SifAdditionalField[];
-  AdditionalRelations?: Array<{ Name: string; FieldCriteria?: unknown; FieldListCriteria?: unknown }>;
+  AdditionalRelations?: Array<{
+    Name: string;
+    FieldCriteria?: unknown;
+    FieldListCriteria?: unknown;
+  }>;
   AdditionalListFields?: SifAdditionalListField[];
 }
 
@@ -1103,8 +1107,8 @@ export interface SifRpcRequest<T> {
 }
 
 export interface SifAuthHeaders {
-  "AuthKey"?: string;
-  "Authorization"?: string;
-  "ClientID"?: string;
+  AuthKey?: string;
+  Authorization?: string;
+  ClientID?: string;
   "Content-Type": string;
 }

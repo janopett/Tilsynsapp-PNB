@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import type { InspectionWithAnswers, ArchivalStatus, SifCaseStage } from "@/types";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { authFetch } from "@/lib/auth-fetch";
-import { createClient } from "@/lib/supabase/client";
-import { captureMapImage, captureOverviewMapImage, capturePolygonMapImage, type OverviewPoint } from "@/lib/pdf/map-capture";
 import { useLanguage } from "@/lib/i18n";
+import {
+  captureMapImage,
+  captureOverviewMapImage,
+  capturePolygonMapImage,
+  type OverviewPoint,
+} from "@/lib/pdf/map-capture";
+import { createClient } from "@/lib/supabase/client";
+import type { ArchivalStatus, InspectionWithAnswers, SifCaseStage } from "@/types";
 
 interface CaseDocument {
   Recno: number;
@@ -52,15 +57,26 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
   const buildInitialMessage = useCallback(() => {
     if (!existingArchival) return null;
     if (existingArchival.status === "success") {
-      const docNum = existingArchival.sif_document_number ?? existingArchival.sif_document_recno ?? "(?)";
+      const docNum =
+        existingArchival.sif_document_number ?? existingArchival.sif_document_recno ?? "(?)";
       const dispatchNote = existingArchival.dispatched
         ? ` · ${t.archive.dispatchStarted}`
         : existingArchival.dispatched === false
-        ? ` · ${t.archive.dispatchFailed(existingArchival.dispatch_error ?? t.archive.unknownError)}`
-        : "";
-      return { status: existingArchival.status as ArchivalStatus, message: `${t.archive.archivedAs(String(docNum))}${dispatchNote}`, url: existingArchival.sif_document_url ?? undefined, documentNumber: existingArchival.sif_document_number ?? undefined };
+          ? ` · ${t.archive.dispatchFailed(existingArchival.dispatch_error ?? t.archive.unknownError)}`
+          : "";
+      return {
+        status: existingArchival.status as ArchivalStatus,
+        message: `${t.archive.archivedAs(String(docNum))}${dispatchNote}`,
+        url: existingArchival.sif_document_url ?? undefined,
+        documentNumber: existingArchival.sif_document_number ?? undefined,
+      };
     }
-    return { status: existingArchival.status as ArchivalStatus, message: existingArchival.error_message ?? t.archive.archivingError, url: existingArchival.sif_document_url ?? undefined, documentNumber: existingArchival.sif_document_number ?? undefined };
+    return {
+      status: existingArchival.status as ArchivalStatus,
+      message: existingArchival.error_message ?? t.archive.archivingError,
+      url: existingArchival.sif_document_url ?? undefined,
+      documentNumber: existingArchival.sif_document_number ?? undefined,
+    };
   }, []);
 
   const [result, setResult] = useState<{
@@ -88,7 +104,9 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     setSelectedDocNumber(null);
     setSelectedDocUrl(null);
     try {
-      const res = await authFetch(`/api/sif/case-documents?caseNumber=${encodeURIComponent(cn.trim())}`);
+      const res = await authFetch(
+        `/api/sif/case-documents?caseNumber=${encodeURIComponent(cn.trim())}`
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t.archive.archivingError);
       setDocuments(sortDocuments(data.documents ?? []));
@@ -110,7 +128,9 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     setStagesLoading(true);
     setStagesError(null);
     try {
-      const res = await authFetch(`/api/sif/case-stages?caseNumber=${encodeURIComponent(cn.trim())}`);
+      const res = await authFetch(
+        `/api/sif/case-stages?caseNumber=${encodeURIComponent(cn.trim())}`
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t.archive.archivingError);
       setStages(data.stages ?? []);
@@ -204,9 +224,8 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         stageRecno: selectedStageRecno ?? undefined,
         existingDocumentNumber:
           docMode === "update" && selectedDocNumber ? selectedDocNumber : undefined,
-        checkpointMapImages: Object.keys(checkpointMapImages).length > 0
-          ? checkpointMapImages
-          : undefined,
+        checkpointMapImages:
+          Object.keys(checkpointMapImages).length > 0 ? checkpointMapImages : undefined,
         overviewMapImage,
         areaMapImage,
       }),
@@ -219,8 +238,8 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       const dispatchNote = a.dispatched
         ? ` · ${t.archive.dispatchStarted}`
         : a.dispatched === false
-        ? ` · ${t.archive.dispatchFailed(a.dispatch_error ?? t.archive.unknownError)}`
-        : "";
+          ? ` · ${t.archive.dispatchFailed(a.dispatch_error ?? t.archive.unknownError)}`
+          : "";
       setResult({
         status: "success",
         message: `${t.archive.archivedAs(a.sif_document_number ?? a.sif_document_recno ?? "(?)")}${dispatchNote}`,
@@ -252,18 +271,22 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               {result.status === "success" ? "✅" : "❌"}
             </span>
             <div>
-              <p className={`font-semibold text-sm ${
-                result.status === "success"
-                  ? "text-green-800 dark:text-green-300"
-                  : "text-red-800 dark:text-red-300"
-              }`}>
+              <p
+                className={`font-semibold text-sm ${
+                  result.status === "success"
+                    ? "text-green-800 dark:text-green-300"
+                    : "text-red-800 dark:text-red-300"
+                }`}
+              >
                 {result.status === "success" ? t.archive.successTitle : t.archive.failedTitle}
               </p>
-              <p className={`text-sm ${
-                result.status === "success"
-                  ? "text-green-700 dark:text-green-400"
-                  : "text-red-700 dark:text-red-400"
-              }`}>
+              <p
+                className={`text-sm ${
+                  result.status === "success"
+                    ? "text-green-700 dark:text-green-400"
+                    : "text-red-700 dark:text-red-400"
+                }`}
+              >
                 {result.message}
               </p>
             </div>
@@ -301,12 +324,8 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
       )}
 
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5">
-        <h2 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">
-          {t.archive.title}
-        </h2>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-          {t.archive.description}
-        </p>
+        <h2 className="font-semibold text-gray-900 dark:text-slate-100 mb-1">{t.archive.title}</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">{t.archive.description}</p>
 
         <div className="space-y-3">
           {caseNumber && (
@@ -325,7 +344,9 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                 {t.archive.stageLabel}
               </label>
               {stagesLoading ? (
-                <p className="text-xs text-gray-400 dark:text-slate-500">{t.archive.loadingStages}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500">
+                  {t.archive.loadingStages}
+                </p>
               ) : stagesError ? (
                 <p className="text-xs text-red-600 dark:text-red-400">{stagesError}</p>
               ) : stages === null ? null : stages.length === 0 ? (
@@ -333,15 +354,19 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               ) : (
                 <select
                   value={selectedStageRecno ?? ""}
-                  onChange={(e) => setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)}
+                  onChange={(e) =>
+                    setSelectedStageRecno(e.target.value ? Number(e.target.value) : null)
+                  }
                   className="input text-sm"
                 >
                   <option value="">{t.archive.selectStage}</option>
-                  {stages.filter((s) => s.recno != null).map((s) => (
-                    <option key={s.recno} value={s.recno}>
-                      {s.title ?? `Trinn ${s.recno}`}
-                    </option>
-                  ))}
+                  {stages
+                    .filter((s) => s.recno != null)
+                    .map((s) => (
+                      <option key={s.recno} value={s.recno}>
+                        {s.title ?? `Trinn ${s.recno}`}
+                      </option>
+                    ))}
                 </select>
               )}
             </div>
@@ -365,9 +390,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
               )}
             </div>
 
-            {docsError && (
-              <p className="text-xs text-red-600 dark:text-red-400">{docsError}</p>
-            )}
+            {docsError && <p className="text-xs text-red-600 dark:text-red-400">{docsError}</p>}
 
             {/* Mode toggle — always visible */}
             <div className="flex gap-2">
@@ -375,9 +398,10 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                 type="button"
                 onClick={() => setDocMode("new")}
                 className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-medium border transition
-                  ${docMode === "new"
-                    ? "bg-brand-600 border-brand-600 text-white"
-                    : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                  ${
+                    docMode === "new"
+                      ? "bg-brand-600 border-brand-600 text-white"
+                      : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
                   }`}
               >
                 {t.archive.createNew}
@@ -387,32 +411,35 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                 onClick={switchToUpdateMode}
                 disabled={!caseNumber.trim()}
                 className={`flex-1 py-1.5 px-3 rounded-lg text-sm font-medium border transition disabled:opacity-40
-                  ${docMode === "update"
-                    ? "bg-brand-600 border-brand-600 text-white"
-                    : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
+                  ${
+                    docMode === "update"
+                      ? "bg-brand-600 border-brand-600 text-white"
+                      : "border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
                   }`}
               >
                 {t.archive.updateExisting}
               </button>
             </div>
 
-            {docMode === "update" && (
-              docsLoading ? (
-                <p className="text-xs text-gray-400 dark:text-slate-500">{t.archive.loadingDocuments}</p>
+            {docMode === "update" &&
+              (docsLoading ? (
+                <p className="text-xs text-gray-400 dark:text-slate-500">
+                  {t.archive.loadingDocuments}
+                </p>
               ) : documents === null ? (
                 <p className="text-xs text-gray-400 dark:text-slate-500">
                   {caseNumber.trim() ? t.archive.enterCaseAndClick : t.archive.enterCase}
                 </p>
               ) : documents.length === 0 ? (
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  {t.archive.noDocuments}
-                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">{t.archive.noDocuments}</p>
               ) : (
                 <select
                   value={selectedDocNumber ?? ""}
                   onChange={(e) => {
                     const val = e.target.value || null;
-                    const doc = documents?.find((d) => (d.DocumentNumber ?? String(d.Recno)) === val);
+                    const doc = documents?.find(
+                      (d) => (d.DocumentNumber ?? String(d.Recno)) === val
+                    );
                     setSelectedDocNumber(val);
                     setSelectedDocUrl(doc?.URL ?? null);
                   }}
@@ -425,8 +452,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
                     </option>
                   ))}
                 </select>
-              )
-            )}
+              ))}
           </div>
 
           <details className="text-sm">
@@ -473,7 +499,9 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         >
           {loading ? (
             <>
-              <span className="animate-spin" aria-hidden="true">⏳</span>
+              <span className="animate-spin" aria-hidden="true">
+                ⏳
+              </span>
               {docMode === "update" ? t.archive.updating : t.archive.archiving}
             </>
           ) : docMode === "update" ? (

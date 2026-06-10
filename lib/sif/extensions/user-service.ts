@@ -7,11 +7,7 @@
  */
 
 import { sifRpcCall } from "../client";
-import type {
-  SifGetUsersQuery,
-  SifGetUsersResult,
-  SifUserResult,
-} from "../types";
+import type { SifGetUsersQuery, SifGetUsersResult, SifUserResult } from "../types";
 
 export type { SifUserResult };
 
@@ -38,11 +34,8 @@ export interface GetUsersOptions {
  *   Login, ContactRecno, IsActive, IsServiceUser, Language,
  *   Profiles (Role, EnterpriseId, …), AccessGroups
  */
-export async function getSifUsers(
-  options?: GetUsersOptions
-): Promise<SifUserResult[]> {
-  const { userId, contactExternalId, maxResults = 50, correlationId } =
-    options ?? {};
+export async function getSifUsers(options?: GetUsersOptions): Promise<SifUserResult[]> {
+  const { userId, contactExternalId, maxResults = 50, correlationId } = options ?? {};
 
   const result = await sifRpcCall<SifGetUsersQuery, SifGetUsersResult>(
     "UserService",
@@ -81,9 +74,7 @@ export async function getSifUserByLogin(
 /**
  * Return only active (non-disabled) users.
  */
-export async function getActiveSifUsers(
-  correlationId?: string
-): Promise<SifUserResult[]> {
+export async function getActiveSifUsers(correlationId?: string): Promise<SifUserResult[]> {
   const all = await getSifUsers({ correlationId });
   return all.filter((u) => u.IsActive !== false);
 }

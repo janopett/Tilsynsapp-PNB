@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Bootstrap script – set or remove admin status for a user by email.
  *
@@ -10,9 +11,9 @@
  * (loaded automatically from .env.local).
  */
 
+import { createClient } from "@supabase/supabase-js";
 import * as fs from "fs";
 import * as path from "path";
-import { createClient } from "@supabase/supabase-js";
 
 // ── Load .env.local manually (no dotenv dependency needed) ──────────────────
 function loadEnvFile(filePath: string) {
@@ -61,25 +62,21 @@ const supabase = createClient(supabaseUrl, serviceKey, {
 });
 
 async function main() {
-  const { data: listData, error: listError } =
-    await supabase.auth.admin.listUsers({ perPage: 1000 });
+  const { data: listData, error: listError } = await supabase.auth.admin.listUsers({
+    perPage: 1000,
+  });
 
   if (listError) {
     console.error("Klarte ikke hente brukere:", listError.message);
     process.exit(1);
   }
 
-  const user = listData.users.find(
-    (u) => u.email?.toLowerCase() === email.toLowerCase()
-  );
+  const user = listData.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
 
   if (!user) {
     console.error(`\nFant ingen bruker med e-post: ${email}`);
     if (listData.users.length > 0) {
-      console.error(
-        "Registrerte brukere:",
-        listData.users.map((u) => u.email).join(", ")
-      );
+      console.error("Registrerte brukere:", listData.users.map((u) => u.email).join(", "));
     } else {
       console.error("Ingen brukere er registrert ennå.");
     }
@@ -87,10 +84,9 @@ async function main() {
   }
 
   const isAdmin = !remove;
-  const { error: updateError } = await supabase.auth.admin.updateUserById(
-    user.id,
-    { app_metadata: { is_admin: isAdmin } }
-  );
+  const { error: updateError } = await supabase.auth.admin.updateUserById(user.id, {
+    app_metadata: { is_admin: isAdmin },
+  });
 
   if (updateError) {
     console.error("Klarte ikke oppdatere bruker:", updateError.message);

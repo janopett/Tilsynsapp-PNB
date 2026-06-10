@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 
 interface AdminUser {
@@ -80,9 +80,7 @@ export default function AdminUsersPage() {
       const data = await res.json();
       if (data.ok) {
         setUsers((prev) =>
-          prev.map((u) =>
-            u.id === userId ? { ...u, isAdmin: !currentIsAdmin } : u
-          )
+          prev.map((u) => (u.id === userId ? { ...u, isAdmin: !currentIsAdmin } : u))
         );
       } else {
         setError(data.error ?? "Ukjent feil");
@@ -137,9 +135,7 @@ export default function AdminUsersPage() {
       });
       const data = await res.json();
       if (res.ok && data.user) {
-        setCreateSuccess(
-          `Bruker opprettet: ${data.user.name} (${data.user.email})`
-        );
+        setCreateSuccess(`Bruker opprettet: ${data.user.name} (${data.user.email})`);
         setForm(EMPTY_FORM);
         setShowCreate(false);
         await loadUsers();
@@ -171,8 +167,7 @@ export default function AdminUsersPage() {
         </button>
       </div>
       <p className="text-sm text-gray-500 dark:text-slate-400 mb-6">
-        Brukere med admin-tilgang kan konfigurere SIF og administrere
-        applikasjonen.
+        Brukere med admin-tilgang kan konfigurere SIF og administrere applikasjonen.
       </p>
 
       {/* Create user form */}
@@ -285,9 +280,15 @@ export default function AdminUsersPage() {
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
-                        {u.name ?? <span className="text-gray-400 dark:text-slate-500 italic">Navn ikke satt</span>}
+                        {u.name ?? (
+                          <span className="text-gray-400 dark:text-slate-500 italic">
+                            Navn ikke satt
+                          </span>
+                        )}
                       </p>
-                      <p className="text-xs text-gray-400 dark:text-slate-500 truncate">{u.email}</p>
+                      <p className="text-xs text-gray-400 dark:text-slate-500 truncate">
+                        {u.email}
+                      </p>
                       <p className="text-xs text-gray-300 dark:text-slate-600 mt-0.5">
                         Sist innlogget:{" "}
                         {u.lastSignIn
@@ -302,7 +303,7 @@ export default function AdminUsersPage() {
                         </span>
                       )}
                       <button
-                        onClick={() => editingId === u.id ? setEditingId(null) : startEdit(u)}
+                        onClick={() => (editingId === u.id ? setEditingId(null) : startEdit(u))}
                         className="text-sm font-medium px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-600 transition"
                       >
                         {editingId === u.id ? "Avbryt" : "Rediger navn"}
@@ -324,7 +325,9 @@ export default function AdminUsersPage() {
                   {editingId === u.id && (
                     <div className="flex gap-2 items-end pt-1">
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-slate-400 mb-0.5">Fornavn</label>
+                        <label className="block text-xs text-gray-500 dark:text-slate-400 mb-0.5">
+                          Fornavn
+                        </label>
                         <input
                           type="text"
                           value={editFirst}
@@ -335,7 +338,9 @@ export default function AdminUsersPage() {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-gray-500 dark:text-slate-400 mb-0.5">Etternavn</label>
+                        <label className="block text-xs text-gray-500 dark:text-slate-400 mb-0.5">
+                          Etternavn
+                        </label>
                         <input
                           type="text"
                           value={editLast}

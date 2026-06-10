@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/api-auth";
 
@@ -8,10 +8,7 @@ const AnswerSchema = z.object({
   comment: z.string().optional().default(""),
 });
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
   const { user, supabase } = auth;

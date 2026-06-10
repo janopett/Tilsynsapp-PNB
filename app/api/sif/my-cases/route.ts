@@ -1,16 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
-import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import { sifRpcCall } from "@/lib/sif/client";
+import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 import { mapPnbCase } from "@/lib/sif/pnb-case-mapper";
+import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import type {
+  SifCaseResult,
   SifGetCasesQuery,
   SifGetCasesResult,
-  SifCaseResult,
   SifGetProgressPlanDetailsQuery,
   SifGetProgressPlanDetailsResult,
 } from "@/lib/sif/types";
-import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
+
 export type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 
 const MAX_PAGES = 20;
@@ -62,9 +63,7 @@ export async function GET(req: NextRequest) {
   const { user } = auth;
   const meta = user.user_metadata ?? {};
   const fullName: string =
-    meta.full_name ??
-    [meta.first_name, meta.last_name].filter(Boolean).join(" ") ??
-    "";
+    meta.full_name ?? [meta.first_name, meta.last_name].filter(Boolean).join(" ") ?? "";
 
   if (!fullName) {
     return NextResponse.json(

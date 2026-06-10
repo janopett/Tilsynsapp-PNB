@@ -6,11 +6,7 @@ import { createClient } from "@/lib/supabase/server";
  * Redirects to /dashboard if the user is not logged in or not an admin.
  * Admin status is stored in app_metadata.is_admin (set server-side only).
  */
-export default async function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
   const {
     data: { user },

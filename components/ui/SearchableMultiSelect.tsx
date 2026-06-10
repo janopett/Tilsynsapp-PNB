@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Item {
   code: string;
@@ -29,17 +29,11 @@ export default function SearchableMultiSelect({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filtered = query.trim()
-    ? items.filter((i) =>
-        i.description.toLowerCase().includes(query.toLowerCase())
-      )
+    ? items.filter((i) => i.description.toLowerCase().includes(query.toLowerCase()))
     : items;
 
   function toggle(code: string) {
-    onChange(
-      selected.includes(code)
-        ? selected.filter((c) => c !== code)
-        : [...selected, code]
-    );
+    onChange(selected.includes(code) ? selected.filter((c) => c !== code) : [...selected, code]);
   }
 
   function remove(code: string) {
@@ -99,7 +93,10 @@ export default function SearchableMultiSelect({
           value={query}
           placeholder={placeholder}
           onFocus={() => setOpen(true)}
-          onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
           className="w-full border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm
                      bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100
                      placeholder-gray-400 dark:placeholder-slate-400
@@ -107,24 +104,33 @@ export default function SearchableMultiSelect({
         />
 
         {open && filtered.length > 0 && (
-          <ul className="absolute z-[200] mt-1 w-full max-h-64 overflow-auto rounded-lg
+          <ul
+            className="absolute z-[200] mt-1 w-full max-h-64 overflow-auto rounded-lg
                          border border-gray-200 dark:border-slate-600
-                         bg-white dark:bg-slate-800 shadow-xl text-sm">
+                         bg-white dark:bg-slate-800 shadow-xl text-sm"
+          >
             {filtered.map((item) => {
               const isSelected = selected.includes(item.code);
               return (
                 <li key={item.code}>
                   <button
                     type="button"
-                    onClick={() => { toggle(item.code); setQuery(""); }}
+                    onClick={() => {
+                      toggle(item.code);
+                      setQuery("");
+                    }}
                     className={`w-full text-left px-3 py-2 flex items-center gap-2 transition
                                 hover:bg-gray-50 dark:hover:bg-slate-700
                                 ${isSelected ? "text-brand-700 dark:text-brand-300 font-medium" : "text-gray-700 dark:text-slate-300"}`}
                   >
-                    <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs
-                                      ${isSelected
-                                        ? "bg-brand-600 border-brand-600 text-white"
-                                        : "border-gray-300 dark:border-slate-500"}`}>
+                    <span
+                      className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-xs
+                                      ${
+                                        isSelected
+                                          ? "bg-brand-600 border-brand-600 text-white"
+                                          : "border-gray-300 dark:border-slate-500"
+                                      }`}
+                    >
                       {isSelected && "✓"}
                     </span>
                     {item.description}

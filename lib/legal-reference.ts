@@ -7,11 +7,11 @@ const LOVDATA_BASE = "https://lovdata.no";
 
 // Law identifiers on Lovdata
 const LAW_IDS: Record<string, string> = {
-  pbl: "lov/2008-06-27-71",          // Plan- og bygningsloven
+  pbl: "lov/2008-06-27-71", // Plan- og bygningsloven
   sak10: "forskrift/2010-03-26-488", // Byggesaksforskriften
   tek17: "forskrift/2017-06-19-840", // Teknisk forskrift 2017
   tek10: "forskrift/2010-03-26-489", // Teknisk forskrift 2010
-  bsl: "lov/1965-06-18-4",           // Bygningsloven (historic)
+  bsl: "lov/1965-06-18-4", // Bygningsloven (historic)
 };
 
 /**

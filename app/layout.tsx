@@ -1,20 +1,16 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ThemeProvider } from "next-themes";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { ThemeProvider } from "next-themes";
 
 export const metadata: Metadata = {
   title: "Tilsynsapp – Plan & Bygg",
   description: "Tilsynsverktøy for byggesaker med automatisk arkivering til Plan & Build",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages();
 
