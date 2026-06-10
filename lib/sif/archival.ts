@@ -114,6 +114,8 @@ export async function archiveInspectionToSif(
   try {
     // Step 1: Load settings + find case in parallel (independent calls).
     // If the case was pre-fetched in route.ts (parallel with DB + PDF), skip the lookup.
+    // loadSifSettingsWithEnvFallback is cached in-process for 60 s (see settings.ts),
+    // so repeated calls within the same serverless instance are cheap DB-wise.
     const [settings, sifCase] = await Promise.all([
       loadSifSettingsWithEnvFallback(),
       ctx.prefetchedCase

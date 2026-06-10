@@ -142,6 +142,8 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
     }
   }, []);
 
+  // fetchStages has empty deps (stable ref), so this effect only fires when
+  // caseNumber changes — no re-render loop risk despite stages being set inside.
   useEffect(() => {
     if (caseNumber.trim()) fetchStages(caseNumber);
   }, [caseNumber, fetchStages]);
