@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { authFetch } from "@/lib/auth-fetch";
-import type { SifFileMetadata } from "@/lib/sif/types";
+import { useCallback, useEffect, useState } from "react";
 import type { CaseFileGroup } from "@/app/api/sif/case-files/route";
+import { authFetch } from "@/lib/auth-fetch";
 import { useLanguage } from "@/lib/i18n";
+import type { SifFileMetadata } from "@/lib/sif/types";
 
 const IMAGE_FORMATS = new Set(["jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff", "svg"]);
 
@@ -71,9 +71,17 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
     const { groupImages, indexInGroup } = lightbox;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight" && indexInGroup < groupImages.length - 1)
-        setLightbox({ file: groupImages[indexInGroup + 1], groupImages, indexInGroup: indexInGroup + 1 });
+        setLightbox({
+          file: groupImages[indexInGroup + 1],
+          groupImages,
+          indexInGroup: indexInGroup + 1,
+        });
       else if (e.key === "ArrowLeft" && indexInGroup > 0)
-        setLightbox({ file: groupImages[indexInGroup - 1], groupImages, indexInGroup: indexInGroup - 1 });
+        setLightbox({
+          file: groupImages[indexInGroup - 1],
+          groupImages,
+          indexInGroup: indexInGroup - 1,
+        });
       else if (e.key === "Escape") closeLightbox();
     };
     window.addEventListener("keydown", onKey);
@@ -118,7 +126,9 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                 <span>{isReferredCase ? "📁" : "📋"}</span>
                 <span>{group.caseNumber}</span>
                 {isReferredCase && (
-                  <span className="normal-case font-normal text-gray-400 dark:text-slate-500">— {t.caseFiles.linkedCase}</span>
+                  <span className="normal-case font-normal text-gray-400 dark:text-slate-500">
+                    — {t.caseFiles.linkedCase}
+                  </span>
                 )}
               </h3>
             )}
@@ -158,7 +168,11 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                   <a
                     key={file.Recno ?? idx}
                     href={proxyUrl(file)!}
-                    download={file.Title ? `${file.Title}${file.Format ? `.${file.Format.toLowerCase()}` : ""}` : undefined}
+                    download={
+                      file.Title
+                        ? `${file.Title}${file.Format ? `.${file.Format.toLowerCase()}` : ""}`
+                        : undefined
+                    }
                     className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition"
                   >
                     <span className="text-2xl leading-none flex-shrink-0">
@@ -169,11 +183,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                         {file.Title ?? t.caseFiles.unknownFile}
                       </p>
                       <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-                        {[
-                          file.Format?.toUpperCase(),
-                          formatSize(file.Size),
-                          file.StatusDescription,
-                        ]
+                        {[file.Format?.toUpperCase(), formatSize(file.Size), file.StatusDescription]
                           .filter(Boolean)
                           .join(" · ")}
                       </p>
@@ -218,7 +228,11 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
               onClick={(e) => {
                 e.stopPropagation();
                 const { groupImages, indexInGroup } = lightbox;
-                setLightbox({ file: groupImages[indexInGroup - 1], groupImages, indexInGroup: indexInGroup - 1 });
+                setLightbox({
+                  file: groupImages[indexInGroup - 1],
+                  groupImages,
+                  indexInGroup: indexInGroup - 1,
+                });
               }}
               aria-label={t.caseFiles.previous}
             >
@@ -241,7 +255,11 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
               onClick={(e) => {
                 e.stopPropagation();
                 const { groupImages, indexInGroup } = lightbox;
-                setLightbox({ file: groupImages[indexInGroup + 1], groupImages, indexInGroup: indexInGroup + 1 });
+                setLightbox({
+                  file: groupImages[indexInGroup + 1],
+                  groupImages,
+                  indexInGroup: indexInGroup + 1,
+                });
               }}
               aria-label={t.caseFiles.next}
             >

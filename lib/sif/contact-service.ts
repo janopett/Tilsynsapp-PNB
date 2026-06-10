@@ -28,25 +28,25 @@
  *   Always use parseEnterpriseRecno() to convert user input before sending to SIF.
  */
 
+import type { SifContact } from "@/types";
 import { sifRpcCall } from "./client";
 import type {
+  SifCaseContact,
+  SifContactPersonResult,
+  SifEnterpriseResult,
   SifGetCaseContactsQuery,
   SifGetCaseContactsResult,
-  SifCaseContact,
   SifGetCasesQuery,
   SifGetCasesResult,
-  SifGetEnterpriseQuery,
-  SifGetEnterpriseResult,
-  SifEnterpriseResult,
   SifGetContactPersonsQuery,
   SifGetContactPersonsResult,
-  SifContactPersonResult,
+  SifGetEnterpriseQuery,
+  SifGetEnterpriseResult,
   SifSynchronizeContactPersonInput,
   SifSynchronizeContactPersonResult,
   SifUpdateContactPersonInput,
   SifUpdateContactPersonResult,
 } from "./types";
-import type { SifContact } from "@/types";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Case contacts
@@ -327,9 +327,7 @@ async function lookupContactPersonByName(
     // from the Name filter, so we filter down to only full-name matches here.
     const fullName = nameQuery.toLowerCase();
     const nameMatches = result.ContactPersons.filter((c) => {
-      const stored = (
-        c.Name ?? [c.FirstName, c.LastName].filter(Boolean).join(" ")
-      ).toLowerCase();
+      const stored = (c.Name ?? [c.FirstName, c.LastName].filter(Boolean).join(" ")).toLowerCase();
       return stored === fullName;
     });
 
@@ -360,10 +358,10 @@ async function lookupContactPersonByName(
     // No enterprise filter — only safe to return when the name is unambiguous.
     if (nameMatches.length === 1) return nameMatches[0];
 
-    console.info(
-      "[SIF] Ambiguous name match — cannot determine which contact to update",
-      { nameQuery, count: nameMatches.length }
-    );
+    console.info("[SIF] Ambiguous name match — cannot determine which contact to update", {
+      nameQuery,
+      count: nameMatches.length,
+    });
     return null;
   } catch (err) {
     console.warn("[SIF] GetContactPersons(Name) lookup failed (non-fatal)", {
@@ -451,9 +449,7 @@ async function callSynchronize(input: {
   );
   if (!result.Successful || result.Recno === undefined) {
     throw new Error(
-      result.ErrorMessage ??
-        result.ErrorDetails ??
-        "SynchronizeContactPerson returned no Recno"
+      result.ErrorMessage ?? result.ErrorDetails ?? "SynchronizeContactPerson returned no Recno"
     );
   }
   return result.Recno;
@@ -505,9 +501,7 @@ async function callUpdateContactPerson(input: {
   );
   if (!result.Successful) {
     throw new Error(
-      result.ErrorMessage ??
-        result.ErrorDetails ??
-        "UpdateContactPerson returned Successful: false"
+      result.ErrorMessage ?? result.ErrorDetails ?? "UpdateContactPerson returned Successful: false"
     );
   }
 }

@@ -1,13 +1,11 @@
 import DashboardNav from "@/components/ui/DashboardNav";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const isAdmin = user?.app_metadata?.is_admin === true;
 
   return (

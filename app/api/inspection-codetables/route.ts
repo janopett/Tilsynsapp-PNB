@@ -1,10 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
-import {
-  loadSifSettingsWithEnvFallback,
-  toSifClientConfig,
-} from "@/lib/sif/settings";
 import { sifRpcCallWithConfig } from "@/lib/sif/client";
+import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "@/lib/sif/settings";
 
 // Mapping fra intern type → PNB-kodetabellnavn
 const CODETABLE_MAP: Record<string, string> = {
@@ -25,7 +22,7 @@ interface GetCodeTableRowsResponse {
   ErrorMessage?: string;
   ErrorDetails?: string;
   TotalCount?: number;
-  Rows?: CodeTableRow[];         // some SIF versions
+  Rows?: CodeTableRow[]; // some SIF versions
   CodeTableRows?: CodeTableRow[]; // other SIF versions
 }
 
@@ -71,7 +68,15 @@ export async function GET(req: NextRequest) {
     const result = await sifRpcCallWithConfig<
       { CodeTableName: string; IncludeExpiredValues: boolean },
       GetCodeTableRowsResponse
-    >(config, "SupportService", "GetCodeTableRows", { CodeTableName: tableName, IncludeExpiredValues: false }, undefined, 0, true);
+    >(
+      config,
+      "SupportService",
+      "GetCodeTableRows",
+      { CodeTableName: tableName, IncludeExpiredValues: false },
+      undefined,
+      0,
+      true
+    );
 
     if (result.Successful === false) {
       const msg = result.ErrorMessage ?? result.ErrorDetails ?? "Successful=false";

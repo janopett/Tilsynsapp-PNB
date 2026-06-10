@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 export type Locale = "nb" | "en";
 
@@ -321,9 +321,7 @@ export function useLanguage() {
         lastChanged: tPnb("lastChanged"),
         deadline: tPnb("deadline"),
         daysLeft: (n) =>
-          n < 0
-            ? tPnb("daysLeftOverdue", { n: Math.abs(n) })
-            : tPnb("daysLeftRemaining", { n }),
+          n < 0 ? tPnb("daysLeftOverdue", { n: Math.abs(n) }) : tPnb("daysLeftRemaining", { n }),
         openCase: tPnb("openCase"),
         all: tPnb("all"),
         activeStages: (n) => tPnb("activeStages", { n }),

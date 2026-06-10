@@ -94,11 +94,7 @@ export class SifTimeoutError extends SifError {
 }
 
 // Helper: map HTTP status to domain error
-export function mapHttpErrorToSifError(
-  status: number,
-  body: unknown,
-  context: string
-): SifError {
+export function mapHttpErrorToSifError(status: number, body: unknown, context: string): SifError {
   const message = extractErrorMessage(body, context);
   switch (status) {
     case 401:

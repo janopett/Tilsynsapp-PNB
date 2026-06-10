@@ -1,19 +1,19 @@
-import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
 import Link from "next/link";
-import type { Attachment, InspectionWithAnswers } from "@/types";
+import { notFound } from "next/navigation";
+import CheckpointOverviewMap, { type MapPoint } from "@/components/ui/CheckpointOverviewMap";
+import PolygonMap from "@/components/ui/PolygonMap";
 import PrintButton from "@/components/ui/PrintButton";
+import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
 import {
-  filterCheckpoints,
-  mergeCheckpointsWithAnswers,
-  groupByCategory,
   CATEGORY_LABELS,
   CATEGORY_ORDER,
   calculateSummary,
+  filterCheckpoints,
+  groupByCategory,
+  mergeCheckpointsWithAnswers,
 } from "@/lib/checklist/filter-engine";
-import { CHECKPOINT_DEFINITIONS } from "@/data/seed/checkpoint-definitions";
-import CheckpointOverviewMap, { type MapPoint } from "@/components/ui/CheckpointOverviewMap";
-import PolygonMap from "@/components/ui/PolygonMap";
+import { createClient } from "@/lib/supabase/server";
+import type { Attachment, InspectionWithAnswers } from "@/types";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -145,7 +145,12 @@ export default async function ReportPage({ params }: Props) {
             ["Dato", new Date(inspection.inspection_date).toLocaleDateString("nb-NO")],
             ["Tiltakstype", (inspection.tiltakstype ?? []).join(", ") || "-"],
             ...(inspection.avvik_frist
-              ? [["Frist for lukking av avvik", new Date(inspection.avvik_frist).toLocaleDateString("nb-NO")]]
+              ? [
+                  [
+                    "Frist for lukking av avvik",
+                    new Date(inspection.avvik_frist).toLocaleDateString("nb-NO"),
+                  ],
+                ]
               : []),
           ].map(([label, value]) => (
             <div key={label}>
@@ -164,9 +169,21 @@ export default async function ReportPage({ params }: Props) {
         {/* Summary */}
         <div className="grid grid-cols-3 gap-3 mb-8">
           {[
-            { label: "Kontrollert", value: summary.ok + summary.deviations, cls: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-transparent" },
-            { label: "OK", value: summary.ok, cls: "bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-transparent" },
-            { label: "Avvik", value: summary.deviations, cls: "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-transparent" },
+            {
+              label: "Kontrollert",
+              value: summary.ok + summary.deviations,
+              cls: "bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-transparent",
+            },
+            {
+              label: "OK",
+              value: summary.ok,
+              cls: "bg-green-50 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-transparent",
+            },
+            {
+              label: "Avvik",
+              value: summary.deviations,
+              cls: "bg-red-50 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-transparent",
+            },
           ].map((s) => (
             <div key={s.label} className={`${s.cls} rounded-xl p-3 text-center`}>
               <p className="text-2xl font-bold">{s.value}</p>
@@ -193,9 +210,9 @@ export default async function ReportPage({ params }: Props) {
           const items = grouped.get(c);
           return items?.some((i) => (i.answer?.status ?? "not_checked") !== "not_checked");
         }).map((category) => {
-          const items = grouped.get(category)!.filter(
-            (i) => (i.answer?.status ?? "not_checked") !== "not_checked"
-          );
+          const items = grouped
+            .get(category)!
+            .filter((i) => (i.answer?.status ?? "not_checked") !== "not_checked");
           return (
             <div key={category} className="mb-6">
               <h2 className="text-sm font-bold text-brand-900 uppercase tracking-wide mb-2 border-b border-gray-200 pb-1">
@@ -255,7 +272,9 @@ export default async function ReportPage({ params }: Props) {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-semibold text-red-900 text-sm">{item.definition.title}</p>
-                    <p className="text-xs text-gray-500">{CATEGORY_LABELS[item.definition.category]}</p>
+                    <p className="text-xs text-gray-500">
+                      {CATEGORY_LABELS[item.definition.category]}
+                    </p>
                     {item.definition.legal_reference && (
                       <p className="text-xs text-gray-400 mt-0.5">
                         Hjemmel: {item.definition.legal_reference}
@@ -294,8 +313,7 @@ export default async function ReportPage({ params }: Props) {
               {appendixItems.map((item) => {
                 const atts = attByCheckpoint.get(item.definition.id) ?? [];
                 const st = item.answer?.status ?? "not_checked";
-                const hasCoords =
-                  item.answer?.latitude != null && item.answer?.longitude != null;
+                const hasCoords = item.answer?.latitude != null && item.answer?.longitude != null;
                 return (
                   <div
                     key={item.definition.id}
@@ -311,12 +329,12 @@ export default async function ReportPage({ params }: Props) {
                           {CATEGORY_LABELS[item.definition.category]}
                         </p>
                         {item.answer?.comment && (
-                          <p className="text-sm text-gray-700 mt-1 italic">
-                            {item.answer.comment}
-                          </p>
+                          <p className="text-sm text-gray-700 mt-1 italic">{item.answer.comment}</p>
                         )}
                       </div>
-                      <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${statusClass[st]}`}>
+                      <span
+                        className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${statusClass[st]}`}
+                      >
                         {statusLabel[st]}
                       </span>
                     </div>
@@ -388,9 +406,7 @@ export default async function ReportPage({ params }: Props) {
 
         <div className="mt-8 border-t pt-4 text-xs text-gray-400 text-center print:mt-16">
           Generert av Tilsynsapp-PNB · {new Date().toLocaleDateString("nb-NO")}
-          {attachmentsWithUrls.length > 0 && (
-            <> · {attachmentsWithUrls.length} vedlegg</>
-          )}
+          {attachmentsWithUrls.length > 0 && <> · {attachmentsWithUrls.length} vedlegg</>}
         </div>
       </div>
     </div>

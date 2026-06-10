@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit-log";
-import { createClient } from "@supabase/supabase-js";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -39,10 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (password.length < 8) {
-    return NextResponse.json(
-      { error: "Passord må være minst 8 tegn" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Passord må være minst 8 tegn" }, { status: 400 });
   }
 
   const supabase = getAdminClient();

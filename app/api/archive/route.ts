@@ -1,13 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import { requireUser } from "@/lib/api-auth";
-import { createServiceClient } from "@/lib/supabase/server";
+import {
+  type AttachmentForPdf,
+  buildJsonFileName,
+  buildPdfFileName,
+  generateInspectionJson,
+  generateInspectionPdf,
+} from "@/lib/pdf/generate";
+import { fetchStaticMapImage } from "@/lib/pdf/map-image";
 import { archiveInspectionToSif } from "@/lib/sif/archival";
 import { findCaseInSif } from "@/lib/sif/case-service";
-import { generateInspectionPdf, buildPdfFileName, generateInspectionJson, buildJsonFileName, type AttachmentForPdf } from "@/lib/pdf/generate";
-import { fetchStaticMapImage } from "@/lib/pdf/map-image";
-import { MEASURE_TYPES } from "@/data/seed/measure-types";
-import type { InspectionWithAnswers, ArchiveInspectionResponse, SifCase } from "@/types";
+import { createServiceClient } from "@/lib/supabase/server";
+import type { ArchiveInspectionResponse, InspectionWithAnswers, SifCase } from "@/types";
 
 const ArchiveRequestSchema = z.object({
   inspectionId: z.string().uuid(),
@@ -34,10 +40,24 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
   const parsed = ArchiveRequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ success: false, error: "Invalid request" } satisfies ArchiveInspectionResponse, { status: 400 });
+    return NextResponse.json(
+      { success: false, error: "Invalid request" } satisfies ArchiveInspectionResponse,
+      { status: 400 }
+    );
   }
 
-  const { inspectionId, caseNumber, externalId, uid, additionalFields, stageRecno, existingDocumentNumber, checkpointMapImages, overviewMapImage, areaMapImage } = parsed.data;
+  const {
+    inspectionId,
+    caseNumber,
+    externalId,
+    uid,
+    additionalFields,
+    stageRecno,
+    existingDocumentNumber,
+    checkpointMapImages,
+    overviewMapImage,
+    areaMapImage,
+  } = parsed.data;
 
   // Start SIF case lookup in parallel with DB queries — findCaseInSif only needs the case number
   // from the request body, not any DB data, so it can run immediately. On failure we fall back to
@@ -50,7 +70,12 @@ export async function POST(req: NextRequest) {
   // Load inspection with answers (parallel with case lookup)
   const [[inspRes, answersRes, attachRes], prefetchedCase] = await Promise.all([
     Promise.all([
-      supabase.from("inspections").select("*").eq("id", inspectionId).eq("user_id", user.id).single(),
+      supabase
+        .from("inspections")
+        .select("*")
+        .eq("id", inspectionId)
+        .eq("user_id", user.id)
+        .single(),
       supabase.from("inspection_answers").select("*").eq("inspection_id", inspectionId),
       supabase.from("attachments").select("*").eq("inspection_id", inspectionId),
     ]),
@@ -58,7 +83,10 @@ export async function POST(req: NextRequest) {
   ]);
 
   if (inspRes.error || !inspRes.data) {
-    return NextResponse.json({ success: false, error: "Inspection not found" } satisfies ArchiveInspectionResponse, { status: 404 });
+    return NextResponse.json(
+      { success: false, error: "Inspection not found" } satisfies ArchiveInspectionResponse,
+      { status: 404 }
+    );
   }
 
   const inspection: InspectionWithAnswers = {
@@ -96,7 +124,11 @@ export async function POST(req: NextRequest) {
   const extraAttachments: Array<{ fileName: string; fileData: Buffer; mimeType: string }> = [];
   if (staticMapBuf) {
     const date = inspection.inspection_date ?? new Date().toISOString().slice(0, 10);
-    extraAttachments.push({ fileName: `Kart_${date}.png`, fileData: staticMapBuf, mimeType: "image/png" });
+    extraAttachments.push({
+      fileName: `Kart_${date}.png`,
+      fileData: staticMapBuf,
+      mimeType: "image/png",
+    });
   }
 
   // Sync values that don't depend on PDF generation
@@ -106,7 +138,13 @@ export async function POST(req: NextRequest) {
 
   // Generate PDF and insert pending archival record in parallel (independent operations)
   const [pdfBuffer, { data: archival }] = await Promise.all([
-    generateInspectionPdf(inspection, attachmentFiles, checkpointMapImages, overviewMapImage, areaMapImage),
+    generateInspectionPdf(
+      inspection,
+      attachmentFiles,
+      checkpointMapImages,
+      overviewMapImage,
+      areaMapImage
+    ),
     serviceClient
       .from("inspection_archivals")
       .insert({ inspection_id: inspectionId, status: "pending", sif_case_number: caseNumber })
@@ -159,7 +197,12 @@ export async function POST(req: NextRequest) {
   const archivalId = archival?.id;
   const [archivalUpdateRes] = await Promise.all([
     archivalId
-      ? serviceClient.from("inspection_archivals").update(result).eq("id", archivalId).select().single()
+      ? serviceClient
+          .from("inspection_archivals")
+          .update(result)
+          .eq("id", archivalId)
+          .select()
+          .single()
       : serviceClient.from("inspection_archivals").insert(result).select().single(),
     result.status === "success"
       ? supabase.from("inspections").update({ status: "archived" }).eq("id", inspectionId)
@@ -171,7 +214,7 @@ export async function POST(req: NextRequest) {
   const response: ArchiveInspectionResponse = {
     success: result.status === "success",
     archival: finalArchival ?? undefined,
-    error: result.status === "failed" ? result.error_message ?? "Archival failed" : undefined,
+    error: result.status === "failed" ? (result.error_message ?? "Archival failed") : undefined,
   };
 
   return NextResponse.json(response, {

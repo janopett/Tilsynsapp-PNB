@@ -11,12 +11,12 @@
 
 import { sifRpcCall } from "../client";
 import type {
+  SifDocumentInCase,
+  SifFileMetadata,
   SifGetCasesQuery,
   SifGetCasesResult,
   SifGetDocumentsQuery,
   SifGetDocumentsResult,
-  SifDocumentInCase,
-  SifFileMetadata,
 } from "../types";
 
 // ── Public types ───────────────────────────────────────────────────────────
@@ -71,8 +71,7 @@ export async function getReferringCases(
 
   if (!result.Successful || !result.Cases?.length) return [];
 
-  const referring =
-    (result.Cases[0].ReferringCases as RawReferringCase[] | null | undefined) ?? [];
+  const referring = (result.Cases[0].ReferringCases as RawReferringCase[] | null | undefined) ?? [];
 
   return referring.map((r) => ({
     caseNumber: r.CaseNumber,
@@ -171,9 +170,6 @@ export async function getReferredCasesWithDocuments(
   );
 
   return settled
-    .filter(
-      (r): r is PromiseFulfilledResult<ReferredCaseWithDocuments> =>
-        r.status === "fulfilled"
-    )
+    .filter((r): r is PromiseFulfilledResult<ReferredCaseWithDocuments> => r.status === "fulfilled")
     .map((r) => r.value);
 }

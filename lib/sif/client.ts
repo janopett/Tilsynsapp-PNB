@@ -3,13 +3,9 @@
 // Handles: URL construction, request dispatch, retry, error mapping
 // ============================================================
 
-import { buildSifAuthHeaders, maskAuthHeaders } from "./auth";
-import {
-  mapHttpErrorToSifError,
-  SifRateLimitError,
-  SifTimeoutError,
-} from "./errors";
 import type { SifAuthConfig } from "./auth";
+import { buildSifAuthHeaders, maskAuthHeaders } from "./auth";
+import { mapHttpErrorToSifError, SifRateLimitError, SifTimeoutError } from "./errors";
 import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "./settings";
 
 export interface SifClientConfig {
@@ -25,11 +21,7 @@ export interface SifClientConfig {
  * If authKey is provided it is appended as ?authkey=... (Public 360 style).
  * E.g.: https://customer.public360online.com/Biz/v2/api/call/SI.Data.RPC/CaseService/GetCases?authkey=<guid>
  */
-export function buildRpcUrl(
-  config: SifClientConfig,
-  service: string,
-  method: string
-): string {
+export function buildRpcUrl(config: SifClientConfig, service: string, method: string): string {
   const base = `${config.baseUrl}${config.rpcPath}/${service}/${method}`;
   const authKey = config.authConfig?.authKey;
   return authKey ? `${base}?authkey=${encodeURIComponent(authKey)}` : base;
@@ -126,7 +118,7 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
     const retryAfterHeader = response.headers.get("retry-after");
     const waitMs = retryAfterHeader
       ? parseInt(retryAfterHeader, 10) * 1000
-      : Math.pow(2, retryCount + 1) * 1000;
+      : 2 ** (retryCount + 1) * 1000;
 
     console.warn("[SIF] Rate limited, retrying", {
       correlationId,
@@ -163,11 +155,7 @@ export async function sifRpcCallWithConfig<TInput, TOutput>(
     });
 
     // Detect Public 360 error envelope: { Type, CorrelationId, ExceptionType, Message }
-    if (
-      body &&
-      typeof body === "object" &&
-      (body as Record<string, unknown>).Type === "Error"
-    ) {
+    if (body && typeof body === "object" && (body as Record<string, unknown>).Type === "Error") {
       const err = body as Record<string, unknown>;
       const msg =
         `360-feil (${err.ExceptionType ?? "ukjent"}): ${err.Message ?? "Ingen melding"}` +

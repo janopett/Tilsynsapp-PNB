@@ -123,18 +123,18 @@ export interface Inspection {
   user_id: string;
 
   // Case metadata
-  case_number?: string;       // Saksnummer
-  case_title?: string;        // Sakstittel fra PNB
-  property_address: string;   // Eiendomsadresse
-  gnr?: string;               // Gårdsnummer
-  bnr?: string;               // Bruksnummer
-  snr?: string;               // Seksjonsnummer
-  fnr?: string;               // Festenummer
-  applicant_name?: string;    // Søkers navn
+  case_number?: string; // Saksnummer
+  case_title?: string; // Sakstittel fra PNB
+  property_address: string; // Eiendomsadresse
+  gnr?: string; // Gårdsnummer
+  bnr?: string; // Bruksnummer
+  snr?: string; // Seksjonsnummer
+  fnr?: string; // Festenummer
+  applicant_name?: string; // Søkers navn
   applicant_recno?: number | null; // Søkers recno i 360° (settes når søker velges fra kontaktlisten)
-  inspector_name?: string;    // Tilsynsmannens navn
-  inspection_date: string;    // Dato for tilsyn (ISO date string)
-  notes?: string;             // Generelle merknader
+  inspector_name?: string; // Tilsynsmannens navn
+  inspection_date: string; // Dato for tilsyn (ISO date string)
+  notes?: string; // Generelle merknader
 
   // Participants (kontakter som deltar på tilsynet)
   participants: SifContact[];
@@ -162,8 +162,8 @@ export interface Inspection {
   bakgrunn?: string[] | null;
 
   // Ny multi-select klassifisering (fra PNB-kodetabeller)
-  befaringsomrade?: string[] | null;   // fra "eBy Supervision area"
-  tiltakstype?: string[] | null;       // fra "eBy Measure type"
+  befaringsomrade?: string[] | null; // fra "eBy Supervision area"
+  tiltakstype?: string[] | null; // fra "eBy Measure type"
 
   // Classification
   measure_type_id: MeasureTypeId;
@@ -201,8 +201,8 @@ export interface InspectionCreate {
   /** @deprecated bruk tiltakstype */
   tilsynstype?: string;
   bakgrunn?: string[];
-  befaringsomrade?: string[];   // fra "eBy Supervision area"
-  tiltakstype?: string[];       // fra "eBy Measure type"
+  befaringsomrade?: string[]; // fra "eBy Supervision area"
+  tiltakstype?: string[]; // fra "eBy Measure type"
 }
 
 // ============================================================
@@ -233,10 +233,10 @@ export interface Attachment {
   inspection_id: string;
   checkpoint_definition_id?: string;
   file_name: string;
-  file_path: string;        // Storage path in Supabase
-  file_type: string;        // MIME type
+  file_path: string; // Storage path in Supabase
+  file_type: string; // MIME type
   file_size_bytes: number;
-  storage_url?: string;     // Public URL if applicable
+  storage_url?: string; // Public URL if applicable
   uploaded_at: string;
   // SIF sync fields
   sif_uploaded_file_reference?: string;

@@ -120,15 +120,23 @@ export default function MapPickerModal({
     const L = window.L;
     const map = mapInstanceRef.current;
     if (!L || !map) return;
-    if (polygonLayerRef.current) { map.removeLayer(polygonLayerRef.current); polygonLayerRef.current = null; }
+    if (polygonLayerRef.current) {
+      map.removeLayer(polygonLayerRef.current);
+      polygonLayerRef.current = null;
+    }
     if (pts.length >= 3) {
       polygonLayerRef.current = L.polygon(pts, {
-        color: "#2563eb", fillColor: "#3b82f6", fillOpacity: 0.18,
-        weight: 2, dashArray: "5,4",
+        color: "#2563eb",
+        fillColor: "#3b82f6",
+        fillOpacity: 0.18,
+        weight: 2,
+        dashArray: "5,4",
       }).addTo(map);
     } else if (pts.length >= 2) {
       polygonLayerRef.current = L.polyline(pts, {
-        color: "#2563eb", weight: 2, dashArray: "5,4",
+        color: "#2563eb",
+        weight: 2,
+        dashArray: "5,4",
       }).addTo(map);
     }
   }
@@ -169,7 +177,10 @@ export default function MapPickerModal({
     const L = window.L;
     const map = mapInstanceRef.current;
     if (L && map) {
-      if (polygonLayerRef.current) { map.removeLayer(polygonLayerRef.current); polygonLayerRef.current = null; }
+      if (polygonLayerRef.current) {
+        map.removeLayer(polygonLayerRef.current);
+        polygonLayerRef.current = null;
+      }
       for (const m of vertexMarkersRef.current) map.removeLayer(m);
       vertexMarkersRef.current = [];
     }
@@ -194,7 +205,11 @@ export default function MapPickerModal({
 
     if (initialLat == null && addressHint) {
       const geo = await geocodeAddress(addressHint);
-      if (geo) { startLat = geo.lat; startLng = geo.lng; zoom = 17; }
+      if (geo) {
+        startLat = geo.lat;
+        startLng = geo.lng;
+        zoom = 17;
+      }
     }
 
     const map = L.map(mapRef.current).setView([startLat, startLng], zoom);
@@ -250,7 +265,8 @@ export default function MapPickerModal({
     const cssId = "leaflet-css";
     if (!document.getElementById(cssId)) {
       const link = document.createElement("link");
-      link.id = cssId; link.rel = "stylesheet";
+      link.id = cssId;
+      link.rel = "stylesheet";
       link.href = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css`;
       document.head.appendChild(link);
     }
@@ -259,17 +275,26 @@ export default function MapPickerModal({
       const script = document.createElement("script");
       script.id = scriptId;
       script.src = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.js`;
-      script.onload = () => { leafletLoaded.current = true; setTimeout(initMap, 50); };
+      script.onload = () => {
+        leafletLoaded.current = true;
+        setTimeout(initMap, 50);
+      };
       document.head.appendChild(script);
     } else {
       const check = setInterval(() => {
-        if (window.L) { clearInterval(check); leafletLoaded.current = true; setTimeout(initMap, 50); }
+        if (window.L) {
+          clearInterval(check);
+          leafletLoaded.current = true;
+          setTimeout(initMap, 50);
+        }
       }, 100);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
@@ -301,12 +326,13 @@ export default function MapPickerModal({
   }
 
   const canSave =
-    (mode === "point" && coords != null) ||
-    (mode === "polygon" && polygonPts.length >= 3);
+    (mode === "point" && coords != null) || (mode === "polygon" && polygonPts.length >= 3);
 
   const statusText =
     mode === "point"
-      ? (coords ? `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°Ø` : "Klikk i kartet for å sette posisjon")
+      ? coords
+        ? `${coords.lat.toFixed(6)}°N, ${coords.lng.toFixed(6)}°Ø`
+        : "Klikk i kartet for å sette posisjon"
       : polygonPts.length === 0
         ? "Klikk i kartet for å legge til hjørner"
         : polygonPts.length < 3
@@ -363,9 +389,7 @@ export default function MapPickerModal({
         <div ref={mapRef} style={{ height: 400, width: "100%" }} aria-label="Interaktivt kart" />
 
         <div className="px-5 py-4 border-t border-gray-100 dark:border-slate-700 flex items-center justify-between gap-4">
-          <p className="text-sm text-gray-500 dark:text-slate-400 min-w-0 truncate">
-            {statusText}
-          </p>
+          <p className="text-sm text-gray-500 dark:text-slate-400 min-w-0 truncate">{statusText}</p>
           <div className="flex gap-2 flex-shrink-0">
             {mode === "polygon" && polygonPts.length > 0 && (
               <button

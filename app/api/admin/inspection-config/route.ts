@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit-log";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -78,10 +78,7 @@ export async function DELETE(req: NextRequest) {
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
 
   const serviceClient = await createServiceClient();
-  const { error } = await serviceClient
-    .from("inspection_list_items")
-    .delete()
-    .eq("id", id);
+  const { error } = await serviceClient.from("inspection_list_items").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   await writeAuditLog({

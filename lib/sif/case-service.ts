@@ -2,20 +2,16 @@
 // SIF CaseService - FindCase strategy
 // ============================================================
 
+import type { SifCase, SifCaseStage } from "@/types";
 import { sifRpcCall } from "./client";
+import { SifCaseNotFoundError, SifMultipleCasesFoundError, SifValidationError } from "./errors";
 import { loadSifSettingsWithEnvFallback } from "./settings";
-import {
-  SifCaseNotFoundError,
-  SifMultipleCasesFoundError,
-  SifValidationError,
-} from "./errors";
 import type {
+  SifCaseStage as RawSifCaseStage,
+  SifCaseResult,
   SifGetCasesQuery,
   SifGetCasesResult,
-  SifCaseResult,
-  SifCaseStage as RawSifCaseStage,
 } from "./types";
-import type { SifCase, SifCaseStage } from "@/types";
 
 export interface FindCaseInput {
   caseNumber?: string;
@@ -34,7 +30,16 @@ export interface FindCaseInput {
  * Throws if 0 or >1 cases match.
  */
 export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
-  const { caseNumber, externalId, externalSystem, importedCaseNumber, uid, uidOrigin, title, correlationId } = input;
+  const {
+    caseNumber,
+    externalId,
+    externalSystem,
+    importedCaseNumber,
+    uid,
+    uidOrigin,
+    title,
+    correlationId,
+  } = input;
   const settings = await loadSifSettingsWithEnvFallback();
   const baseUrl = settings.baseUrl.replace(/\/$/, "");
 
@@ -80,10 +85,7 @@ export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
   );
 
   if (!result.Successful) {
-    throw new SifCaseNotFoundError(
-      criteria,
-      result.ErrorMessage ?? result.ErrorDetails
-    );
+    throw new SifCaseNotFoundError(criteria, result.ErrorMessage ?? result.ErrorDetails);
   }
 
   const cases = result.Cases ?? [];
@@ -109,12 +111,14 @@ export async function searchCasesInSif(query: string, maxResults = 10): Promise<
   const baseUrl = settings.baseUrl.replace(/\/$/, "");
 
   const [byNumber, byTitle] = await Promise.allSettled([
-    sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
-      "CaseService", "GetCases", { CaseNumber: `%${q}%`, MaxReturnedCases: maxResults }
-    ),
-    sifRpcCall<SifGetCasesQuery, SifGetCasesResult>(
-      "CaseService", "GetCases", { Title: `%${q}%`, MaxReturnedCases: maxResults }
-    ),
+    sifRpcCall<SifGetCasesQuery, SifGetCasesResult>("CaseService", "GetCases", {
+      CaseNumber: `%${q}%`,
+      MaxReturnedCases: maxResults,
+    }),
+    sifRpcCall<SifGetCasesQuery, SifGetCasesResult>("CaseService", "GetCases", {
+      Title: `%${q}%`,
+      MaxReturnedCases: maxResults,
+    }),
   ]);
 
   const seen = new Set<number>();
@@ -141,8 +145,12 @@ function mapStage(s: RawSifCaseStage): SifCaseStage {
     startDate: s.StartDate,
     deadlineDate: s.DeadlineDate,
     notes: s.Notes,
-    stageType: s.StageType ? { code: s.StageType.Code, description: s.StageType.Description } : undefined,
-    stageStatus: s.StageStatus ? { code: s.StageStatus.Code, description: s.StageStatus.Description } : undefined,
+    stageType: s.StageType
+      ? { code: s.StageType.Code, description: s.StageType.Description }
+      : undefined,
+    stageStatus: s.StageStatus
+      ? { code: s.StageStatus.Code, description: s.StageStatus.Description }
+      : undefined,
     remainingDays: s.RemainingDays,
   };
 }

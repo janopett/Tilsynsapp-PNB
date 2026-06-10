@@ -1,8 +1,8 @@
 "use client";
 
-import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "@/lib/i18n";
+import { createClient } from "@/lib/supabase/client";
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -16,10 +16,7 @@ export default function LogoutButton() {
   }
 
   return (
-    <button
-      onClick={handleLogout}
-      className="text-sm text-blue-200 hover:text-white transition"
-    >
+    <button onClick={handleLogout} className="text-sm text-blue-200 hover:text-white transition">
       {t.nav.logout}
     </button>
   );

@@ -186,7 +186,9 @@ export default function SifTestPage() {
     updateEnterpriseTimer[0] = setTimeout(async () => {
       setUpdateEnterpriseSearching(true);
       try {
-        const res = await authFetch(`/api/sif/enterprise-search?q=${encodeURIComponent(value.trim())}`);
+        const res = await authFetch(
+          `/api/sif/enterprise-search?q=${encodeURIComponent(value.trim())}`
+        );
         const data = await res.json();
         setUpdateEnterpriseHits(data.ok ? (data.enterprises ?? []) : []);
       } finally {
@@ -333,7 +335,9 @@ export default function SifTestPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6">SIF Admin – Testverktøy</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 mb-6">
+        SIF Admin – Testverktøy
+      </h1>
 
       {/* Connection test */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mb-5">
@@ -362,13 +366,14 @@ export default function SifTestPage() {
               <>
                 <span className="font-semibold">Tilkobling OK</span>
                 {versionResult.version && (
-                  <span className="ml-2 text-green-600">– SIF versjon: {versionResult.version}</span>
+                  <span className="ml-2 text-green-600">
+                    – SIF versjon: {versionResult.version}
+                  </span>
                 )}
               </>
             ) : (
               <>
-                <span className="font-semibold">Feil:</span>{" "}
-                {versionResult.error}
+                <span className="font-semibold">Feil:</span> {versionResult.error}
               </>
             )}
           </div>
@@ -379,8 +384,8 @@ export default function SifTestPage() {
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6">
         <h2 className="text-base font-semibold mb-4">Saksoppslag</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-          Slå opp en sak i Plan &amp; Build ved hjelp av saksnummer.
-          Bruk dette for å verifisere at saksnummer er riktig formatert.
+          Slå opp en sak i Plan &amp; Build ved hjelp av saksnummer. Bruk dette for å verifisere at
+          saksnummer er riktig formatert.
         </p>
         <form onSubmit={lookupCase} className="flex gap-3">
           <input
@@ -420,10 +425,18 @@ export default function SifTestPage() {
         <h2 className="text-base font-semibold mb-1">Test: IncludeReferringCases (GetCases)</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">CaseService/GetCases</code>{" "}
-          med <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">IncludeReferringCases: true</code>{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            CaseService/GetCases
+          </code>{" "}
+          med{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            IncludeReferringCases: true
+          </code>{" "}
           og viser råsvaret. Bruk dette for å undersøke om saken har refererte saker, og hva{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">ReferringCases</code>-feltet inneholder.
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            ReferringCases
+          </code>
+          -feltet inneholder.
         </p>
         <form onSubmit={lookupReferringCases} className="flex gap-3 mb-4">
           <input
@@ -445,17 +458,22 @@ export default function SifTestPage() {
         {refCasesResult && (
           <div className="space-y-4">
             {/* ReferringCases highlighted */}
-            {refCasesResult.ok && (refCasesResult.raw as { Cases?: Array<{ ReferringCases?: unknown }> })?.Cases?.[0] && (
-              <div>
-                <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                  ReferringCases (fra Cases[0])
-                </p>
-                <CopyableJson
-                  data={(refCasesResult.raw as { Cases: Array<{ ReferringCases?: unknown }> }).Cases[0].ReferringCases ?? null}
-                  ok={true}
-                />
-              </div>
-            )}
+            {refCasesResult.ok &&
+              (refCasesResult.raw as { Cases?: Array<{ ReferringCases?: unknown }> })
+                ?.Cases?.[0] && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                    ReferringCases (fra Cases[0])
+                  </p>
+                  <CopyableJson
+                    data={
+                      (refCasesResult.raw as { Cases: Array<{ ReferringCases?: unknown }> })
+                        .Cases[0].ReferringCases ?? null
+                    }
+                    ok={true}
+                  />
+                </div>
+              )}
             {/* Full raw response */}
             <div>
               <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
@@ -472,15 +490,23 @@ export default function SifTestPage() {
 
       {/* IncludeMilestones + IncludeStages test */}
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-6 mt-5">
-        <h2 className="text-base font-semibold mb-1">Test: IncludeMilestones + IncludeStages (GetCases)</h2>
+        <h2 className="text-base font-semibold mb-1">
+          Test: IncludeMilestones + IncludeStages (GetCases)
+        </h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">CaseService/GetCases</code>{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            CaseService/GetCases
+          </code>{" "}
           med{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">IncludeMilestones: true</code>{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            IncludeMilestones: true
+          </code>{" "}
           og{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">IncludeStages: true</code>.{" "}
-          Viser sak-nivå milepæler, hvert trinn med sine milepæler, og fullstendig råsvar.
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            IncludeStages: true
+          </code>
+          . Viser sak-nivå milepæler, hvert trinn med sine milepæler, og fullstendig råsvar.
         </p>
         <form onSubmit={lookupMilestones} className="flex gap-3 mb-4">
           <input
@@ -501,43 +527,51 @@ export default function SifTestPage() {
 
         {milestonesResult && (
           <div className="space-y-4">
-            {milestonesResult.ok && (() => {
-              type RawCase = {
-                Milestones?: unknown;
-                Stages?: Array<{ Title?: string; StageStatus?: { Description?: string }; DeadlineDate?: string; Milestones?: unknown }>;
-              };
-              const c = (milestonesResult.raw as { Cases?: RawCase[] })?.Cases?.[0];
-              if (!c) return null;
-              return (
-                <>
-                  {/* Case-level milestones */}
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                      Cases[0].Milestones (sak-nivå)
-                    </p>
-                    <CopyableJson data={c.Milestones ?? null} ok={true} />
-                  </div>
-
-                  {/* Per-stage milestones */}
-                  {(c.Stages ?? []).map((s, i) => (
-                    <div key={i}>
+            {milestonesResult.ok &&
+              (() => {
+                type RawCase = {
+                  Milestones?: unknown;
+                  Stages?: Array<{
+                    Title?: string;
+                    StageStatus?: { Description?: string };
+                    DeadlineDate?: string;
+                    Milestones?: unknown;
+                  }>;
+                };
+                const c = (milestonesResult.raw as { Cases?: RawCase[] })?.Cases?.[0];
+                if (!c) return null;
+                return (
+                  <>
+                    {/* Case-level milestones */}
+                    <div>
                       <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
-                        Stages[{i}] — {s.Title ?? "trinn"}{" "}
-                        {s.StageStatus?.Description && (
-                          <span className="normal-case font-normal text-gray-400">({s.StageStatus.Description})</span>
-                        )}
-                        {s.DeadlineDate && (
-                          <span className="normal-case font-normal text-brand-600 dark:text-brand-400 ml-2">
-                            frist: {s.DeadlineDate}
-                          </span>
-                        )}
+                        Cases[0].Milestones (sak-nivå)
                       </p>
-                      <CopyableJson data={s.Milestones ?? null} ok={true} />
+                      <CopyableJson data={c.Milestones ?? null} ok={true} />
                     </div>
-                  ))}
-                </>
-              );
-            })()}
+
+                    {/* Per-stage milestones */}
+                    {(c.Stages ?? []).map((s, i) => (
+                      <div key={i}>
+                        <p className="text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-1">
+                          Stages[{i}] — {s.Title ?? "trinn"}{" "}
+                          {s.StageStatus?.Description && (
+                            <span className="normal-case font-normal text-gray-400">
+                              ({s.StageStatus.Description})
+                            </span>
+                          )}
+                          {s.DeadlineDate && (
+                            <span className="normal-case font-normal text-brand-600 dark:text-brand-400 ml-2">
+                              frist: {s.DeadlineDate}
+                            </span>
+                          )}
+                        </p>
+                        <CopyableJson data={s.Milestones ?? null} ok={true} />
+                      </div>
+                    ))}
+                  </>
+                );
+              })()}
 
             {/* Full raw response */}
             <div>
@@ -558,9 +592,18 @@ export default function SifTestPage() {
         <h2 className="text-base font-semibold mb-1">Test: Filer i sak (via GetDocuments)</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Henter dokumenter med tilhørende filer via{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">DocumentService/GetDocuments</code>{" "}
-          med <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">IncludeFiles: true</code>.{" "}
-          (<code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">FileService/GetFilesWithMetadata</code> er blokkert på dette endepunktet.)
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            DocumentService/GetDocuments
+          </code>{" "}
+          med{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            IncludeFiles: true
+          </code>
+          . (
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            FileService/GetFilesWithMetadata
+          </code>{" "}
+          er blokkert på dette endepunktet.)
         </p>
         <form onSubmit={lookupFiles} className="flex gap-3 mb-4">
           <input
@@ -592,14 +635,18 @@ export default function SifTestPage() {
         <h2 className="text-base font-semibold mb-1">Test: SynchronizeContactPerson</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Oppretter eller oppdaterer en kontaktperson i Plan &amp; Build via{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">ContactService/SynchronizeContactPerson</code>.
-          Returnerer <code className="text-xs bg-gray-100 rounded px-1 py-0.5">Recno</code> som brukes
-          som kopimottaker ved arkivering. Rollen legges i <em>Title</em>-feltet.
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            ContactService/SynchronizeContactPerson
+          </code>
+          . Returnerer <code className="text-xs bg-gray-100 rounded px-1 py-0.5">Recno</code> som
+          brukes som kopimottaker ved arkivering. Rollen legges i <em>Title</em>-feltet.
         </p>
         <form onSubmit={syncContact} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fornavn</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                Fornavn
+              </label>
               <input
                 type="text"
                 value={syncFirstName}
@@ -609,7 +656,9 @@ export default function SifTestPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Etternavn</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                Etternavn
+              </label>
               <input
                 type="text"
                 value={syncLastName}
@@ -621,7 +670,8 @@ export default function SifTestPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-              Rolle / tittel <span className="text-gray-400 font-normal">(lagres i Title-feltet)</span>
+              Rolle / tittel{" "}
+              <span className="text-gray-400 font-normal">(lagres i Title-feltet)</span>
             </label>
             <input
               type="text"
@@ -633,7 +683,8 @@ export default function SifTestPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-              Foretak <span className="text-gray-400 font-normal">(søk på navn, velg resultat)</span>
+              Foretak{" "}
+              <span className="text-gray-400 font-normal">(søk på navn, velg resultat)</span>
             </label>
             <div className="relative">
               <input
@@ -669,12 +720,17 @@ export default function SifTestPage() {
               )}
             </div>
             {syncEnterprise && (
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">{syncEnterprise}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">
+                {syncEnterprise}
+              </p>
             )}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-              ExternalId <span className="text-gray-400 font-normal">(valgfri – genereres automatisk om tom)</span>
+              ExternalId{" "}
+              <span className="text-gray-400 font-normal">
+                (valgfri – genereres automatisk om tom)
+              </span>
             </label>
             <input
               type="text"
@@ -697,11 +753,11 @@ export default function SifTestPage() {
           <div className="mt-4">
             {syncResult.ok ? (
               <div className="rounded-xl p-4 text-sm bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-300">
-                <span className="font-semibold">Kontaktperson synkronisert!</span>{" "}
-                Recno:{" "}
+                <span className="font-semibold">Kontaktperson synkronisert!</span> Recno:{" "}
                 <code className="font-mono font-bold">{syncResult.recno}</code>
                 <p className="mt-1 text-green-600 text-xs">
-                  Bruk <code className="font-mono">recno:{syncResult.recno}</code> i ExternalId-feltet til CreateDocument for å legge til som kopimottaker.
+                  Bruk <code className="font-mono">recno:{syncResult.recno}</code> i
+                  ExternalId-feltet til CreateDocument for å legge til som kopimottaker.
                 </p>
               </div>
             ) : (
@@ -718,9 +774,12 @@ export default function SifTestPage() {
         <h2 className="text-base font-semibold mb-1">Debug: GetContactPersons</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Slår opp råsvaret fra{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">ContactService/GetContactPersons</code>{" "}
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            ContactService/GetContactPersons
+          </code>{" "}
           for et gitt ExternalId. Bruk dette for å verifisere at oppslaget fungerer og for å se
-          nøyaktig hvilke feltnavn og verdier PNB returnerer (Name, FirstName, LastName, Enterprise, osv.).
+          nøyaktig hvilke feltnavn og verdier PNB returnerer (Name, FirstName, LastName, Enterprise,
+          osv.).
         </p>
         <form onSubmit={lookupContact} className="flex gap-3 mb-4">
           <input
@@ -751,9 +810,11 @@ export default function SifTestPage() {
         <h2 className="text-base font-semibold mb-1">Test: UpdateContactPerson</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">ContactService/UpdateContactPerson</code>{" "}
-          direkte med angitt Recno. Returnerer råsvaret fra SIF. Bruk dette til å verifisere at oppdatering av
-          eksisterende kontaktperson fungerer.
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            ContactService/UpdateContactPerson
+          </code>{" "}
+          direkte med angitt Recno. Returnerer råsvaret fra SIF. Bruk dette til å verifisere at
+          oppdatering av eksisterende kontaktperson fungerer.
         </p>
         <form onSubmit={runUpdateContactPerson} className="space-y-3">
           <div>
@@ -770,7 +831,9 @@ export default function SifTestPage() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Fornavn</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                Fornavn
+              </label>
               <input
                 type="text"
                 value={updateFirstName}
@@ -780,7 +843,9 @@ export default function SifTestPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Etternavn</label>
+              <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
+                Etternavn
+              </label>
               <input
                 type="text"
                 value={updateLastName}
@@ -804,7 +869,8 @@ export default function SifTestPage() {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">
-              Foretak <span className="text-gray-400 font-normal">(søk på navn, velg resultat)</span>
+              Foretak{" "}
+              <span className="text-gray-400 font-normal">(søk på navn, velg resultat)</span>
             </label>
             <div className="relative">
               <input
@@ -840,7 +906,9 @@ export default function SifTestPage() {
               )}
             </div>
             {updateEnterprise && (
-              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">{updateEnterprise}</p>
+              <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 font-mono">
+                {updateEnterprise}
+              </p>
             )}
           </div>
           <div>
@@ -865,7 +933,9 @@ export default function SifTestPage() {
         </form>
         {updateResult && (
           <div className="mt-4">
-            <p className={`text-xs font-semibold mb-1 ${updateResult.ok ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}>
+            <p
+              className={`text-xs font-semibold mb-1 ${updateResult.ok ? "text-green-700 dark:text-green-400" : "text-red-700 dark:text-red-400"}`}
+            >
               {updateResult.ok ? "Svar fra SIF:" : "Feil:"}
             </p>
             <CopyableJson data={updateResult.raw} ok={updateResult.ok} />
@@ -878,8 +948,11 @@ export default function SifTestPage() {
         <h2 className="text-base font-semibold mb-1">Test: GetCodeTableRows</h2>
         <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
           Kaller{" "}
-          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">SupportService/GetCodeTableRows</code>{" "}
-          direkte og viser råsvaret. Bruk dette for å verifisere at kodetabellnavnet er riktig i din installasjon.
+          <code className="text-xs bg-gray-100 dark:bg-slate-700 rounded px-1 py-0.5 dark:text-slate-300">
+            SupportService/GetCodeTableRows
+          </code>{" "}
+          direkte og viser råsvaret. Bruk dette for å verifisere at kodetabellnavnet er riktig i din
+          installasjon.
         </p>
         <form onSubmit={lookupCodeTable} className="flex gap-3 mb-4">
           <input

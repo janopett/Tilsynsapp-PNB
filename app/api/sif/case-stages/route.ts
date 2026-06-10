@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { findCaseInSif } from "@/lib/sif/case-service";
 import type { SifCaseStage } from "@/types";

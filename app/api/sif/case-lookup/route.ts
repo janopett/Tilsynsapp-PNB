@@ -1,16 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { requireUser } from "@/lib/api-auth";
 import { findCaseInSif } from "@/lib/sif/case-service";
 import { SifCaseNotFoundError, SifMultipleCasesFoundError } from "@/lib/sif/errors";
 
-const CaseLookupSchema = z.object({
-  caseNumber: z.string().optional(),
-  externalId: z.string().optional(),
-  uid: z.string().optional(),
-}).refine((d) => d.caseNumber || d.externalId || d.uid, {
-  message: "At least one of caseNumber, externalId, or uid is required",
-});
+const CaseLookupSchema = z
+  .object({
+    caseNumber: z.string().optional(),
+    externalId: z.string().optional(),
+    uid: z.string().optional(),
+  })
+  .refine((d) => d.caseNumber || d.externalId || d.uid, {
+    message: "At least one of caseNumber, externalId, or uid is required",
+  });
 
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req);

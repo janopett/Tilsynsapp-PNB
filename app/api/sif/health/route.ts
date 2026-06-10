@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
-import { testSifConnection } from "@/lib/sif/support-service";
-import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "@/lib/sif/settings";
 import { buildRpcUrl, maskUrl } from "@/lib/sif/client";
+import { loadSifSettingsWithEnvFallback, toSifClientConfig } from "@/lib/sif/settings";
+import { testSifConnection } from "@/lib/sif/support-service";
 
 export async function GET(req: NextRequest) {
   const auth = await requireUser(req);
@@ -16,8 +16,5 @@ export async function GET(req: NextRequest) {
     : null;
 
   const result = await testSifConnection();
-  return NextResponse.json(
-    { ...result, attemptedUrl },
-    { status: result.ok ? 200 : 503 }
-  );
+  return NextResponse.json({ ...result, attemptedUrl }, { status: result.ok ? 200 : 503 });
 }

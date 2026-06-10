@@ -2,8 +2,9 @@
  * Integration-style test for the archival orchestrator.
  * Mocks all SIF service calls.
  */
-import { archiveInspectionToSif } from "@/lib/sif/archival";
+
 import type { ArchivalContext } from "@/lib/sif/archival";
+import { archiveInspectionToSif } from "@/lib/sif/archival";
 import { SifCaseNotFoundError } from "@/lib/sif/errors";
 
 // Mock all external SIF calls
@@ -16,17 +17,50 @@ jest.mock("@/lib/sif/file-service", () => ({
 }));
 jest.mock("@/lib/sif/document-service", () => ({
   createInspectionDocumentInSif: jest.fn(),
+  updateInspectionDocumentInSif: jest.fn(),
+  dispatchDocumentsInSif: jest.fn(),
+}));
+jest.mock("@/lib/sif/settings", () => ({
+  loadSifSettingsWithEnvFallback: jest.fn(),
 }));
 
 import { findCaseInSif } from "@/lib/sif/case-service";
-import { uploadFilesToSif } from "@/lib/sif/file-service";
 import { createInspectionDocumentInSif } from "@/lib/sif/document-service";
+import { uploadFilesToSif } from "@/lib/sif/file-service";
+import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 
 const mockFindCase = findCaseInSif as jest.MockedFunction<typeof findCaseInSif>;
 const mockUpload = uploadFilesToSif as jest.MockedFunction<typeof uploadFilesToSif>;
 const mockCreateDoc = createInspectionDocumentInSif as jest.MockedFunction<
   typeof createInspectionDocumentInSif
 >;
+const mockLoadSettings = loadSifSettingsWithEnvFallback as jest.MockedFunction<
+  typeof loadSifSettingsWithEnvFallback
+>;
+
+const mockSettings = {
+  baseUrl: "https://sif.example.com",
+  rpcPath: "/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC",
+  authMode: "authkey" as const,
+  authkey: "test-key",
+  timeoutMs: 30000,
+  oauthClientId: "",
+  oauthClientSecret: "",
+  oauthTokenUrl: "",
+  oauthScope: "",
+  docArchive: "PNB",
+  docCategory: "TILSYN",
+  docStatus: "J",
+  docTitleTemplate: "{propertyAddress}",
+  docMainFileRelationType: "H",
+  docAttachmentRelationType: "V",
+  roleMunicipalitySender: "AS",
+  roleApplicantRecipient: "EMO",
+  roleCopyRecipient: "KM",
+  responsiblePersonRecno: 0,
+  docAccessCode: "",
+  autoDispatch: false,
+};
 
 const baseContext: ArchivalContext = {
   inspectionId: "insp-uuid-001",
@@ -53,6 +87,7 @@ const mockSifDocument = {
 describe("archiveInspectionToSif", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockLoadSettings.mockResolvedValue(mockSettings);
   });
 
   it("returns success status with all SIF references", async () => {
@@ -76,9 +111,7 @@ describe("archiveInspectionToSif", () => {
   });
 
   it("returns failed status when case is not found", async () => {
-    mockFindCase.mockRejectedValueOnce(
-      new SifCaseNotFoundError("24/1234")
-    );
+    mockFindCase.mockRejectedValueOnce(new SifCaseNotFoundError("24/1234"));
 
     const result = await archiveInspectionToSif(baseContext);
 
@@ -99,9 +132,7 @@ describe("archiveInspectionToSif", () => {
 
   it("returns failed status when document creation fails", async () => {
     mockFindCase.mockResolvedValueOnce(mockSifCase);
-    mockUpload.mockResolvedValueOnce([
-      { fileReference: "ref-001", fileName: "rapport.pdf" },
-    ]);
+    mockUpload.mockResolvedValueOnce([{ fileReference: "ref-001", fileName: "rapport.pdf" }]);
     mockCreateDoc.mockRejectedValueOnce(new Error("Document creation failed"));
 
     const result = await archiveInspectionToSif(baseContext);
@@ -136,9 +167,7 @@ describe("archiveInspectionToSif", () => {
 
     const ctx: ArchivalContext = {
       ...baseContext,
-      attachments: [
-        { fileName: "foto.jpg", fileData: Buffer.from("img"), mimeType: "image/jpeg" },
-      ],
+      attachments: [{ fileName: "foto.jpg", fileData: Buffer.from("img"), mimeType: "image/jpeg" }],
     };
 
     await archiveInspectionToSif(ctx);
@@ -151,9 +180,7 @@ describe("archiveInspectionToSif", () => {
 
   it("stores request_payload_json with correlationId and inspection details", async () => {
     mockFindCase.mockResolvedValueOnce(mockSifCase);
-    mockUpload.mockResolvedValueOnce([
-      { fileReference: "ref-001", fileName: "rapport.pdf" },
-    ]);
+    mockUpload.mockResolvedValueOnce([{ fileReference: "ref-001", fileName: "rapport.pdf" }]);
     mockCreateDoc.mockResolvedValueOnce(mockSifDocument);
 
     const result = await archiveInspectionToSif(baseContext);

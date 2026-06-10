@@ -12,22 +12,22 @@
 // the internal 360° recno is known.
 // ============================================================
 
+import type { SifDocument, SifUploadedFileReference } from "@/types";
 import { sifRpcCall } from "./client";
-import { loadSifSettingsWithEnvFallback } from "./settings";
 import { SifCreateDocumentError } from "./errors";
+import { loadSifSettingsWithEnvFallback } from "./settings";
 import type {
   SifCreateDocumentInput,
   SifCreateDocumentResult,
-  SifUpdateDocumentInput,
-  SifUpdateDocumentResult,
   SifDispatchDocumentsInput,
   SifDispatchDocumentsResult,
+  SifDocumentInCase,
   SifFileInput,
   SifGetDocumentsQuery,
   SifGetDocumentsResult,
-  SifDocumentInCase,
+  SifUpdateDocumentInput,
+  SifUpdateDocumentResult,
 } from "./types";
-import type { SifDocument, SifUploadedFileReference } from "@/types";
 
 /**
  * Resolve a potentially relative SIF URL to an absolute URL using the configured base URL.
@@ -64,14 +64,14 @@ export interface CreateInspectionDocumentInput {
   /** Uploaded file references from FileService.Upload */
   files: Array<{
     title: string;
-    format: string;              // e.g. "pdf", "jpg"
+    format: string; // e.g. "pdf", "jpg"
     uploadedFileReference: string;
-    relationType?: string;       // e.g. "H" for main document
+    relationType?: string; // e.g. "H" for main document
   }>;
   additionalFields?: Array<{ name: string; value: string }>;
   /** Recno of the case stage to link the document to. Sent as ToStage in AdditionalFields. */
   stageRecno?: number;
-  documentDate?: string;         // ISO date
+  documentDate?: string; // ISO date
   /** Explicit access code (tilgangskode). When set, 360° skips access-code inheritance from file sub-items. */
   accessCode?: string;
   correlationId?: string;
@@ -171,7 +171,7 @@ export async function createInspectionDocumentInSif(
     recno: result.Recno ?? 0,
     documentNumber: result.DocumentNumber,
     title,
-    url: await resolveUrl(result.URL) || undefined,
+    url: (await resolveUrl(result.URL)) || undefined,
     raw: result,
   };
 }
@@ -298,7 +298,7 @@ export async function updateInspectionDocumentInSif(
   return {
     recno: result.Recno ?? 0,
     documentNumber: result.DocumentNumber ?? documentNumber,
-    url: await resolveUrl(result.URL) || undefined,
+    url: (await resolveUrl(result.URL)) || undefined,
     raw: result,
   };
 }

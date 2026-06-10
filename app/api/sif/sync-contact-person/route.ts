@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
-import { synchronizeContactPerson } from "@/lib/sif/contact-service";
 import { sifRpcCall } from "@/lib/sif/client";
+import { synchronizeContactPerson } from "@/lib/sif/contact-service";
 
 // ── GET /api/sif/sync-contact-person?externalId=... ──────────────────────────
 // Debug: raw GetContactPersons response for a given ExternalId.
@@ -11,7 +11,10 @@ export async function GET(req: NextRequest) {
 
   const externalId = new URL(req.url).searchParams.get("externalId");
   if (!externalId) {
-    return NextResponse.json({ ok: false, error: "externalId query param required" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "externalId query param required" },
+      { status: 400 }
+    );
   }
 
   try {
@@ -42,7 +45,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "externalId er påkrevd" }, { status: 400 });
   }
   if (!firstName?.trim() && !lastName?.trim()) {
-    return NextResponse.json({ ok: false, error: "Minst fornavn eller etternavn må oppgis" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "Minst fornavn eller etternavn må oppgis" },
+      { status: 400 }
+    );
   }
 
   try {

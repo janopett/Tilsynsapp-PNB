@@ -2,8 +2,8 @@
 // SIF EstateService - fetch estates (eiendommer)
 // ============================================================
 
-import { sifRpcCall } from "./client";
 import type { SifEstate } from "@/types";
+import { sifRpcCall } from "./client";
 
 interface EstateQuery {
   // NOTE: CaseNumber/CaseRecno are not in the official Swagger for GetEstates,
@@ -32,9 +32,9 @@ interface RawEstateAddress {
 export interface RawEstate {
   Recno: number;
   Address?: RawEstateAddress;
-  EstateNumber?: number;     // gnr
-  WorkNumber?: number;       // bnr
-  SectionNumber?: number | null;   // snr
+  EstateNumber?: number; // gnr
+  WorkNumber?: number; // bnr
+  SectionNumber?: number | null; // snr
   LeaseHoldNumber?: number | null; // fnr
   Type?: string;
   Description?: string;
@@ -56,7 +56,8 @@ function rawToSifEstate(e: RawEstate): SifEstate {
     gnr: e.EstateNumber != null ? String(e.EstateNumber) : undefined,
     bnr: e.WorkNumber != null ? String(e.WorkNumber) : undefined,
     snr: e.SectionNumber != null && e.SectionNumber !== 0 ? String(e.SectionNumber) : undefined,
-    fnr: e.LeaseHoldNumber != null && e.LeaseHoldNumber !== 0 ? String(e.LeaseHoldNumber) : undefined,
+    fnr:
+      e.LeaseHoldNumber != null && e.LeaseHoldNumber !== 0 ? String(e.LeaseHoldNumber) : undefined,
     municipality: e.Municipality,
   };
 }

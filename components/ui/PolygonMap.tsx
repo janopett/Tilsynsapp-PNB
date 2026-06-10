@@ -61,7 +61,8 @@ export default function PolygonMap({ polygon, height = 280 }: Props) {
     const cssId = "leaflet-css";
     if (!document.getElementById(cssId)) {
       const link = document.createElement("link");
-      link.id = cssId; link.rel = "stylesheet";
+      link.id = cssId;
+      link.rel = "stylesheet";
       link.href = `https://unpkg.com/leaflet@${LEAFLET_VERSION}/dist/leaflet.css`;
       document.head.appendChild(link);
     }
@@ -75,7 +76,10 @@ export default function PolygonMap({ polygon, height = 280 }: Props) {
       document.head.appendChild(script);
     } else {
       const check = setInterval(() => {
-        if (window.L) { clearInterval(check); setTimeout(initMap, 50); }
+        if (window.L) {
+          clearInterval(check);
+          setTimeout(initMap, 50);
+        }
       }, 100);
     }
   }, [polygon]); // eslint-disable-line react-hooks/exhaustive-deps

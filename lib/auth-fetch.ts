@@ -4,7 +4,9 @@ import { createClient } from "@/lib/supabase/client";
 
 export async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const supabase = createClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
   return fetch(url, {
     ...options,

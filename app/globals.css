@@ -34,7 +34,10 @@
   [class*="bg-gray"],
   [class*="bg-slate"],
   [class*="border-"] {
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.1s ease;
+    transition:
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      color 0.1s ease;
   }
 }
 

@@ -77,9 +77,11 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
     }
   }
 
-  const inp = "block w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
+  const inp =
+    "block w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500";
   const label = "block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1";
-  const section = "bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 space-y-4";
+  const section =
+    "bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-5 space-y-4";
   const heading = "text-base font-semibold text-gray-800 dark:text-slate-200 mb-3";
 
   return (
@@ -101,7 +103,9 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
         </p>
       )}
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2">{error}</p>
+        <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-xl px-4 py-2">
+          {error}
+        </p>
       )}
 
       {/* Connection */}
@@ -153,7 +157,9 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
           <label className={label}>
             Authkey{" "}
             {form.hasAuthkey && (
-              <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">(satt – tøm feltet for å beholde)</span>
+              <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">
+                (satt – tøm feltet for å beholde)
+              </span>
             )}
           </label>
           <input
@@ -194,7 +200,9 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
             <label className={label}>
               Client Secret{" "}
               {form.hasOauthClientSecret && (
-                <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">(satt)</span>
+                <span className="text-xs text-gray-400 dark:text-slate-500 font-normal">
+                  (satt)
+                </span>
               )}
             </label>
             <input
@@ -233,27 +241,58 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={label}>Arkiv</label>
-            <input type="text" value={form.docArchive} onChange={(e) => set("docArchive", e.target.value)} className={inp} />
+            <input
+              type="text"
+              value={form.docArchive}
+              onChange={(e) => set("docArchive", e.target.value)}
+              className={inp}
+            />
           </div>
           <div>
             <label className={label}>Kategori</label>
-            <input type="text" value={form.docCategory} onChange={(e) => set("docCategory", e.target.value)} className={inp} />
+            <input
+              type="text"
+              value={form.docCategory}
+              onChange={(e) => set("docCategory", e.target.value)}
+              className={inp}
+            />
           </div>
           <div>
             <label className={label}>Status</label>
-            <input type="text" value={form.docStatus} onChange={(e) => set("docStatus", e.target.value)} className={inp} />
+            <input
+              type="text"
+              value={form.docStatus}
+              onChange={(e) => set("docStatus", e.target.value)}
+              className={inp}
+            />
           </div>
           <div>
             <label className={label}>Tilgangskode</label>
-            <input type="text" value={form.docAccessCode} onChange={(e) => set("docAccessCode", e.target.value)} placeholder="(ingen)" className={inp} />
+            <input
+              type="text"
+              value={form.docAccessCode}
+              onChange={(e) => set("docAccessCode", e.target.value)}
+              placeholder="(ingen)"
+              className={inp}
+            />
           </div>
           <div>
             <label className={label}>Hoveddokument-relasjonstype</label>
-            <input type="text" value={form.docMainFileRelationType} onChange={(e) => set("docMainFileRelationType", e.target.value)} className={inp} />
+            <input
+              type="text"
+              value={form.docMainFileRelationType}
+              onChange={(e) => set("docMainFileRelationType", e.target.value)}
+              className={inp}
+            />
           </div>
           <div>
             <label className={label}>Vedlegg-relasjonstype</label>
-            <input type="text" value={form.docAttachmentRelationType} onChange={(e) => set("docAttachmentRelationType", e.target.value)} className={inp} />
+            <input
+              type="text"
+              value={form.docAttachmentRelationType}
+              onChange={(e) => set("docAttachmentRelationType", e.target.value)}
+              className={inp}
+            />
           </div>
         </div>
         <div>
@@ -266,7 +305,9 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
             className={inp}
           />
           <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-            Variabler: {"{{propertyAddress}}"}, {"{{caseNumber}}"}, {"{{title}}"}, {"{{date}}"}, {"{{year}}"}, {"{{inspectorName}}"}, {"{{applicantName}}"}, {"{{gnrBnr}}"}, {"{{measureType}}"}, {"{{inspectionId}}"}
+            Variabler: {"{{propertyAddress}}"}, {"{{caseNumber}}"}, {"{{title}}"}, {"{{date}}"},{" "}
+            {"{{year}}"}, {"{{inspectorName}}"}, {"{{applicantName}}"}, {"{{gnrBnr}}"},{" "}
+            {"{{measureType}}"}, {"{{inspectionId}}"}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -277,7 +318,10 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
             onChange={(e) => set("autoDispatch", e.target.checked)}
             className="w-4 h-4 accent-brand-600"
           />
-          <label htmlFor="autoDispatch" className="text-sm text-gray-700 dark:text-slate-300 cursor-pointer select-none">
+          <label
+            htmlFor="autoDispatch"
+            className="text-sm text-gray-700 dark:text-slate-300 cursor-pointer select-none"
+          >
             Send automatisk til mottakere etter arkivering
           </label>
         </div>
@@ -289,15 +333,30 @@ export default function SifConfigForm({ initialSettings }: SifConfigFormProps) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className={label}>Avsender (kommunen)</label>
-            <input type="text" value={form.roleMunicipalitySender} onChange={(e) => set("roleMunicipalitySender", e.target.value)} className={inp} />
+            <input
+              type="text"
+              value={form.roleMunicipalitySender}
+              onChange={(e) => set("roleMunicipalitySender", e.target.value)}
+              className={inp}
+            />
           </div>
           <div>
             <label className={label}>Mottaker (søker)</label>
-            <input type="text" value={form.roleApplicantRecipient} onChange={(e) => set("roleApplicantRecipient", e.target.value)} className={inp} />
+            <input
+              type="text"
+              value={form.roleApplicantRecipient}
+              onChange={(e) => set("roleApplicantRecipient", e.target.value)}
+              className={inp}
+            />
           </div>
           <div>
             <label className={label}>Kopi-mottaker</label>
-            <input type="text" value={form.roleCopyRecipient} onChange={(e) => set("roleCopyRecipient", e.target.value)} className={inp} />
+            <input
+              type="text"
+              value={form.roleCopyRecipient}
+              onChange={(e) => set("roleCopyRecipient", e.target.value)}
+              className={inp}
+            />
           </div>
           <div>
             <label className={label}>Ansvarlig person (Recno)</label>

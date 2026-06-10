@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit-log";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -90,9 +90,18 @@ export async function PATCH(req: NextRequest) {
 
   const allowed: Record<string, unknown> = {};
   const allowedFields = [
-    "title", "category", "description", "applies_to",
-    "required_tags", "severity", "legal_reference", "legal_reference_url",
-    "active", "sort_order", "applies_to_omrade", "applies_to_type_codes",
+    "title",
+    "category",
+    "description",
+    "applies_to",
+    "required_tags",
+    "severity",
+    "legal_reference",
+    "legal_reference_url",
+    "active",
+    "sort_order",
+    "applies_to_omrade",
+    "applies_to_type_codes",
   ];
   for (const f of allowedFields) {
     if (f in fields) allowed[f] = fields[f];
@@ -142,16 +151,23 @@ export async function DELETE(req: NextRequest) {
       .update({ active: false, updated_at: new Date().toISOString() })
       .eq("id", id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    await writeAuditLog({ adminId: auth.user.id, action: "checkpoint.deactivate", targetType: "checkpoint", targetId: id });
+    await writeAuditLog({
+      adminId: auth.user.id,
+      action: "checkpoint.deactivate",
+      targetType: "checkpoint",
+      targetId: id,
+    });
     return NextResponse.json({ ok: true, deactivated: true });
   }
 
   // Hard delete — no answers reference this checkpoint
-  const { error } = await serviceClient
-    .from("checkpoint_definitions")
-    .delete()
-    .eq("id", id);
+  const { error } = await serviceClient.from("checkpoint_definitions").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  await writeAuditLog({ adminId: auth.user.id, action: "checkpoint.delete", targetType: "checkpoint", targetId: id });
+  await writeAuditLog({
+    adminId: auth.user.id,
+    action: "checkpoint.delete",
+    targetType: "checkpoint",
+    targetId: id,
+  });
   return NextResponse.json({ ok: true, deleted: true });
 }

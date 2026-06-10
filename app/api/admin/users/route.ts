@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit-log";
-import { createClient } from "@supabase/supabase-js";
 
 function getAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     const firstName = (m.first_name as string | undefined)?.trim();
     const lastName = (m.last_name as string | undefined)?.trim();
     const name =
-      (firstName && lastName ? `${firstName} ${lastName}` : firstName ?? lastName) ??
+      (firstName && lastName ? `${firstName} ${lastName}` : (firstName ?? lastName)) ??
       (m.full_name as string | undefined) ??
       (m.name as string | undefined) ??
       null;
@@ -63,10 +63,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!body.userId || typeof body.isAdmin !== "boolean") {
-    return NextResponse.json(
-      { error: "userId and isAdmin are required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "userId and isAdmin are required" }, { status: 400 });
   }
 
   // Prevent removing own admin status

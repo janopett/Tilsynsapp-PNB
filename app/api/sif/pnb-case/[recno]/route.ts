@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
-import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import { sifRpcCall } from "@/lib/sif/client";
 import { mapPnbCase } from "@/lib/sif/pnb-case-mapper";
+import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import type {
   SifGetCasesQuery,
   SifGetCasesResult,
@@ -12,10 +12,7 @@ import type {
 
 // ── GET /api/sif/pnb-case/[recno] ────────────────────────────────────────────
 // Fetches a single PNB case by internal recno, with full detail.
-export async function GET(
-  req: NextRequest,
-  { params }: { params: Promise<{ recno: string }> }
-) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ recno: string }> }) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
 
@@ -69,15 +66,14 @@ export async function GET(
 
     if (!alreadyHasDates) {
       try {
-        const pp = await sifRpcCall<SifGetProgressPlanDetailsQuery, SifGetProgressPlanDetailsResult>(
-          "ProgressPlanService",
-          "GetProgressPlanDetails",
-          {
-            CaseNumber: caseItem.caseNumber,
-            IncludePhases: true,
-            MaxReturnedActivities: 50,
-          }
-        );
+        const pp = await sifRpcCall<
+          SifGetProgressPlanDetailsQuery,
+          SifGetProgressPlanDetailsResult
+        >("ProgressPlanService", "GetProgressPlanDetails", {
+          CaseNumber: caseItem.caseNumber,
+          IncludePhases: true,
+          MaxReturnedActivities: 50,
+        });
         if (pp.Successful && pp.Activities?.length) {
           caseItem.progressPlanDates = pp.Activities.flatMap((a) => {
             const dates: string[] = [];

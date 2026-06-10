@@ -6,10 +6,10 @@
 // ============================================================
 
 import type {
+  CheckpointCategory,
   CheckpointDefinition,
   CheckpointWithAnswer,
   InspectionAnswer,
-  CheckpointCategory,
 } from "@/types";
 
 /**
@@ -49,9 +49,7 @@ export function mergeCheckpointsWithAnswers(
   checkpoints: CheckpointDefinition[],
   answers: InspectionAnswer[]
 ): CheckpointWithAnswer[] {
-  const answerMap = new Map(
-    answers.map((a) => [a.checkpoint_definition_id, a])
-  );
+  const answerMap = new Map(answers.map((a) => [a.checkpoint_definition_id, a]));
 
   return checkpoints.map((def) => ({
     definition: def,
@@ -107,10 +105,7 @@ export const CATEGORY_LABELS_EN: Record<CheckpointCategory, string> = {
 };
 
 /** Return the localised category label for a given locale. */
-export function getCategoryLabel(
-  category: CheckpointCategory,
-  locale: "nb" | "en" = "nb"
-): string {
+export function getCategoryLabel(category: CheckpointCategory, locale: "nb" | "en" = "nb"): string {
   return (locale === "en" ? CATEGORY_LABELS_EN : CATEGORY_LABELS)[category];
 }
 

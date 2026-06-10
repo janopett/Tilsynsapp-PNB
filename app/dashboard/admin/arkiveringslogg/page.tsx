@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 
 type ArchivalStatus = "pending" | "success" | "failed";
@@ -114,7 +114,9 @@ export default function ArkiveringsloggPage() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center items-center h-40 text-gray-400 dark:text-slate-500">Laster…</div>
+        <div className="flex justify-center items-center h-40 text-gray-400 dark:text-slate-500">
+          Laster…
+        </div>
       ) : archivals.length === 0 ? (
         <div className="text-center py-20 text-gray-400 dark:text-slate-500">
           <p className="text-4xl mb-3">📭</p>
@@ -148,15 +150,9 @@ export default function ArkiveringsloggPage() {
                         timeStyle: "short",
                       })}
                     </span>
-                    {a.inspections?.case_number && (
-                      <span>Sak: {a.inspections.case_number}</span>
-                    )}
-                    {a.sif_case_number && (
-                      <span>SIF-sak: {a.sif_case_number}</span>
-                    )}
-                    {a.sif_document_number && (
-                      <span>SIF-dok: {a.sif_document_number}</span>
-                    )}
+                    {a.inspections?.case_number && <span>Sak: {a.inspections.case_number}</span>}
+                    {a.sif_case_number && <span>SIF-sak: {a.sif_case_number}</span>}
+                    {a.sif_document_number && <span>SIF-dok: {a.sif_document_number}</span>}
                     {a.sif_document_url && (
                       <a
                         href={a.sif_document_url}

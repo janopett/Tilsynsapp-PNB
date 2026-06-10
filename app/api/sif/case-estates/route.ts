@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/api-auth";
 import { findCaseInSif } from "@/lib/sif/case-service";
 import { getEstateByMatrikkel } from "@/lib/sif/estate-service";
@@ -15,7 +15,9 @@ interface RawArchiveCode {
  * Format: "kommunenr/gnr/bnr/fnr/snr"
  * Example: "4601/168/200/0/1" → gnr=168, bnr=200, fnr=0, snr=1
  */
-function parseArchiveCodes(archiveCodes: RawArchiveCode[]): Array<{ gnr: number; bnr: number; snr: number | null; fnr: number | null }> {
+function parseArchiveCodes(
+  archiveCodes: RawArchiveCode[]
+): Array<{ gnr: number; bnr: number; snr: number | null; fnr: number | null }> {
   return archiveCodes
     .filter((ac) => ac.ArchiveType === "Gnr/bnr" && ac.ArchiveCode)
     .map((ac) => {
@@ -24,9 +26,7 @@ function parseArchiveCodes(archiveCodes: RawArchiveCode[]): Array<{ gnr: number;
       const bnr = parseInt(parts[2] ?? "", 10);
       const fnr = parseInt(parts[3] ?? "0", 10);
       const snr = parseInt(parts[4] ?? "0", 10);
-      return isNaN(gnr) || isNaN(bnr)
-        ? null
-        : { gnr, bnr, fnr: fnr || null, snr: snr || null };
+      return isNaN(gnr) || isNaN(bnr) ? null : { gnr, bnr, fnr: fnr || null, snr: snr || null };
     })
     .filter((x): x is NonNullable<typeof x> => x !== null);
 }
@@ -60,18 +60,17 @@ export async function GET(req: NextRequest) {
   const caseRecno = caseRecnoStr ? parseInt(caseRecnoStr, 10) : undefined;
 
   if (!caseNumber && !caseRecno) {
-    return NextResponse.json(
-      { error: "caseNumber or caseRecno is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "caseNumber or caseRecno is required" }, { status: 400 });
   }
 
   try {
     const sifCase = await findCaseInSif({ caseNumber });
-    const raw = sifCase.raw as {
-      CaseEstates?: SifCaseEstate[];
-      ArchiveCodes?: RawArchiveCode[];
-    } | undefined;
+    const raw = sifCase.raw as
+      | {
+          CaseEstates?: SifCaseEstate[];
+          ArchiveCodes?: RawArchiveCode[];
+        }
+      | undefined;
 
     // Strategy 1: CaseEstates from GetCases (IncludeCaseEstates: true)
     if (raw?.CaseEstates?.length) {
@@ -93,8 +92,7 @@ export async function GET(req: NextRequest) {
 
     const estates: SifEstate[] = parsed.map((m, i) => {
       const result = estateResults[i];
-      const enriched =
-        result.status === "fulfilled" && result.value ? result.value : null;
+      const enriched = result.status === "fulfilled" && result.value ? result.value : null;
 
       return {
         recno: enriched?.Recno ?? -(m.gnr * 100000 + m.bnr),
@@ -112,6 +110,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: true, estates });
   } catch (err) {
     console.error("[case-estates] Error", err);
-    return NextResponse.json({ ok: false, estates: [], error: "Kunne ikke hente eiendommer fra SIF." });
+    return NextResponse.json({
+      ok: false,
+      estates: [],
+      error: "Kunne ikke hente eiendommer fra SIF.",
+    });
   }
 }

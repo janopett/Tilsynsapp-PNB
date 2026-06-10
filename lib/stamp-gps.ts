@@ -19,8 +19,12 @@ export async function extractGps(file: File): Promise<ExifGps | null> {
   if (file.type.startsWith("image/")) {
     try {
       const exifrModule = await import("exifr");
-      const parse: ((input: File, opts: object) => Promise<Record<string, number> | null | undefined>) =
-        exifrModule.parse ?? (exifrModule as unknown as { default: { parse: typeof exifrModule.parse } }).default?.parse;
+      const parse: (
+        input: File,
+        opts: object
+      ) => Promise<Record<string, number> | null | undefined> =
+        exifrModule.parse ??
+        (exifrModule as unknown as { default: { parse: typeof exifrModule.parse } }).default?.parse;
 
       if (typeof parse === "function") {
         const output = await parse(file, { gps: true });
@@ -70,11 +74,11 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
       `https://nominatim.openstreetmap.org/reverse` +
       `?format=jsonv2&lat=${lat}&lon=${lng}&accept-language=no&zoom=18`;
     const res = await fetch(url, {
-      headers: { "Accept": "application/json" },
+      headers: { Accept: "application/json" },
       signal: AbortSignal.timeout(5_000),
     });
     if (!res.ok) return null;
-    const data = await res.json() as {
+    const data = (await res.json()) as {
       address?: Record<string, string>;
       display_name?: string;
     };

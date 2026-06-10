@@ -1,8 +1,8 @@
 import {
-  filterCheckpoints,
-  mergeCheckpointsWithAnswers,
-  groupByCategory,
   calculateSummary,
+  filterCheckpoints,
+  groupByCategory,
+  mergeCheckpointsWithAnswers,
 } from "@/lib/checklist/filter-engine";
 import type { CheckpointDefinition, InspectionAnswer } from "@/types";
 
@@ -76,7 +76,11 @@ describe("filterCheckpoints", () => {
   });
 
   it("inkluderer sjekkpunkter som matcher valgt tiltakstype", () => {
-    const result = filterCheckpoints(mockCheckpoints, [], ["Nytt utvendig anlegg for vann og avløp"]);
+    const result = filterCheckpoints(
+      mockCheckpoints,
+      [],
+      ["Nytt utvendig anlegg for vann og avløp"]
+    );
     expect(result.map((c) => c.id)).toContain("cp-3");
   });
 
@@ -108,10 +112,7 @@ describe("mergeCheckpointsWithAnswers", () => {
   ];
 
   it("merges answer into matching checkpoint", () => {
-    const merged = mergeCheckpointsWithAnswers(
-      [mockCheckpoints[0], mockCheckpoints[1]],
-      answers
-    );
+    const merged = mergeCheckpointsWithAnswers([mockCheckpoints[0], mockCheckpoints[1]], answers);
     expect(merged[0].answer?.status).toBe("ok");
     expect(merged[1].answer).toBeUndefined();
   });

@@ -10,7 +10,9 @@ export default async function InspectionPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session) redirect("/login");
 
   const [inspRes, answersRes, attachRes, archivalRes] = await Promise.all([

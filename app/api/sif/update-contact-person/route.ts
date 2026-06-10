@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { sifRpcCall } from "@/lib/sif/client";
 import type { SifUpdateContactPersonInput, SifUpdateContactPersonResult } from "@/lib/sif/types";

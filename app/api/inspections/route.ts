@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 const CreateInspectionSchema = z.object({
   property_address: z.string().min(1),
@@ -22,7 +22,13 @@ const CreateInspectionSchema = z.object({
   estates: z.array(z.record(z.unknown())).default([]),
   latitude: z.number().optional(),
   longitude: z.number().optional(),
-  area_geojson: z.object({ type: z.literal("Polygon"), coordinates: z.array(z.array(z.tuple([z.number(), z.number()]))) }).nullable().optional(),
+  area_geojson: z
+    .object({
+      type: z.literal("Polygon"),
+      coordinates: z.array(z.array(z.tuple([z.number(), z.number()]))),
+    })
+    .nullable()
+    .optional(),
   sif_stage_recno: z.number().optional(),
   bakgrunn: z.array(z.string()).default([]),
   befaringsomrade: z.array(z.string()).default([]),
@@ -43,7 +49,9 @@ export async function POST(req: NextRequest) {
     { global: { headers: { Authorization: `Bearer ${token}` } } }
   );
 
-  const { data: { user } } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser(token);
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

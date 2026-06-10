@@ -2,21 +2,21 @@
 // SIF FileService - Upload files to 360°
 // ============================================================
 
+import type { SifUploadedFileReference } from "@/types";
 import { sifRpcCall } from "./client";
 import { SifUploadError, SifValidationError } from "./errors";
 import type {
-  SifUploadInput,
-  SifUploadResult,
+  SifFileMetadata,
   SifGetFilesWithMetadataQuery,
   SifGetFilesWithMetadataResult,
-  SifFileMetadata,
+  SifUploadInput,
+  SifUploadResult,
 } from "./types";
-import type { SifUploadedFileReference } from "@/types";
 
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024; // 10 MB — matches Supabase Storage bucket limit
 
 export interface UploadFileInput {
-  fileName: string;       // Must include extension, e.g. "rapport.pdf"
+  fileName: string; // Must include extension, e.g. "rapport.pdf"
   fileData: Buffer | Uint8Array;
   mimeType?: string;
   correlationId?: string;
@@ -26,9 +26,7 @@ export interface UploadFileInput {
  * Upload a single file to SIF FileService.
  * Returns the FileReference needed for CreateDocument.
  */
-export async function uploadFileToSif(
-  input: UploadFileInput
-): Promise<SifUploadedFileReference> {
+export async function uploadFileToSif(input: UploadFileInput): Promise<SifUploadedFileReference> {
   const { fileName, fileData, correlationId } = input;
 
   // Validate filename has extension

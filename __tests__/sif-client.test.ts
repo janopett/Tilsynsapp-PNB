@@ -3,13 +3,10 @@
  * Uses fetch mock to avoid real network calls.
  * @jest-environment node
  */
-import { buildRpcUrl, sifRpcCallWithConfig } from "@/lib/sif/client";
-import {
-  SifAuthenticationError,
-  SifRateLimitError,
-  SifTimeoutError,
-} from "@/lib/sif/errors";
+
 import type { SifClientConfig } from "@/lib/sif/client";
+import { buildRpcUrl, sifRpcCallWithConfig } from "@/lib/sif/client";
+import { SifAuthenticationError, SifRateLimitError, SifTimeoutError } from "@/lib/sif/errors";
 
 // Mock auth to return predictable headers
 jest.mock("@/lib/sif/auth", () => ({
@@ -58,12 +55,9 @@ describe("sifRpcCallWithConfig", () => {
     const mockData = { CaseNumber: "24/1234", Recno: 100 };
     global.fetch = jest.fn().mockResolvedValueOnce(makeJsonResponse(mockData));
 
-    const result = await sifRpcCallWithConfig(
-      mockConfig,
-      "CaseService",
-      "GetCases",
-      { CaseNumber: "24/1234" }
-    );
+    const result = await sifRpcCallWithConfig(mockConfig, "CaseService", "GetCases", {
+      CaseNumber: "24/1234",
+    });
 
     expect(result).toEqual(mockData);
     expect(global.fetch).toHaveBeenCalledTimes(1);
@@ -98,12 +92,7 @@ describe("sifRpcCallWithConfig", () => {
       .mockResolvedValueOnce(makeJsonResponse({ success: true }));
 
     jest.useFakeTimers();
-    const promise = sifRpcCallWithConfig(
-      mockConfig,
-      "CaseService",
-      "GetCases",
-      {}
-    );
+    const promise = sifRpcCallWithConfig(mockConfig, "CaseService", "GetCases", {});
     await jest.runAllTimersAsync();
     const result = await promise;
     jest.useRealTimers();
@@ -113,22 +102,15 @@ describe("sifRpcCallWithConfig", () => {
   });
 
   it("throws SifRateLimitError after 3 retries exhausted", async () => {
-    global.fetch = jest
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({}), {
-          status: 429,
-          headers: { "Content-Type": "application/json" },
-        })
-      );
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({}), {
+        status: 429,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
 
     jest.useFakeTimers();
-    const promise = sifRpcCallWithConfig(
-      mockConfig,
-      "CaseService",
-      "GetCases",
-      {}
-    );
+    const promise = sifRpcCallWithConfig(mockConfig, "CaseService", "GetCases", {});
     // Set up assertion before advancing timers to avoid unhandled rejection
     const assertion = expect(promise).rejects.toBeInstanceOf(SifRateLimitError);
     await jest.runAllTimersAsync();

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { createClient } from "@/lib/supabase/server";
 
@@ -7,7 +7,10 @@ export async function GET(req: NextRequest) {
   if (auth.error) return auth.error;
 
   const supabase = await createClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
   return NextResponse.json({
     user_id: user?.id ?? null,

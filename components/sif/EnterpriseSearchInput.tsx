@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { authFetch } from "@/lib/auth-fetch";
 import type { SifEnterpriseResult } from "@/lib/sif/types";
 
@@ -28,7 +28,9 @@ export default function EnterpriseSearchInput({
   const containerRef = useRef<HTMLDivElement>(null);
   const listboxId = "enterprise-search-listbox";
 
-  useEffect(() => { setQuery(value); }, [value]);
+  useEffect(() => {
+    setQuery(value);
+  }, [value]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -41,19 +43,28 @@ export default function EnterpriseSearchInput({
   }, []);
 
   const search = useCallback(async (q: string) => {
-    if (q.trim().length < 2) { setResults([]); setOpen(false); return; }
+    if (q.trim().length < 2) {
+      setResults([]);
+      setOpen(false);
+      return;
+    }
     setLoading(true);
     setNoResults(false);
     try {
       const res = await authFetch(`/api/sif/enterprise-search?q=${encodeURIComponent(q.trim())}`);
       const data = await res.json();
       if (data.ok && data.enterprises.length > 0) {
-        setResults(data.enterprises); setNoResults(false); setOpen(true);
+        setResults(data.enterprises);
+        setNoResults(false);
+        setOpen(true);
       } else {
-        setResults([]); setNoResults(true); setOpen(true);
+        setResults([]);
+        setNoResults(true);
+        setOpen(true);
       }
     } catch {
-      setResults([]); setNoResults(false);
+      setResults([]);
+      setNoResults(false);
     } finally {
       setLoading(false);
     }
@@ -65,7 +76,8 @@ export default function EnterpriseSearchInput({
     onChange(val);
     setNoResults(false);
     if (val.trim().length < 2) {
-      setOpen(false); setResults([]);
+      setOpen(false);
+      setResults([]);
       if (debounceRef.current) clearTimeout(debounceRef.current);
       return;
     }
@@ -98,7 +110,10 @@ export default function EnterpriseSearchInput({
           autoComplete="off"
         />
         {loading && (
-          <span aria-live="polite" className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 text-xs animate-pulse">
+          <span
+            aria-live="polite"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400 text-xs animate-pulse"
+          >
             Søker…
           </span>
         )}
@@ -123,7 +138,9 @@ export default function EnterpriseSearchInput({
                                focus-visible:outline-none focus-visible:bg-gray-100 dark:focus-visible:bg-slate-700"
                     onMouseDown={() => handleSelect(e)}
                   >
-                    <span className="text-sm font-medium text-gray-900 dark:text-slate-100">{e.Name}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-slate-100">
+                      {e.Name}
+                    </span>
                     {(e.EnterpriseNumber || e.PostAddress?.ZipPlace) && (
                       <span className="text-xs text-gray-500 dark:text-slate-400">
                         {[e.EnterpriseNumber, e.PostAddress?.ZipPlace].filter(Boolean).join(" · ")}

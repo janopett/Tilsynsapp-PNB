@@ -4,12 +4,12 @@
 // Useful for debugging contact mapping without creating documents.
 // ============================================================
 
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { requireUser } from "@/lib/api-auth";
-import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import { buildDocumentTitle } from "@/config/sif-mapping";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
+import { requireUser } from "@/lib/api-auth";
+import { loadSifSettingsWithEnvFallback } from "@/lib/sif/settings";
 import type { InspectionWithAnswers } from "@/types";
 
 const PreviewRequestSchema = z.object({
@@ -60,9 +60,9 @@ export async function POST(req: NextRequest) {
   });
 
   // Build contacts (same logic as archival.ts)
-  const participants: Array<{ recno: number; name: string }> = (
-    inspection.participants ?? []
-  ).map((p) => ({ recno: p.recno, name: p.name }));
+  const participants: Array<{ recno: number; name: string }> = (inspection.participants ?? []).map(
+    (p) => ({ recno: p.recno, name: p.name })
+  );
 
   const applicantRecno = inspection.applicant_recno ?? undefined;
 
@@ -90,16 +90,26 @@ export async function POST(req: NextRequest) {
   }
   // External participants with companyRecno → copy recipients
   const externalParticipants = (inspection.external_participants ?? []) as Array<{
-    id: string; name: string; role?: string; company?: string; companyRecno?: number;
+    id: string;
+    name: string;
+    role?: string;
+    company?: string;
+    companyRecno?: number;
   }>;
   for (const ep of externalParticipants) {
     if (ep.companyRecno) {
-      docContacts.push({ Role: settings.roleCopyRecipient, ExternalId: `recno:${ep.companyRecno}` });
+      docContacts.push({
+        Role: settings.roleCopyRecipient,
+        ExternalId: `recno:${ep.companyRecno}`,
+      });
     }
   }
   const extNoteFields = externalParticipants
     .filter((ep) => !ep.companyRecno)
-    .map((ep) => ({ Name: "EksternDeltaker", Value: [ep.name, ep.role, ep.company].filter(Boolean).join(" – ") }));
+    .map((ep) => ({
+      Name: "EksternDeltaker",
+      Value: [ep.name, ep.role, ep.company].filter(Boolean).join(" – "),
+    }));
 
   const payload = {
     Title: title,
@@ -116,8 +126,16 @@ export async function POST(req: NextRequest) {
     Files: [
       { Title: "(PDF-rapport)", Format: "pdf", RelationType: settings.docMainFileRelationType },
     ],
-    ...([...(additionalFields?.map((f) => ({ Name: f.name, Value: f.value })) ?? []), ...extNoteFields].length
-      ? { AdditionalFields: [...(additionalFields?.map((f) => ({ Name: f.name, Value: f.value })) ?? []), ...extNoteFields] }
+    ...([
+      ...(additionalFields?.map((f) => ({ Name: f.name, Value: f.value })) ?? []),
+      ...extNoteFields,
+    ].length
+      ? {
+          AdditionalFields: [
+            ...(additionalFields?.map((f) => ({ Name: f.name, Value: f.value })) ?? []),
+            ...extNoteFields,
+          ],
+        }
       : {}),
   };
 

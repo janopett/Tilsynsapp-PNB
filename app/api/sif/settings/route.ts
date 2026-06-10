@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/api-auth";
 import { writeAuditLog } from "@/lib/audit-log";
-import { createServiceClient } from "@/lib/supabase/server";
-import { loadSifSettings, sanitizeForClient, invalidateSifSettingsCache } from "@/lib/sif/settings";
 import type { SifAuthMode } from "@/lib/sif/auth";
+import { invalidateSifSettingsCache, loadSifSettings, sanitizeForClient } from "@/lib/sif/settings";
+import { createServiceClient } from "@/lib/supabase/server";
 
 // ── GET /api/sif/settings ─────────────────────────────────────────────────────
 // Returns current settings (secrets are masked).
@@ -47,19 +47,14 @@ export async function PUT(req: NextRequest) {
       : (existing?.authkey ?? "");
 
   const oauthClientSecret =
-    typeof body.oauthClientSecret === "string" &&
-    body.oauthClientSecret !== MASK
+    typeof body.oauthClientSecret === "string" && body.oauthClientSecret !== MASK
       ? body.oauthClientSecret
       : (existing?.oauthClientSecret ?? "");
 
   const row = {
     base_url: String(body.baseUrl ?? ""),
-    rpc_path:
-      String(body.rpcPath ?? "") ||
-      "/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC",
-    auth_mode: (["authkey", "combined_daemon"].includes(
-      String(body.authMode)
-    )
+    rpc_path: String(body.rpcPath ?? "") || "/Biz/v2/api/call/SI.Data.RPC/SI.Data.RPC",
+    auth_mode: (["authkey", "combined_daemon"].includes(String(body.authMode))
       ? body.authMode
       : "authkey") as SifAuthMode,
     authkey,
@@ -72,12 +67,9 @@ export async function PUT(req: NextRequest) {
     doc_category: String(body.docCategory ?? "recno:111"),
     doc_status: String(body.docStatus ?? "J"),
     doc_title_template:
-      String(body.docTitleTemplate ?? "") ||
-      "Tilsynsrapport - {{propertyAddress}} - {{date}}",
+      String(body.docTitleTemplate ?? "") || "Tilsynsrapport - {{propertyAddress}} - {{date}}",
     doc_main_file_relation_type: String(body.docMainFileRelationType ?? "H"),
-    doc_attachment_relation_type: String(
-      body.docAttachmentRelationType ?? "V"
-    ),
+    doc_attachment_relation_type: String(body.docAttachmentRelationType ?? "V"),
     role_municipality_sender: String(body.roleMunicipalitySender ?? "AV"),
     role_applicant_recipient: String(body.roleApplicantRecipient ?? "EM"),
     role_copy_recipient: String(body.roleCopyRecipient ?? "KM"),
@@ -87,27 +79,18 @@ export async function PUT(req: NextRequest) {
   };
 
   // Singleton: insert first row or update the existing one
-  const { data: existingRow } = await supabase
-    .from("sif_settings")
-    .select("id")
-    .maybeSingle();
+  const { data: existingRow } = await supabase.from("sif_settings").select("id").maybeSingle();
 
   let dbError;
   if (existingRow) {
-    ({ error: dbError } = await supabase
-      .from("sif_settings")
-      .update(row)
-      .eq("id", existingRow.id));
+    ({ error: dbError } = await supabase.from("sif_settings").update(row).eq("id", existingRow.id));
   } else {
     ({ error: dbError } = await supabase.from("sif_settings").insert(row));
   }
 
   if (dbError) {
     console.error("[SIF settings] Save failed:", dbError.message);
-    return NextResponse.json(
-      { error: "Failed to save settings" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to save settings" }, { status: 500 });
   }
 
   invalidateSifSettingsCache();

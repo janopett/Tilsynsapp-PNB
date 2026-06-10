@@ -52,9 +52,9 @@ export interface SifMappingConfig {
 export const sifMapping: SifMappingConfig = {
   inspectionReport: {
     // TODO: Replace with correct archive for tilsynsrapporter
-    archive: "recno:2",            // Default: "Saksdokument"
+    archive: "recno:2", // Default: "Saksdokument"
     // TODO: Replace with correct category recno
-    category: "recno:111",         // e.g. "Internt notat uten oppfølging"
+    category: "recno:111", // e.g. "Internt notat uten oppfølging"
     // TODO: Replace with correct status recno (J = Journalført)
     status: "J",
     titleTemplate: "{{title}} - Tilsynsrapport - {{date}}",
@@ -62,9 +62,9 @@ export const sifMapping: SifMappingConfig = {
     attachmentRelationType: "V",
   },
   contactRoles: {
-    municipalitySenderRole: "AV",        // Avsender
-    applicantRecipientRole: "Mottaker",  // Mottaker
-    copyRecipientRole: "Kopi til",       // Kopi til
+    municipalitySenderRole: "AV", // Avsender
+    applicantRecipientRole: "Mottaker", // Mottaker
+    copyRecipientRole: "Kopi til", // Kopi til
   },
   defaults: {
     // TODO: Set to 0 or the correct recno of the service user / default responsible
@@ -95,10 +95,7 @@ export interface TitleTemplateVars {
  *           {{date}}, {{inspectorName}}, {{applicantName}},
  *           {{gnrBnr}}, {{measureType}}, {{year}}, {{inspectionId}}
  */
-export function buildDocumentTitle(
-  template: string,
-  vars: TitleTemplateVars
-): string {
+export function buildDocumentTitle(template: string, vars: TitleTemplateVars): string {
   const rawDate = vars.date ?? new Date().toISOString().slice(0, 10);
   // Format date as DD.MM.ÅÅÅÅ for Norwegian display
   const [yyyy, mm, dd] = rawDate.split("-");
@@ -107,8 +104,8 @@ export function buildDocumentTitle(
   return template
     .replace(/\{\{propertyAddress\}\}/g, vars.propertyAddress ?? "")
     .replace(/\{\{caseNumber\}\}/g, vars.caseNumber ?? "")
-    .replace(/\{\{title\}\}/g, vars.caseTitle ?? "")          // preferred alias
-    .replace(/\{\{caseTitle\}\}/g, vars.caseTitle ?? "")      // backward compat
+    .replace(/\{\{title\}\}/g, vars.caseTitle ?? "") // preferred alias
+    .replace(/\{\{caseTitle\}\}/g, vars.caseTitle ?? "") // backward compat
     .replace(/\{\{date\}\}/g, formattedDate)
     .replace(/\{\{inspectorName\}\}/g, vars.inspectorName ?? "")
     .replace(/\{\{applicantName\}\}/g, vars.applicantName ?? "")

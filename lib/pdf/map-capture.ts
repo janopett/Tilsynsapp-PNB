@@ -5,15 +5,12 @@
  */
 
 function lon2tileFrac(lon: number, zoom: number): number {
-  return ((lon + 180) / 360) * Math.pow(2, zoom);
+  return ((lon + 180) / 360) * 2 ** zoom;
 }
 
 function lat2tileFrac(lat: number, zoom: number): number {
   const latRad = (lat * Math.PI) / 180;
-  return (
-    ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) *
-    Math.pow(2, zoom)
-  );
+  return ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * 2 ** zoom;
 }
 
 const TILE_SUBDOMAINS = ["a", "b", "c"] as const;
@@ -30,8 +27,14 @@ async function loadTile(z: number, x: number, y: number): Promise<HTMLImageEleme
     const objectUrl = URL.createObjectURL(blob);
     return new Promise((resolve) => {
       const img = new Image();
-      img.onload = () => { URL.revokeObjectURL(objectUrl); resolve(img); };
-      img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(null); };
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(img);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(null);
+      };
       img.src = objectUrl;
     });
   } catch {
@@ -135,9 +138,7 @@ const PIN_COLOR: Record<string, string> = {
  * Capture an overview map showing multiple numbered, colour-coded pins.
  * Automatically selects a zoom level that fits all points.
  */
-export async function captureOverviewMapImage(
-  points: OverviewPoint[]
-): Promise<string | null> {
+export async function captureOverviewMapImage(points: OverviewPoint[]): Promise<string | null> {
   if (typeof document === "undefined" || points.length === 0) return null;
 
   const TILE_SIZE = 256;

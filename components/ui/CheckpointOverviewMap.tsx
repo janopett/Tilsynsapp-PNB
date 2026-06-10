@@ -95,7 +95,10 @@ export default function CheckpointOverviewMap({ points }: { points: MapPoint[] }
     const existing = document.getElementById(scriptId);
     if (existing) {
       const poll = setInterval(() => {
-        if (window.L) { clearInterval(poll); setTimeout(initMap, 50); }
+        if (window.L) {
+          clearInterval(poll);
+          setTimeout(initMap, 50);
+        }
       }, 100);
     } else {
       const script = document.createElement("script");

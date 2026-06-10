@@ -49,7 +49,7 @@ The inspector works in a browser on PC, tablet, or mobile. When the site visit i
 | Feature | Value |
 |---------|-------|
 | Automatic PDF report | Fully formatted site visit report generated without manual effort — includes case metadata, checklist, deviation summary, photos, and map |
-| Archive with one click | Report sent directly to the correct case in Public 360° — create a new document or update an existing one |
+| Archive with one click | Report sent directly to the correct case in Public 360° — select a case stage (behandlingstrinn), create a new document or update an existing one |
 | Traceability | All site visits, deviations, and archival events are logged and searchable |
 | User management | Simple access control via admin panel — no IT department involvement needed |
 | Audit log | All admin actions logged automatically (ISO 27001 A.12.4.1) |

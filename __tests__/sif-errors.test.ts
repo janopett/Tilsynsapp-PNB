@@ -1,16 +1,16 @@
 import {
-  SifError,
+  mapHttpErrorToSifError,
   SifAuthenticationError,
   SifAuthorizationError,
+  SifCaseNotFoundError,
+  SifCreateDocumentError,
+  SifError,
+  SifMultipleCasesFoundError,
   SifNotFoundError,
   SifRateLimitError,
-  SifValidationError,
-  SifCaseNotFoundError,
-  SifMultipleCasesFoundError,
-  SifUploadError,
-  SifCreateDocumentError,
   SifTimeoutError,
-  mapHttpErrorToSifError,
+  SifUploadError,
+  SifValidationError,
 } from "@/lib/sif/errors";
 
 describe("SIF Error Classes", () => {
@@ -107,11 +107,7 @@ describe("mapHttpErrorToSifError", () => {
   });
 
   it("extracts retryAfter from body for 429", () => {
-    const err = mapHttpErrorToSifError(
-      429,
-      { RetryAfter: 60 },
-      "rate limit"
-    ) as SifRateLimitError;
+    const err = mapHttpErrorToSifError(429, { RetryAfter: 60 }, "rate limit") as SifRateLimitError;
     expect(err.retryAfterSeconds).toBe(60);
   });
 

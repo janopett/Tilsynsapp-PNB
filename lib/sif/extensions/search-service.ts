@@ -14,18 +14,18 @@
  * and is more reliable (no recno resolution step needed).
  */
 
-import { sifRpcCall } from "../client";
-import type {
-  SifSearchQuery,
-  SifSearchResult,
-  SifGetDocumentsQuery,
-  SifGetDocumentsResult,
-  SifGetCasesQuery,
-  SifGetCasesResult,
-  SifDocumentInCase,
-} from "../types";
 import type { SifCase } from "@/types";
 import { findCaseInSif } from "../case-service";
+import { sifRpcCall } from "../client";
+import type {
+  SifDocumentInCase,
+  SifGetCasesQuery,
+  SifGetCasesResult,
+  SifGetDocumentsQuery,
+  SifGetDocumentsResult,
+  SifSearchQuery,
+  SifSearchResult,
+} from "../types";
 
 // ── Public types ───────────────────────────────────────────────────────────
 
@@ -139,8 +139,7 @@ export async function searchCasesGlobal(
     )
   );
 
-  return settled
-    .flatMap((r) => (r.status === "fulfilled" && r.value ? [r.value] : []));
+  return settled.flatMap((r) => (r.status === "fulfilled" && r.value ? [r.value] : []));
 }
 
 /**
@@ -159,21 +158,20 @@ export async function searchDocumentsGlobal(
   if (recnos.length === 0) return [];
 
   const settled = await Promise.allSettled(
-    recnos.slice(0, maxResults).map((recno) =>
-      sifRpcCall<SifGetDocumentsQuery, SifGetDocumentsResult>(
-        "DocumentService",
-        "GetDocuments",
-        { Recno: recno, MaxReturnedDocuments: 1 },
-        correlationId
-      ).then((res) => res.Documents?.[0] ?? null)
-    )
+    recnos
+      .slice(0, maxResults)
+      .map((recno) =>
+        sifRpcCall<SifGetDocumentsQuery, SifGetDocumentsResult>(
+          "DocumentService",
+          "GetDocuments",
+          { Recno: recno, MaxReturnedDocuments: 1 },
+          correlationId
+        ).then((res) => res.Documents?.[0] ?? null)
+      )
   );
 
   return settled
-    .filter(
-      (r): r is PromiseFulfilledResult<SifDocumentInCase | null> =>
-        r.status === "fulfilled"
-    )
+    .filter((r): r is PromiseFulfilledResult<SifDocumentInCase | null> => r.status === "fulfilled")
     .map((r) => r.value)
     .filter((v): v is SifDocumentInCase => v !== null);
 }
