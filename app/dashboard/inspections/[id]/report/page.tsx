@@ -342,7 +342,6 @@ export default async function ReportPage({ params }: Props) {
                     {/* Map snapshot (if coordinates registered) */}
                     {hasCoords && (
                       <div className="relative mb-3 rounded-lg overflow-hidden border border-gray-200">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={kartverketMapUrl(item.answer!.latitude!, item.answer!.longitude!)}
                           alt="Kartutsnitt for sjekkpunkt"
@@ -378,7 +377,6 @@ export default async function ReportPage({ params }: Props) {
                         {atts.map((att) => (
                           <div key={att.id} className="space-y-1">
                             {att.file_type.startsWith("image/") && att.storage_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={att.storage_url}
                                 alt={att.file_name}

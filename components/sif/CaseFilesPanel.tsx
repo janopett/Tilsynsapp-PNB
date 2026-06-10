@@ -148,7 +148,6 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                       className="aspect-square bg-gray-100 dark:bg-slate-700 rounded-xl overflow-hidden relative group focus:outline-none focus:ring-2 focus:ring-brand-500"
                       title={file.Title ?? undefined}
                     >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={proxyUrl(file)!}
                         alt={file.Title ?? t.caseFiles.unknownFile}
@@ -240,7 +239,6 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
             </button>
           )}
 
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             key={lightbox.file.Recno}
             src={proxyUrl(lightbox.file)!}

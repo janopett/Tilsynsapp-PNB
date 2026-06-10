@@ -18,7 +18,6 @@ interface Props {
 
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     L: any;
   }
 }
@@ -58,7 +57,6 @@ function geojsonToPts(poly: GeoJsonPolygon): [number, number][] {
   return poly.coordinates[0].slice(0, -1).map(([lng, lat]) => [lat, lng]);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function makeVertexIcon(L: any, isFirst: boolean): any {
   const size = isFirst ? 14 : 10;
   return L.divIcon({
@@ -87,7 +85,6 @@ export default function MapPickerModal({
   onClose,
 }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstanceRef = useRef<any>(null);
   const leafletLoaded = useRef(false);
 
@@ -95,7 +92,6 @@ export default function MapPickerModal({
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     initialLat != null && initialLng != null ? { lat: initialLat, lng: initialLng } : null
   );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markerRef = useRef<any>(null);
 
   // Polygon mode
@@ -110,9 +106,7 @@ export default function MapPickerModal({
   modeRef.current = mode;
   polygonPtsRef.current = polygonPts;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const polygonLayerRef = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const vertexMarkersRef = useRef<any[]>([]);
 
   // ── Shape-only redraw (no markers) ─────────────────────────
@@ -238,7 +232,6 @@ export default function MapPickerModal({
 
     if (modeRef.current === "polygon") setCursor("crosshair");
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     map.on("click", (e: any) => {
       const { lat, lng } = e.latlng;
       if (modeRef.current === "point") {
@@ -289,7 +282,7 @@ export default function MapPickerModal({
         }
       }, 100);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
