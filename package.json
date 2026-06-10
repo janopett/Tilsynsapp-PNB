@@ -13,7 +13,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "db:generate": "supabase gen types typescript --local > types/supabase.ts",
-    "set-admin": "npx tsx scripts/set-admin.ts"
+    "set-admin": "npx tsx scripts/set-admin.ts",
+    "docs:pdf": "bunx md-to-pdf --launch-options '{\"args\":[\"--no-sandbox\"]}' README.md README.no.md EXECUTIVE_SUMMARY.md EXECUTIVE_SUMMARY.en.md"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.0",
