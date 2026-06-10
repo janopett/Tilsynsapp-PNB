@@ -41,7 +41,7 @@ Web application for conducting and archiving building site visits (befaringer) i
 ### SIF integration (Plan & Building / Public 360°)
 
 - Case search and lookup of property and parties directly from PNB
-- Auto-load case stages (behandlingstrinn) based on case number
+- Auto-load case stages (behandlingstrinn) based on case number; inspector selects a stage in the archive panel to link the document to that stage in 360° via `AdditionalFields.ToStage`
 - Synchronisation of external participants (e.g. fire safety officer) into 360° as contact persons
 - Automatic document creation with uploaded PDF report, JSON metadata export, and attachments
 - **Update existing document** — fetch documents already on the case and add a new version

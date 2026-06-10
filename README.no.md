@@ -41,7 +41,7 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 ### SIF-integrasjon (Plan & Bygg / Public 360°)
 
 - Sakssøk og oppslag av eiendom og parter direkte fra PNB
-- Automatisk innlasting av behandlingstrinn basert på saksnummer
+- Automatisk innlasting av behandlingstrinn basert på saksnummer; inspektøren velger trinn i arkiveringspanelet for å knytte dokumentet til riktig trinn i 360° via `AdditionalFields.ToStage`
 - Synkronisering av eksterne deltakere (f.eks. brannvernleder) til 360° som kontaktpersoner
 - Automatisk oppretting av dokument med PDF-rapport, JSON-metadata og vedlegg
 - **Oppdatering av eksisterende dokument** — hent dokumenter som allerede ligger på saken og legg til ny versjon

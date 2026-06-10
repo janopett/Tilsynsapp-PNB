@@ -49,7 +49,7 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når befaring
 | Funksjon | Verdi |
 |----------|-------|
 | Automatisk PDF-rapport | Ferdig formatert befaringsrapport genereres uten manuelt arbeid — inkluderer saksopplysninger, sjekkliste, avviksoppsummering, bilder og kart |
-| Arkivering med ett klikk | Rapporten sendes direkte til riktig sak i Public 360° — opprett nytt dokument eller oppdater et eksisterende |
+| Arkivering med ett klikk | Rapporten sendes direkte til riktig sak i Public 360° — velg behandlingstrinn, opprett nytt dokument eller oppdater et eksisterende |
 | Sporbarhet | Alle befaringer, avvik og arkiveringer er loggede og søkbare |
 | Brukeradministrasjon | Enkel tilgangsstyring via admin-panel — ingen IT-avdeling nødvendig |
 | Audit-logg | Alle admin-handlinger logges automatisk (ISO 27001 A.12.4.1) |
