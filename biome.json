@@ -24,12 +24,12 @@
         "noLabelWithoutControl": "warn",
         "noNoninteractiveElementToInteractiveRole": "warn",
         "noSvgWithoutTitle": "warn",
+        "noStaticElementInteractions": "warn",
         "useAriaPropsSupportedByRole": "warn",
         "useButtonType": "warn",
         "useFocusableInteractive": "warn",
         "useKeyWithClickEvents": "warn",
-        "useSemanticElements": "warn",
-        "noStaticElementInteractions": "warn"
+        "useSemanticElements": "warn"
       },
       "correctness": {
         "noUnusedImports": "warn",
@@ -59,11 +59,6 @@
       "trailingCommas": "es5",
       "semicolons": "always",
       "jsxQuoteStyle": "double"
-    }
-  },
-  "css": {
-    "parser": {
-      "cssModules": false
     }
   },
   "assist": { "actions": { "source": { "organizeImports": "on" } } }

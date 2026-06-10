@@ -263,6 +263,21 @@ const CheckpointItem = memo(function CheckpointItem({
           fileName = file.name.replace(/\.[^.]+$/, `.${stamped.ext}`);
         }
         setGpsStatus(gps.source);
+        // Auto-set map pin from GPS if the inspector hasn't placed one manually yet
+        if (lat === null) {
+          setLat(gps.latitude);
+          setLng(gps.longitude);
+          onUpdate(
+            definition.id,
+            currentStatus,
+            comment,
+            selectedContactRecno,
+            currentContactName(),
+            gps.latitude,
+            gps.longitude,
+            frist || null
+          );
+        }
       } else {
         setGpsStatus("none");
       }

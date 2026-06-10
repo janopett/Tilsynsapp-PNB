@@ -10,7 +10,6 @@ interface Props {
 
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     L: any;
   }
 }
@@ -19,7 +18,6 @@ const LEAFLET_VERSION = "1.9.4";
 
 export default function PolygonMap({ polygon, height = 280 }: Props) {
   const mapRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const mapInstanceRef = useRef<any>(null);
   const initialised = useRef(false);
 
@@ -82,7 +80,7 @@ export default function PolygonMap({ polygon, height = 280 }: Props) {
         }
       }, 100);
     }
-  }, [polygon]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [polygon]);
 
   return (
     <div

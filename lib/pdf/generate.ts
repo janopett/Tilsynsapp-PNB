@@ -367,7 +367,6 @@ export async function generateInspectionPdf(
       },
       margin: { left: L },
     });
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     y = (doc as any).lastAutoTable.finalY + 6;
   }
 
@@ -602,7 +601,6 @@ export async function generateInspectionPdf(
         const leftPad = data.cell.padding("left");
         const textX = data.cell.x + leftPad;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const textPosY = (data.cell as any).textPos?.y;
         const firstBaseline: number =
           typeof textPosY === "number" ? textPosY : data.cell.y + topPad + fontH;

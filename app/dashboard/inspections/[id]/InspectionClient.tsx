@@ -922,7 +922,6 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
         })
         .catch(() => setCaseContacts(DUMMY_CONTACTS));
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch checkpoint definitions from DB (falls back to hardcoded if unavailable)
@@ -1014,7 +1013,7 @@ export default function InspectionClient({ id, initialInspection }: InspectionCl
       setSavingId(null);
     },
     [id, inspection]
-  ); // eslint-disable-line react-hooks/exhaustive-deps
+  );
 
   // Must be before any conditional returns (rules of hooks)
   const attachmentsByCheckpoint = useMemo(() => {

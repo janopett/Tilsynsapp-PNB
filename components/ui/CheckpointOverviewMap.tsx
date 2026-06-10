@@ -4,7 +4,6 @@ import { useEffect, useRef } from "react";
 
 declare global {
   interface Window {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     L: any;
   }
 }
@@ -107,7 +106,7 @@ export default function CheckpointOverviewMap({ points }: { points: MapPoint[] }
       script.onload = () => setTimeout(initMap, 50);
       document.head.appendChild(script);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   if (points.length === 0) return null;
 

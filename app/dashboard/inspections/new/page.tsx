@@ -231,7 +231,7 @@ export default function NewInspectionPage() {
       fetchCaseData(caseNumber);
     }, 400);
     return () => clearTimeout(timer);
-  }, [caseNumber]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [caseNumber]);
 
   function fillFromEstate(estate: SifEstate) {
     if (estate.address) setPropertyAddress(estate.address);
