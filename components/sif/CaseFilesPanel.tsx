@@ -54,9 +54,12 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
   const [groups, setGroups] = useState<CaseFileGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fetchKey, setFetchKey] = useState(0);
   const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
   const [pdfViewer, setPdfViewer] = useState<PdfViewer | null>(null);
   const [pdfLoadingRecno, setPdfLoadingRecno] = useState<number | null>(null);
+
+  const refresh = useCallback(() => setFetchKey((k) => k + 1), []);
 
   useEffect(() => {
     setLoading(true);
@@ -69,7 +72,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [caseNumber]);
+  }, [caseNumber, fetchKey]);
 
   const closeLightbox = useCallback(() => setLightbox(null), []);
 
@@ -132,8 +135,14 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
 
   if (error) {
     return (
-      <div className="py-10 text-center text-red-500 dark:text-red-400 text-sm">
-        {t.caseFiles.error(error)}
+      <div className="py-10 text-center text-sm space-y-3">
+        <p className="text-red-500 dark:text-red-400">{t.caseFiles.error(error)}</p>
+        <button
+          onClick={refresh}
+          className="text-xs text-gray-500 dark:text-slate-400 underline hover:text-gray-700 dark:hover:text-slate-200"
+        >
+          Prøv igjen
+        </button>
       </div>
     );
   }
@@ -148,6 +157,18 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
 
   return (
     <div className="space-y-8">
+      <div className="flex justify-end">
+        <button
+          onClick={refresh}
+          className="text-xs text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 flex items-center gap-1 transition"
+          title="Hent filer på nytt fra PNB"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Oppdater
+        </button>
+      </div>
       {groups.map((group) => {
         const images = group.files.filter(isImage).filter((f) => !!f.Recno);
         const others = group.files.filter((f) => !isImage(f)).filter((f) => !!f.Recno);
@@ -187,7 +208,24 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                         alt={file.Title ?? t.caseFiles.unknownFile}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                         loading="lazy"
+                        onError={(e) => {
+                          const el = e.currentTarget;
+                          el.style.display = "none";
+                          const placeholder = el.nextElementSibling as HTMLElement | null;
+                          if (placeholder) placeholder.style.display = "flex";
+                        }}
                       />
+                      <div
+                        style={{ display: "none" }}
+                        className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-gray-400 dark:text-slate-500"
+                      >
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                        </svg>
+                        <span className="text-xs px-2 text-center leading-tight">
+                          {file.Title ?? t.caseFiles.unknownFile}
+                        </span>
+                      </div>
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-colors duration-200 rounded-xl" />
                     </button>
                   ))}
