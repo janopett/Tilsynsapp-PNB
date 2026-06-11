@@ -15,6 +15,7 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 - [SIF-integrasjon](#sif-integrasjon)
 - [Arkiveringsflyt](#arkiveringsflyt)
 - [Admin-funksjonalitet](#admin-funksjonalitet)
+- [Testing](#testing)
 - [Universell utforming](#universell-utforming-wcag-21-aa)
 - [Sikkerhet](#sikkerhet)
 
@@ -208,6 +209,9 @@ app/
 │       ├── pnb-case/[recno]/   # GET — henter én PNB-sak med full detalj (kontakter, trinn, milepæler)
 │       ├── user-profile/       # GET/POST — les og synkroniser brukerens 360°-kontaktrecno
 │       ├── code-tables/        # Arkivkoder, kategorier, statuser (admin)
+│       ├── file-proxy/         # GET — last ned filer fra 360° (autentisert proxy)
+│       ├── sync-contact-person/ # POST — synkroniser ekstern deltaker til 360°
+│       ├── update-contact-person/ # POST — oppdater eksisterende kontakt i 360°
 │       ├── settings/           # Les gjeldende SIF-konfigurasjon
 │       ├── health/             # Tilkoblingskontroll
 │       └── debug-raw/          # Rå RPC-kall for testing
@@ -251,6 +255,7 @@ lib/
 ├── supabase/                   # Supabase server-/nettleserklient-fabrikker
 ├── api-auth.ts                 # JWT-vakter: requireUser() / requireAdmin()
 ├── audit-log.ts                # Strukturert logging: admin-audit-logg + saksbehandler-aktivitetslogg
+├── pnb-cache.ts                # Klient-side cache-ugyldiggjøring (dirty-flagg i localStorage, 30 min TTL)
 └── legal-reference.ts          # Lovdata URL-bygger fra lovhenvisningsstrenger
 
 config/
@@ -417,6 +422,60 @@ Alle saksbehandlerhandlinger logges til `activity_logs`-tabellen. Hver post inne
 | `sif.case_lookup_not_found` | Sak ikke funnet i PNB | Søkekriterium |
 
 Kommentartekst ekskluderes bevisst fra `inspection.answer`-logger — kun tilstedeværelse av kommentar (`hasComment: true/false`) registreres.
+
+---
+
+## Testing
+
+Tester kjøres med Jest 29 + ts-jest. All forretningslogikk i `lib/` er testet; UI-komponenter og Next.js-infrastruktur er utelatt.
+
+```bash
+bun run test              # Kjør alle testsuiter
+bun run test:watch        # Watch-modus
+bun run test:coverage     # Dekningsrapport (skrives til coverage/)
+```
+
+### Testsuiter (22 filer)
+
+| Fil | Dekker |
+|-----|--------|
+| `audit-log.test.ts` | `writeAuditLog` + `writeActivityLog` — innsetting, feilhåndtering |
+| `filter-engine.test.ts` | Sjekkpunkt-filtrering, gruppering, statusoppsummering |
+| `legal-reference.test.ts` | Lovdata URL-generering for pbl / sak10 / tek17 / tek10 / bsl |
+| `pnb-cache.test.ts` | `markPnbCacheDirty` / `isPnbCacheDirty` — TTL, dirty-flagg |
+| `pnb-case-mapper.test.ts` | Mapping fra SIF-sak til appens domenemodell |
+| `sif-archival.test.ts` | Fullstendig arkiveringsflyt (saksoppslag → opplasting → dokumentoppretting) |
+| `sif-auth.test.ts` | AuthKey-header-bygging + OAuth2 token-caching |
+| `sif-case-service.test.ts` | `findCaseInSif` — oppslag via saksnummer / uid / externalId, feiltilfeller |
+| `sif-client.test.ts` | RPC-dispatcher, HTTP 429 retry med eksponentiell backoff |
+| `sif-contact-service.test.ts` | `getCaseContacts`, `searchEnterprises`, `synchronizeContactPerson` |
+| `sif-document-service.test.ts` | `createDocument`, `updateDocument`, `getDocuments`, `dispatchDocuments` |
+| `sif-errors.test.ts` | SIF-feiltypemapping |
+| `sif-estate-service.test.ts` | `getEstateByMatrikkel`, `getCaseEstates` — matrikkelnummer-oppløsning |
+| `sif-file-download.test.ts` | Autentisert fil-proxy-nedlasting, relativ URL-oppløsning, parallell batch |
+| `sif-file-service.test.ts` | Filopplasting, multipart-bygging, batch |
+| `sif-mapping.test.ts` | Variabelsubstitusjon i dokumenttittelmal |
+| `sif-referred-cases.test.ts` | Traversering av refererte saker, dokument-/filfiltrering |
+| `sif-search-service.test.ts` | `searchSif`, `searchDocumentsInCase`, `searchCasesGlobal`, `searchDocumentsGlobal` |
+| `sif-settings.test.ts` | Innstillinger fra DB/env, intern 60 sek cache |
+| `sif-user-service.test.ts` | `getSifUsers`, `getSifUserByLogin`, `getActiveSifUsers` |
+
+### Dekning
+
+Dekningsgrense: **70 % linjer + funksjoner** for alle inkluderte `lib/`-filer.
+
+Faktisk dekning (siste kjøring): ~92 % linjer / ~92 % funksjoner.
+
+Utelatt fra dekning (med begrunnelse):
+
+| Sti | Årsak |
+|-----|-------|
+| `lib/sif/types.ts` | Rene TypeScript-deklarasjoner (~1100 linjer); ingen kjørbar kode |
+| `lib/api-auth.ts` | Krever live `NextRequest` + Supabase-sesjon — integrasjonstestdomene |
+| `lib/pdf/` | Canvas API-kall (jsPDF) kan ikke kjøres i jsdom |
+| `lib/supabase/` | Klientfabrikk-initialisering — testet indirekte via service-mocks |
+| `lib/i18n/` | next-intl hooks — krever Next.js render-kontekst |
+| `lib/pdf/stamp-gps.ts` | Canvas 2D API — ikke tilgjengelig i jsdom |
 
 ---
 

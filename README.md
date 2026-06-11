@@ -15,6 +15,7 @@ Web application for conducting and archiving building site visits (befaringer) i
 - [SIF integration](#sif-integration)
 - [Archival flow](#archival-flow)
 - [Admin functionality](#admin-functionality)
+- [Testing](#testing)
 - [Accessibility](#accessibility-wcag-21-aa)
 - [Security](#security)
 
@@ -208,6 +209,9 @@ app/
 │       ├── pnb-case/[recno]/   # GET — fetch a single PNB case with full detail (contacts, stages, milestones)
 │       ├── user-profile/       # GET/POST — read and sync the current user's 360° contact recno
 │       ├── code-tables/        # Archive codes, categories, statuses (admin only)
+│       ├── file-proxy/         # GET — download files from 360° (auth proxying)
+│       ├── sync-contact-person/ # POST — sync external participant to 360°
+│       ├── update-contact-person/ # POST — update existing contact in 360°
 │       ├── settings/           # Read current SIF config
 │       ├── health/             # Connectivity check
 │       └── debug-raw/          # Raw RPC call for testing
@@ -251,6 +255,7 @@ lib/
 ├── supabase/                   # Supabase server/browser client factories
 ├── api-auth.ts                 # JWT guards: requireUser() / requireAdmin()
 ├── audit-log.ts                # Structured logging: admin audit log + saksbehandler activity log
+├── pnb-cache.ts                # Client-side cache invalidation (dirty flag in localStorage, 30 min TTL)
 └── legal-reference.ts          # Lovdata URL builder from legal reference strings
 
 config/
@@ -417,6 +422,60 @@ All case-handler actions are logged to the `activity_logs` table. Each entry sto
 | `sif.case_lookup_not_found` | Case not found in PNB | `caseNumber`/`externalId`/`uid` queried |
 
 Comment text is intentionally excluded from `inspection.answer` logs — only the presence of a comment (`hasComment: true/false`) is recorded.
+
+---
+
+## Testing
+
+Tests are run with Jest 29 + ts-jest. All business logic in `lib/` is tested; UI components and Next.js infrastructure are excluded.
+
+```bash
+bun run test              # Run all test suites
+bun run test:watch        # Watch mode
+bun run test:coverage     # Coverage report (outputs to coverage/)
+```
+
+### Test suites (22 files)
+
+| File | Covers |
+|------|--------|
+| `audit-log.test.ts` | `writeAuditLog` + `writeActivityLog` — insert, error handling |
+| `filter-engine.test.ts` | Checkpoint filtering, grouping, status summary |
+| `legal-reference.test.ts` | Lovdata URL generation for pbl / sak10 / tek17 / tek10 / bsl |
+| `pnb-cache.test.ts` | `markPnbCacheDirty` / `isPnbCacheDirty` — TTL, dirty flag |
+| `pnb-case-mapper.test.ts` | SIF case → app domain mapping |
+| `sif-archival.test.ts` | Full archival orchestration (case lookup → upload → document creation) |
+| `sif-auth.test.ts` | AuthKey header building + OAuth2 token caching |
+| `sif-case-service.test.ts` | `findCaseInSif` — caseNumber / uid / externalId lookup, error cases |
+| `sif-client.test.ts` | RPC dispatcher, HTTP 429 retry with exponential backoff |
+| `sif-contact-service.test.ts` | `getCaseContacts`, `searchEnterprises`, `synchronizeContactPerson` |
+| `sif-document-service.test.ts` | `createDocument`, `updateDocument`, `getDocuments`, `dispatchDocuments` |
+| `sif-errors.test.ts` | SIF error type mapping |
+| `sif-estate-service.test.ts` | `getEstateByMatrikkel`, `getCaseEstates` — matrikkel resolution |
+| `sif-file-download.test.ts` | Auth-proxied file downloads, relative URL resolution, parallel batch |
+| `sif-file-service.test.ts` | File upload, multipart construction, batch |
+| `sif-mapping.test.ts` | Document title template variable substitution |
+| `sif-referred-cases.test.ts` | Referred case traversal, document/file filtering |
+| `sif-search-service.test.ts` | `searchSif`, `searchDocumentsInCase`, `searchCasesGlobal`, `searchDocumentsGlobal` |
+| `sif-settings.test.ts` | Settings DB/env fallback, in-process 60 s cache |
+| `sif-user-service.test.ts` | `getSifUsers`, `getSifUserByLogin`, `getActiveSifUsers` |
+
+### Coverage
+
+Coverage threshold: **70 % lines + functions** for all included `lib/` files.
+
+Actual coverage (as of latest run): ~92 % lines / ~92 % functions.
+
+Excluded from coverage (with rationale):
+
+| Path | Reason |
+|------|--------|
+| `lib/sif/types.ts` | Pure TypeScript declarations (~1100 lines); no executable code |
+| `lib/api-auth.ts` | Requires live `NextRequest` + Supabase session — integration test territory |
+| `lib/pdf/` | Canvas API calls (jsPDF) cannot run in jsdom |
+| `lib/supabase/` | Client factory initialisation — tested indirectly via service mocks |
+| `lib/i18n/` | next-intl hooks — require Next.js render context |
+| `lib/pdf/stamp-gps.ts` | Canvas 2D API — not available in jsdom |
 
 ---
 

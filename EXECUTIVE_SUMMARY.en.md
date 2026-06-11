@@ -145,6 +145,7 @@ The archival flow is optimised for speed through parallel execution:
 | ✅ Production-ready | Auto-dispatch of archived documents to recipients |
 | ✅ Production-ready | User and access administration |
 | ✅ Production-ready | Audit logging (ISO 27001 A.12.4.1) |
+| ✅ Production-ready | Activity log — all case-handler actions logged with user, timestamp, and context |
 | 🔄 Configurable | Checkpoint library and dropdown lists customisable per municipality |
 | 🔄 Configurable | SIF archive codes, contact roles, and title template set per installation |
 
