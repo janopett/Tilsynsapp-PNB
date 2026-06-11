@@ -47,6 +47,17 @@ async function resolveUser(req: NextRequest) {
   return user ?? null;
 }
 
+async function fetchWithSifAuth(url: string): Promise<Response | null> {
+  const settings = await loadSifSettingsWithEnvFallback();
+  const config = toSifClientConfig(settings);
+  const authHeaders = await buildSifAuthHeaders(config.authConfig);
+  return fetch(url, {
+    method: "GET",
+    headers: authHeaders as unknown as HeadersInit,
+    signal: AbortSignal.timeout(30_000),
+  }).catch(() => null);
+}
+
 export async function GET(req: NextRequest) {
   const user = await resolveUser(req);
   if (!user) {
@@ -61,41 +72,76 @@ export async function GET(req: NextRequest) {
 
   const formatParam = req.nextUrl.searchParams.get("format") ?? "";
   const titleParam = req.nextUrl.searchParams.get("title") ?? "fil";
+  // Optional direct URL from SifFileMetadata.URL — avoids token round-trip
+  const fileUrlParam = req.nextUrl.searchParams.get("fileUrl");
 
-  // Step 1: generate short-lived download token
-  const tokenResult = await sifRpcCall<object, TokenResult>(
-    "FileService",
-    "GenerateFileVariantsDownloadToken",
-    { FileRecno: recno, IncludeMetadata: true },
-    undefined,
-    true
-  ).catch(() => null);
-
-  const fileReference = tokenResult?.FileVariantResult?.FileReference;
-  if (!fileReference) {
-    return NextResponse.json({ error: "Nedlastingstoken ikke tilgjengelig" }, { status: 404 });
-  }
-
-  const variantExt = tokenResult?.FileVariantResult?.VariantMetadata?.[0]?.FileExtension?.replace(
-    /^\./,
-    ""
-  );
-  const format = (formatParam || variantExt || "").toLowerCase();
-
-  // Step 2: fetch file via GetFile RPC — authkey is in URL via buildRpcUrl
   const settings = await loadSifSettingsWithEnvFallback();
   const config = toSifClientConfig(settings);
-  const rpcUrl = buildRpcUrl(config, "FileService", "GetFile");
-  const authHeaders = await buildSifAuthHeaders(config.authConfig);
 
-  const fileResponse = await fetch(rpcUrl, {
-    method: "POST",
-    headers: authHeaders as unknown as HeadersInit,
-    body: JSON.stringify({ parameter: { Recno: recno, FileReferenceToken: fileReference } }),
-    signal: AbortSignal.timeout(30_000),
-  }).catch(() => null);
+  let fileResponse: Response | null = null;
+  let format = formatParam.toLowerCase();
+
+  // Strategy 1: direct URL from file metadata (fastest, no extra RPC)
+  if (fileUrlParam) {
+    const resolved = fileUrlParam.startsWith("/")
+      ? `${config.baseUrl}${fileUrlParam}`
+      : fileUrlParam;
+    fileResponse = await fetchWithSifAuth(resolved);
+    if (!fileResponse?.ok) {
+      console.warn("[file-proxy] Direct URL fetch failed, trying token approach", {
+        recno,
+        status: fileResponse?.status,
+      });
+      fileResponse = null;
+    }
+  }
+
+  // Strategy 2: GenerateFileVariantsDownloadToken → GetFile
+  if (!fileResponse) {
+    const tokenResult = await sifRpcCall<object, TokenResult>(
+      "FileService",
+      "GenerateFileVariantsDownloadToken",
+      { FileRecno: recno, IncludeMetadata: true },
+      undefined,
+      true
+    ).catch((err) => {
+      console.warn("[file-proxy] GenerateFileVariantsDownloadToken failed", { recno, err });
+      return null;
+    });
+
+    const fileReference = tokenResult?.FileVariantResult?.FileReference;
+    const variantExt = tokenResult?.FileVariantResult?.VariantMetadata?.[0]?.FileExtension?.replace(
+      /^\./,
+      ""
+    );
+    if (variantExt) format = variantExt.toLowerCase();
+
+    if (fileReference) {
+      const authHeaders = await buildSifAuthHeaders(config.authConfig);
+      const rpcUrl = buildRpcUrl(config, "FileService", "GetFile");
+      fileResponse = await fetch(rpcUrl, {
+        method: "POST",
+        headers: authHeaders as unknown as HeadersInit,
+        body: JSON.stringify({ parameter: { Recno: recno, FileReferenceToken: fileReference } }),
+        signal: AbortSignal.timeout(30_000),
+      }).catch(() => null);
+    }
+  }
+
+  // Strategy 3: direct GetFile by recno only (some 360° instances allow this)
+  if (!fileResponse) {
+    const authHeaders = await buildSifAuthHeaders(config.authConfig);
+    const rpcUrl = buildRpcUrl(config, "FileService", "GetFile");
+    fileResponse = await fetch(rpcUrl, {
+      method: "POST",
+      headers: authHeaders as unknown as HeadersInit,
+      body: JSON.stringify({ parameter: { Recno: recno } }),
+      signal: AbortSignal.timeout(30_000),
+    }).catch(() => null);
+  }
 
   if (!fileResponse?.ok) {
+    console.error("[file-proxy] All fetch strategies failed", { recno });
     return NextResponse.json({ error: "Fil ikke funnet" }, { status: 404 });
   }
 
@@ -103,6 +149,7 @@ export async function GET(req: NextRequest) {
   if (responseCt.includes("application/json")) {
     const body = await fileResponse.json().catch(() => null);
     const msg = body?.ErrorMessage ?? body?.Message ?? "Fil ikke funnet";
+    console.error("[file-proxy] SIF returned JSON error", { recno, msg });
     return NextResponse.json({ error: msg }, { status: 404 });
   }
 
