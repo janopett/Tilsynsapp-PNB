@@ -176,6 +176,8 @@ supabase db reset         # Reset local database and re-apply all migrations
 | `026_fix_missing_checkpoints_and_025.sql` | Inserts 5 missing checkpoints (UK001, PRD001, KS001, LB001, NB001) that only existed in TypeScript and re-applies all 025 updates using explicit ARRAY values |
 | `027_inspection_avvik_frist.sql` | Adds `avvik_frist DATE` to `inspections` — deadline for closing deviations, per SAK10 § 15-3 |
 | `028_answer_frist.sql` | Adds `frist DATE` to `inspection_answers` — per-deviation correction deadline, shown in checklist, HTML report and PDF |
+| `029_inspection_area_polygon.sql` | Adds `area_polygon JSONB` to `inspections` — stores the GeoJSON polygon for the supervision area |
+| `030_user_profiles.sql` | Adds `user_profiles` table — stores each user's PNB/360° contact recno (`pnb_contact_recno`) for ViewFile permission grants on archived documents |
 
 ---
 
@@ -203,6 +205,7 @@ app/
 │       ├── enterprise-search/  # Company search (GetEnterprises)
 │       ├── my-cases/           # GET — fetch PNB cases where user is responsible (filtered by ResponsiblePersonName)
 │       ├── pnb-case/[recno]/   # GET — fetch a single PNB case with full detail (contacts, stages, milestones)
+│       ├── user-profile/       # GET/POST — read and sync the current user's 360° contact recno
 │       ├── code-tables/        # Archive codes, categories, statuses (admin only)
 │       ├── settings/           # Read current SIF config
 │       ├── health/             # Connectivity check
@@ -368,6 +371,8 @@ The archival endpoint (`POST /api/archive`) orchestrates the following steps, op
 ```
 
 The pre-fetched SIF case (step 1) is passed directly to `archiveInspectionToSif()` to skip a redundant lookup.
+
+**ViewFile permissions** — the archive route also fetches the current user's PNB contact recno from `user_profiles` (in parallel with the DB queries). On cache miss it calls `UserService/GetUsers` with the user's email as the AD login and saves the result. The recno is then added as a `Permissions` entry (`ContactExternalId: "recno:XXXX", ViewFile: true`) on the created document so the archiving user can view the uploaded files in the Saksfiler tab.
 
 ---
 

@@ -176,6 +176,8 @@ supabase db reset         # Nullstill lokal database og kjør alle migrasjoner p
 | `026_fix_missing_checkpoints_and_025.sql` | Setter inn 5 manglende sjekkpunkter (UK001, PRD001, KS001, LB001, NB001) som bare fantes i TypeScript og gjentar alle 025-oppdateringer med eksplisitte ARRAY-verdier (ingen subqueries) |
 | `027_inspection_avvik_frist.sql` | Legger til `avvik_frist DATE` på `inspections` — frist for lukking av avvik, jf. SAK10 § 15-3 |
 | `028_answer_frist.sql` | Legger til `frist DATE` på `inspection_answers` — per-avvik-frist for retting, vises i sjekkliste, HTML-rapport og PDF |
+| `029_inspection_area_polygon.sql` | Legger til `area_polygon JSONB` på `inspections` — lagrer GeoJSON-polygon for tilsynsområdet |
+| `030_user_profiles.sql` | Legger til tabellen `user_profiles` — lagrer brukerens PNB/360°-kontaktrecno (`pnb_contact_recno`) for automatisk tildeling av ViewFile-tillatelse ved arkivering |
 
 ---
 
@@ -203,6 +205,7 @@ app/
 │       ├── enterprise-search/  # Foretakssøk (GetEnterprises)
 │       ├── my-cases/           # GET — henter PNB-saker der bruker er ansvarlig (filtrert på ResponsiblePersonName)
 │       ├── pnb-case/[recno]/   # GET — henter én PNB-sak med full detalj (kontakter, trinn, milepæler)
+│       ├── user-profile/       # GET/POST — les og synkroniser brukerens 360°-kontaktrecno
 │       ├── code-tables/        # Arkivkoder, kategorier, statuser (admin)
 │       ├── settings/           # Les gjeldende SIF-konfigurasjon
 │       ├── health/             # Tilkoblingskontroll
@@ -368,6 +371,8 @@ Arkiveringsendepunktet (`POST /api/archive`) orkestrerer følgende steg, optimal
 ```
 
 Det pre-hentede SIF-tilfellet (steg 1) sendes direkte til `archiveInspectionToSif()` for å hoppe over et redundant oppslag.
+
+**ViewFile-tillatelser** — arkiveringsruten henter også den innloggede brukerens PNB-kontaktrecno fra `user_profiles` (parallelt med DB-spørringene). Ved cache-miss kalles `UserService/GetUsers` med brukerens e-post som AD-login og resultatet lagres. Recno-en legges deretter inn som en `Permissions`-post (`ContactExternalId: "recno:XXXX", ViewFile: true`) på det opprettede dokumentet, slik at brukeren kan se de opplastede filene i Saksfiler-fanen.
 
 ---
 

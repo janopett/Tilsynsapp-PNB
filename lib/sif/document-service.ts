@@ -25,6 +25,7 @@ import type {
   SifFileInput,
   SifGetDocumentsQuery,
   SifGetDocumentsResult,
+  SifPermission,
   SifUpdateDocumentInput,
   SifUpdateDocumentResult,
 } from "./types";
@@ -74,6 +75,8 @@ export interface CreateInspectionDocumentInput {
   documentDate?: string; // ISO date
   /** Explicit access code (tilgangskode). When set, 360° skips access-code inheritance from file sub-items. */
   accessCode?: string;
+  /** Row-level permissions to set on the document. Use to grant ViewFile to the archiving user. */
+  permissions?: SifPermission[];
   correlationId?: string;
 }
 
@@ -97,6 +100,7 @@ export async function createInspectionDocumentInSif(
     stageRecno,
     documentDate,
     accessCode,
+    permissions,
     correlationId,
   } = input;
 
@@ -134,6 +138,7 @@ export async function createInspectionDocumentInSif(
       ];
       return fields.length ? { AdditionalFields: fields } : {};
     })(),
+    ...(permissions?.length ? { Permissions: permissions } : {}),
   };
 
   console.info("[SIF] DocumentService/CreateDocument", {

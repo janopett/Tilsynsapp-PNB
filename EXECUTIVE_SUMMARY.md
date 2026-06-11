@@ -140,7 +140,7 @@ Arkiveringsflyten er optimalisert for hastighet gjennom parallell kjøring:
 |--------|--------|
 | ✅ Produksjonsklar | Tilsynsgjennomføring og strukturerte sjekklister |
 | ✅ Produksjonsklar | PDF-rapportgenerering med innebygde bilder, avviksoppsummering, lovhenvisninger per avvik og frist for lukking (SAK10 § 15-3) |
-| ✅ Produksjonsklar | Arkivering til Public 360° — opprett nytt eller oppdater eksisterende dokument |
+| ✅ Produksjonsklar | Arkivering til Public 360° — opprett nytt eller oppdater eksisterende dokument; tildeler automatisk ViewFile-tillatelse til den arkiverende brukeren |
 | ✅ Produksjonsklar | Automatisk utsending av arkiverte dokumenter til mottakere |
 | ✅ Produksjonsklar | Bruker- og tilgangsadministrasjon |
 | ✅ Produksjonsklar | Audit-logging (ISO 27001 A.12.4.1) |
