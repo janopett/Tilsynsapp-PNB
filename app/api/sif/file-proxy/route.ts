@@ -111,7 +111,7 @@ export async function GET(req: NextRequest) {
     FORMAT_MIME[format] || responseCt.split(";")[0].trim() || "application/octet-stream";
   const safeName = titleParam.replace(/[^\w\s.-]/g, "_");
   const filename = format ? `${safeName}.${format}` : safeName;
-  const isInline = mimeType.startsWith("image/");
+  const isInline = mimeType.startsWith("image/") || mimeType === "application/pdf";
 
   return new NextResponse(new Uint8Array(fileData), {
     headers: {
