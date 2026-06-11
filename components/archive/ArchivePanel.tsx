@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { authFetch } from "@/lib/auth-fetch";
+import { markPnbCacheDirty } from "@/lib/pnb-cache";
 import { useLanguage } from "@/lib/i18n";
 import {
   captureMapImage,
@@ -248,6 +249,7 @@ export default function ArchivePanel({ inspection, onArchived, onMarkCompleted }
         url: a.sif_document_url ?? selectedDocUrl ?? undefined,
         documentNumber: a.sif_document_number,
       });
+      markPnbCacheDirty();
       onArchived();
     } else {
       setResult({ status: "failed", message: data.error ?? t.archive.unknownError });
