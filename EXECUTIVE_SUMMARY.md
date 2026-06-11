@@ -76,28 +76,28 @@ Appen er bygget for å leve **inne i** kommunens eksisterende infrastruktur — 
 
 | Steg | Beskrivelse | Tid |
 |------|-------------|-----|
-| Forberedelse | Søk opp saken i PNB, noter saksnummer, adresse, søker og tiltakstype for å ha med til stedet | 10 min |
+| Forberedelse | Les gjennom relevant dokumentasjon, tegninger og historikk; søk opp saken i PNB, noter saksnummer, adresse, søker og tiltakstype | 130 min |
 | På stedet | Gjennomfør tilsynet med løpende notater på mobil eller papir; ta bilder på telefon | 60 min |
 | Skriv rapport | Åpne Word-dokumentet i PNB, gå gjennom notater og bilder, skriv rapport, sett inn bilder fra telefon | 60 min |
 | Arkivering | Ferdigstill og ekspeder dokumentet i PNB | 10 min |
-| **Totalt** | | **140 min** |
+| **Totalt** | | **260 min** |
 
 #### Med Tilsynsapp-PNB
 
 | Steg | Beskrivelse | Tid |
 |------|-------------|-----|
-| Forberedelse | Søk opp saken i appen — adresse, søker, eiendom og tiltakstype hentes automatisk fra PNB | 2 min |
+| Forberedelse | Les gjennom relevant dokumentasjon, tegninger og historikk; søk opp saken i appen — adresse, søker, eiendom og tiltakstype hentes automatisk fra PNB | 122 min |
 | På stedet | Gjennomfør tilsynet med strukturert sjekkliste, registrer avvik med kommentar, ta bilder direkte koblet til hvert sjekkpunkt | 60 min |
 | Rapport og arkivering | Trykk «Generer rapport», trykk «Arkiver» — PDF sendes direkte til riktig sak i PNB | 2 min |
-| **Totalt** | | **64 min** |
+| **Totalt** | | **184 min** |
 
 #### Resultat
 
 | | I dag | Med appen | Spart |
 |-|-------|-----------|-------|
 | Selve tilsynet (uendret) | 60 min | 60 min | — |
-| Forberedelse og etterarbeid | 80 min | 4 min | **76 min** |
-| **Totalt per tilsyn** | **140 min** | **64 min** | **76 min (54 %)** |
+| Forberedelse og etterarbeid | 200 min | 124 min | **76 min** |
+| **Totalt per tilsyn** | **260 min** | **184 min** | **76 min (29 %)** |
 
 En saksbehandler med **2 tilsyn per uke** sparer rundt **2,5 time per uke** — tilsvarende cirka **100 timer, eller 2,5 arbeidsuke, per år**.
 
