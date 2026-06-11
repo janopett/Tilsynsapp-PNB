@@ -42,7 +42,7 @@ interface LightboxImage {
 
 interface PdfViewer {
   file: SifFileMetadata;
-  blobUrl: string;
+  viewUrl: string;
 }
 
 interface Props {
@@ -57,7 +57,6 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
   const [fetchKey, setFetchKey] = useState(0);
   const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
   const [pdfViewer, setPdfViewer] = useState<PdfViewer | null>(null);
-  const [pdfLoadingRecno, setPdfLoadingRecno] = useState<number | null>(null);
 
   const refresh = useCallback(() => setFetchKey((k) => k + 1), []);
 
@@ -76,25 +75,12 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
 
   const closeLightbox = useCallback(() => setLightbox(null), []);
 
-  const openPdf = useCallback(async (file: SifFileMetadata) => {
+  const openPdf = useCallback((file: SifFileMetadata) => {
     if (!file.Recno) return;
-    setPdfLoadingRecno(file.Recno);
-    try {
-      const res = await authFetch(proxyUrl(file)!);
-      const buf = await res.arrayBuffer();
-      const blob = new Blob([buf], { type: "application/pdf" });
-      setPdfViewer({ file, blobUrl: URL.createObjectURL(blob) });
-    } finally {
-      setPdfLoadingRecno(null);
-    }
+    setPdfViewer({ file, viewUrl: proxyUrl(file)! });
   }, []);
 
-  const closePdfViewer = useCallback(() => {
-    setPdfViewer((prev) => {
-      if (prev) URL.revokeObjectURL(prev.blobUrl);
-      return null;
-    });
-  }, []);
+  const closePdfViewer = useCallback(() => setPdfViewer(null), []);
 
   useEffect(() => {
     if (!lightbox) return;
@@ -237,7 +223,6 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
               <div className="space-y-2">
                 {others.map((file, idx) => {
                   const isPdf = file.Format?.toLowerCase() === "pdf";
-                  const isLoading = pdfLoadingRecno === file.Recno;
                   const rowClass =
                     "flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition w-full text-left";
                   const meta = (
@@ -267,50 +252,19 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
                       <button
                         key={file.Recno ?? idx}
                         onClick={() => openPdf(file)}
-                        disabled={isLoading}
                         className={rowClass}
                       >
                         {meta}
-                        {isLoading ? (
-                          <svg
-                            className="w-4 h-4 text-gray-400 flex-shrink-0 animate-spin"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            />
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            className="w-4 h-4 text-gray-400 flex-shrink-0"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                            />
-                          </svg>
-                        )}
+                        <svg
+                          className="w-4 h-4 text-gray-400 flex-shrink-0"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
                       </button>
                     );
                   }
@@ -421,7 +375,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
             <span className="text-white/80 text-sm truncate">{pdfViewer.file.Title}</span>
             <div className="flex items-center gap-2 flex-shrink-0">
               <a
-                href={pdfViewer.blobUrl}
+                href={pdfViewer.viewUrl}
                 download={
                   pdfViewer.file.Title
                     ? `${pdfViewer.file.Title}.pdf`
@@ -441,7 +395,7 @@ export default function CaseFilesPanel({ caseNumber }: Props) {
             </div>
           </div>
           <iframe
-            src={pdfViewer.blobUrl}
+            src={pdfViewer.viewUrl}
             className="flex-1 w-full border-0"
             title={pdfViewer.file.Title ?? "PDF"}
           />
