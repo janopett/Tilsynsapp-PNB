@@ -31,7 +31,8 @@ function formatSize(bytes: number | undefined): string {
 
 function proxyUrl(file: SifFileMetadata): string | null {
   if (!file.Recno) return null;
-  return `/api/sif/file-proxy?recno=${file.Recno}&format=${encodeURIComponent(file.Format ?? "")}&title=${encodeURIComponent(file.Title ?? "fil")}`;
+  const base = `/api/sif/file-proxy?recno=${file.Recno}&format=${encodeURIComponent(file.Format ?? "")}&title=${encodeURIComponent(file.Title ?? "fil")}`;
+  return file.URL ? `${base}&fileUrl=${encodeURIComponent(file.URL)}` : base;
 }
 
 interface LightboxImage {
