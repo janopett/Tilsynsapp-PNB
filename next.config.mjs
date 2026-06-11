@@ -46,6 +46,7 @@ const nextConfig = {
               `connect-src 'self' https://*.supabase.co wss://*.supabase.co https://nominatim.openstreetmap.org https://*.tile.openstreetmap.org`,
               "font-src 'self'",
               "frame-ancestors 'none'",
+              "frame-src 'self' blob:",
               "base-uri 'self'",
               "form-action 'self'",
             ].join("; "),
