@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
+import { writeActivityLog } from "@/lib/audit-log";
 import { requireUser } from "@/lib/api-auth";
 import {
   type AttachmentForPdf,
@@ -241,6 +242,21 @@ export async function POST(req: NextRequest) {
   ]);
 
   const finalArchival = archivalUpdateRes.data;
+
+  void writeActivityLog({
+    userId: user.id,
+    userEmail: user.email ?? "",
+    action: result.status === "success" ? "inspection.archive" : "inspection.archive_failed",
+    inspectionId: inspectionId,
+    metadata: {
+      caseNumber: result.sif_case_number ?? caseNumber ?? null,
+      documentNumber: "sif_document_number" in result ? result.sif_document_number : undefined,
+      documentRecno: "sif_document_recno" in result ? result.sif_document_recno : undefined,
+      existingDocumentNumber: existingDocumentNumber ?? null,
+      pdfFileName,
+      errorMessage: "error_message" in result ? result.error_message : undefined,
+    },
+  });
 
   const response: ArchiveInspectionResponse = {
     success: result.status === "success",

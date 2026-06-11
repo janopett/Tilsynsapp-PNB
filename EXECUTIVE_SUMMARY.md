@@ -53,6 +53,7 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når befaring
 | Sporbarhet | Alle befaringer, avvik og arkiveringer er loggede og søkbare |
 | Brukeradministrasjon | Enkel tilgangsstyring via admin-panel — ingen IT-avdeling nødvendig |
 | Audit-logg | Alle admin-handlinger logges automatisk (ISO 27001 A.12.4.1) |
+| Aktivitetslogg | Alle saksbehandlerhandlinger logges med bruker, tidspunkt og kontekst — hvem opprettet hvilket tilsyn, hvem arkiverte til hvilken sak, hvem søkte etter hvilken sak |
 
 ---
 

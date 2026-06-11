@@ -1,6 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { writeActivityLog } from "@/lib/audit-log";
 
 const CreateInspectionSchema = z.object({
   property_address: z.string().min(1),
@@ -79,6 +80,19 @@ export async function POST(req: NextRequest) {
     console.error("Error creating inspection", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  void writeActivityLog({
+    userId: user.id,
+    userEmail: user.email ?? "",
+    action: "inspection.create",
+    inspectionId: data.id,
+    metadata: {
+      propertyAddress: parsed.data.property_address,
+      caseNumber: parsed.data.case_number ?? null,
+      inspectorName: parsed.data.inspector_name ?? null,
+      inspectionDate: parsed.data.inspection_date,
+    },
+  });
 
   return NextResponse.json({ id: data.id }, { status: 201 });
 }

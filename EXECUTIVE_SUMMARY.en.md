@@ -53,6 +53,7 @@ The inspector works in a browser on PC, tablet, or mobile. When the site visit i
 | Traceability | All site visits, deviations, and archival events are logged and searchable |
 | User management | Simple access control via admin panel — no IT department involvement needed |
 | Audit log | All admin actions logged automatically (ISO 27001 A.12.4.1) |
+| Activity log | All case-handler actions logged with user, timestamp, and context — who created which inspection, who archived to which case, who searched for what |
 
 ---
 

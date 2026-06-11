@@ -178,6 +178,7 @@ supabase db reset         # Nullstill lokal database og kjør alle migrasjoner p
 | `028_answer_frist.sql` | Legger til `frist DATE` på `inspection_answers` — per-avvik-frist for retting, vises i sjekkliste, HTML-rapport og PDF |
 | `029_inspection_area_polygon.sql` | Legger til `area_polygon JSONB` på `inspections` — lagrer GeoJSON-polygon for tilsynsområdet |
 | `030_user_profiles.sql` | Legger til tabellen `user_profiles` — lagrer brukerens PNB/360°-kontaktrecno (`pnb_contact_recno`) for automatisk tildeling av ViewFile-tillatelse ved arkivering |
+| `031_activity_log.sql` | Legger til tabellen `activity_logs` — strukturert aktivitetslogg for saksbehandlere (tilsyn opprettet, sjekkpunkt besvart, arkivert til SIF, sakssøk) |
 
 ---
 
@@ -249,7 +250,7 @@ lib/
 ├── i18n/                       # Norske/engelske oversettelser (next-intl-kompatibilitetsadapter)
 ├── supabase/                   # Supabase server-/nettleserklient-fabrikker
 ├── api-auth.ts                 # JWT-vakter: requireUser() / requireAdmin()
-├── audit-log.ts                # Strukturert logging av admin-handlinger
+├── audit-log.ts                # Strukturert logging: admin-audit-logg + saksbehandler-aktivitetslogg
 └── legal-reference.ts          # Lovdata URL-bygger fra lovhenvisningsstrenger
 
 config/
@@ -402,6 +403,21 @@ Alle admin-handlinger logges automatisk til `audit_logs`-tabellen (ISO 27001 A.1
 | `inspection_config.create/delete` | Dropdown-listeelement lagt til eller slettet |
 | `sif_settings.update` | SIF-innstillinger lagret (sensitive felt utelatt fra logg) |
 
+### Aktivitetslogging (saksbehandlere)
+
+Alle saksbehandlerhandlinger logges til `activity_logs`-tabellen. Hver post inneholder brukerens ID, e-postadresse (snapshot), handlingstype, eventuell tilsyns-ID og et metadata-JSON-objekt. Logging er fire-and-forget — en loggfeil blokkerer aldri selve handlingen.
+
+| Handling | Trigger | Nøkkelmetadata |
+|----------|---------|----------------|
+| `inspection.create` | Nytt tilsyn opprettet | `propertyAddress`, `caseNumber`, `inspectorName`, `inspectionDate` |
+| `inspection.answer` | Sjekkpunkt besvart eller endret | `checkpointDefinitionId`, `status` (`ok`/`deviation`/`not_checked`), `hasComment` |
+| `inspection.archive` | Arkivering til SIF/360° vellykket | `caseNumber`, `documentNumber`, `documentRecno`, `pdfFileName` |
+| `inspection.archive_failed` | Arkivering til SIF/360° feilet | `caseNumber`, `pdfFileName`, `errorMessage` |
+| `sif.case_lookup` | Sak funnet i PNB | Søkekriterium og `foundCaseNumber`, `foundRecno` |
+| `sif.case_lookup_not_found` | Sak ikke funnet i PNB | Søkekriterium |
+
+Kommentartekst ekskluderes bevisst fra `inspection.answer`-logger — kun tilstedeværelse av kommentar (`hasComment: true/false`) registreres.
+
 ---
 
 ## Universell utforming (WCAG 2.1 AA)
@@ -425,4 +441,5 @@ Alle admin-handlinger logges automatisk til `audit_logs`-tabellen (ISO 27001 A.1
 - **CSP-headers** konfigurert i `next.config.mjs`
 - **HSTS**, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`
 - **SIF-legitimasjon** lagret kryptert i Supabase DB — eksponeres aldri til nettleseren
-- **Audit-logg** fanger alle privilegerte handlinger med bruker-ID og tidsstempel
+- **Audit-logg** fanger alle privilegerte admin-handlinger med bruker-ID og tidsstempel
+- **Aktivitetslogg** fanger alle saksbehandlerhandlinger (tilsyn, arkivering, sakssøk) med bruker-ID, e-post-snapshot og strukturert metadata

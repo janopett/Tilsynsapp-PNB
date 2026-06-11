@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { writeActivityLog } from "@/lib/audit-log";
 import { requireUser } from "@/lib/api-auth";
 
 const AnswerSchema = z.object({
@@ -52,6 +53,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  void writeActivityLog({
+    userId: user.id,
+    userEmail: user.email ?? "",
+    action: "inspection.answer",
+    inspectionId: id,
+    metadata: {
+      checkpointDefinitionId: checkpoint_definition_id,
+      status,
+      hasComment: Boolean(comment),
+    },
+  });
 
   // Auto-update inspection status
   const { data: answers } = await supabase
