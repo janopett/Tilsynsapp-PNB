@@ -145,6 +145,7 @@ Arkiveringsflyten er optimalisert for hastighet gjennom parallell kjøring:
 | ✅ Produksjonsklar | Automatisk utsending av arkiverte dokumenter til mottakere |
 | ✅ Produksjonsklar | Bruker- og tilgangsadministrasjon |
 | ✅ Produksjonsklar | Audit-logging (ISO 27001 A.12.4.1) |
+| ✅ Produksjonsklar | Aktivitetslogg — alle saksbehandlerhandlinger logges med bruker, tidspunkt og kontekst |
 | 🔄 Konfigurerbart | Sjekkpunkt-bibliotek og dropdown-lister tilpasset per kommune |
 | 🔄 Konfigurerbart | SIF-arkivkoder, kontaktroller og tittelmal settes per installasjon |
 
