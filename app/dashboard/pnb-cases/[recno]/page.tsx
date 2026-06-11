@@ -4,17 +4,19 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/lib/i18n";
+import { isPnbCacheDirty, PNB_CACHE_FALLBACK_TTL } from "@/lib/pnb-cache";
 import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 import { createClient } from "@/lib/supabase/client";
 
-const CASE_CACHE_TTL = 5 * 60 * 1000;
-
+// Cache invalidated on write (markPnbCacheDirty); 30-min fallback for external changes.
 function loadCaseCache(recno: string): PnbCaseItem | null {
   try {
     const raw = sessionStorage.getItem(`pnb_case_${recno}_v1`);
     if (!raw) return null;
     const { data, ts } = JSON.parse(raw) as { data: PnbCaseItem; ts: number };
-    return Date.now() - ts < CASE_CACHE_TTL ? data : null;
+    if (Date.now() - ts > PNB_CACHE_FALLBACK_TTL) return null;
+    if (isPnbCacheDirty(ts)) return null;
+    return data;
   } catch {
     return null;
   }

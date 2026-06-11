@@ -6,20 +6,24 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { MEASURE_TYPES } from "@/data/seed/measure-types";
 import { useLanguage } from "@/lib/i18n";
+import { isPnbCacheDirty, PNB_CACHE_FALLBACK_TTL } from "@/lib/pnb-cache";
 import type { PnbCaseItem } from "@/lib/sif/pnb-case-mapper";
 import { createClient } from "@/lib/supabase/client";
 import type { ExternalParticipant, Inspection } from "@/types";
 
-// ── PNB cases localStorage cache (5 min TTL, persists across page reloads) ──
+// ── PNB cases localStorage cache ─────────────────────────────────────────────
+// Invalidated immediately when the app writes (markPnbCacheDirty in ArchivePanel).
+// 30-min fallback TTL covers external changes made directly in 360°.
 const PNB_CACHE_KEY = "pnb_cases_v2";
-const PNB_CACHE_TTL = 5 * 60 * 1000;
 
 function loadPnbCache(): PnbCaseItem[] | null {
   try {
     const raw = localStorage.getItem(PNB_CACHE_KEY);
     if (!raw) return null;
     const { cases, ts } = JSON.parse(raw) as { cases: PnbCaseItem[]; ts: number };
-    return Date.now() - ts < PNB_CACHE_TTL ? cases : null;
+    if (Date.now() - ts > PNB_CACHE_FALLBACK_TTL) return null;
+    if (isPnbCacheDirty(ts)) return null;
+    return cases;
   } catch {
     return null;
   }
@@ -123,12 +127,6 @@ export default function DashboardClient({ list }: DashboardClientProps) {
       doFetchPnb(false);
     }
   }, [doFetchPnb, pnbFetched]);
-
-  // Periodic silent background refresh every 5 min
-  useEffect(() => {
-    const timer = setInterval(() => doFetchPnb(true), PNB_CACHE_TTL);
-    return () => clearInterval(timer);
-  }, [doFetchPnb]);
 
   const counts = {
     all: list.length,
