@@ -178,6 +178,7 @@ supabase db reset         # Reset local database and re-apply all migrations
 | `028_answer_frist.sql` | Adds `frist DATE` to `inspection_answers` — per-deviation correction deadline, shown in checklist, HTML report and PDF |
 | `029_inspection_area_polygon.sql` | Adds `area_polygon JSONB` to `inspections` — stores the GeoJSON polygon for the supervision area |
 | `030_user_profiles.sql` | Adds `user_profiles` table — stores each user's PNB/360° contact recno (`pnb_contact_recno`) for ViewFile permission grants on archived documents |
+| `031_activity_log.sql` | Adds `activity_logs` table — structured saksbehandler activity log (inspection created, checkpoint answered, archived to SIF, case lookup) |
 
 ---
 
@@ -249,7 +250,7 @@ lib/
 ├── i18n/                       # Norwegian/English translations (next-intl compatibility adapter)
 ├── supabase/                   # Supabase server/browser client factories
 ├── api-auth.ts                 # JWT guards: requireUser() / requireAdmin()
-├── audit-log.ts                # Structured admin action logging
+├── audit-log.ts                # Structured logging: admin audit log + saksbehandler activity log
 └── legal-reference.ts          # Lovdata URL builder from legal reference strings
 
 config/
@@ -402,6 +403,21 @@ All admin actions are automatically logged to the `audit_logs` table (ISO 27001 
 | `inspection_config.create/delete` | Dropdown list item added or removed |
 | `sif_settings.update` | SIF settings saved (sensitive fields excluded from log) |
 
+### Activity logging (saksbehandler)
+
+All case-handler actions are logged to the `activity_logs` table. Each entry stores the user's ID, email snapshot, action type, optional inspection ID, and a metadata JSON object. Logging is fire-and-forget — a log failure never blocks the operation.
+
+| Action | Trigger | Key metadata |
+|--------|---------|--------------|
+| `inspection.create` | New site visit created | `propertyAddress`, `caseNumber`, `inspectorName`, `inspectionDate` |
+| `inspection.answer` | Checkpoint answered or changed | `checkpointDefinitionId`, `status` (`ok`/`deviation`/`not_checked`), `hasComment` |
+| `inspection.archive` | Archival to SIF/360° succeeded | `caseNumber`, `documentNumber`, `documentRecno`, `pdfFileName` |
+| `inspection.archive_failed` | Archival to SIF/360° failed | `caseNumber`, `pdfFileName`, `errorMessage` |
+| `sif.case_lookup` | Case found in PNB | `caseNumber`/`externalId`/`uid` queried, `foundCaseNumber`, `foundRecno` |
+| `sif.case_lookup_not_found` | Case not found in PNB | `caseNumber`/`externalId`/`uid` queried |
+
+Comment text is intentionally excluded from `inspection.answer` logs — only the presence of a comment (`hasComment: true/false`) is recorded.
+
 ---
 
 ## Accessibility (WCAG 2.1 AA)
@@ -425,4 +441,5 @@ All admin actions are automatically logged to the `audit_logs` table (ISO 27001 
 - **CSP headers** configured in `next.config.mjs`
 - **HSTS**, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`
 - **SIF credentials** stored encrypted in Supabase DB — never exposed to the browser
-- **Audit log** captures all privileged actions with user ID and timestamp
+- **Audit log** captures all privileged admin actions with user ID and timestamp
+- **Activity log** captures all saksbehandler actions (inspections, archival, case lookups) with user ID, email snapshot, and structured metadata

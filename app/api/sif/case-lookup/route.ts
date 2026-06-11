@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { writeActivityLog } from "@/lib/audit-log";
 import { requireUser } from "@/lib/api-auth";
 import { findCaseInSif } from "@/lib/sif/case-service";
 import { SifCaseNotFoundError, SifMultipleCasesFoundError } from "@/lib/sif/errors";
@@ -17,6 +18,7 @@ const CaseLookupSchema = z
 export async function POST(req: NextRequest) {
   const auth = await requireUser(req);
   if (auth.error) return auth.error;
+  const { user } = auth;
 
   const body = await req.json().catch(() => null);
   const parsed = CaseLookupSchema.safeParse(body);
@@ -27,14 +29,34 @@ export async function POST(req: NextRequest) {
   const { caseNumber, externalId, uid } = parsed.data;
 
   try {
-    const sifCase = await findCaseInSif({
-      caseNumber,
-      externalId,
-      uid,
+    const sifCase = await findCaseInSif({ caseNumber, externalId, uid });
+
+    void writeActivityLog({
+      userId: user.id,
+      userEmail: user.email ?? "",
+      action: "sif.case_lookup",
+      metadata: {
+        caseNumber: caseNumber ?? null,
+        externalId: externalId ?? null,
+        uid: uid ?? null,
+        foundCaseNumber: sifCase.caseNumber,
+        foundRecno: sifCase.recno,
+      },
     });
+
     return NextResponse.json({ ok: true, case: sifCase });
   } catch (err) {
     if (err instanceof SifCaseNotFoundError) {
+      void writeActivityLog({
+        userId: user.id,
+        userEmail: user.email ?? "",
+        action: "sif.case_lookup_not_found",
+        metadata: {
+          caseNumber: caseNumber ?? null,
+          externalId: externalId ?? null,
+          uid: uid ?? null,
+        },
+      });
       return NextResponse.json({ ok: false, error: err.message }, { status: 404 });
     }
     if (err instanceof SifMultipleCasesFoundError) {
