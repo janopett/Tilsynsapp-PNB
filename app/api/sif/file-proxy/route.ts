@@ -117,7 +117,7 @@ export async function GET(req: NextRequest) {
     headers: {
       "Content-Type": mimeType,
       "Content-Length": String(fileData.byteLength),
-      "Content-Disposition": `attachment; filename="${encodeURIComponent(filename)}"`,
+      "Content-Disposition": `${isInline ? "inline" : "attachment"}; filename="${encodeURIComponent(filename)}"`,
       "Cache-Control": "private, max-age=3600",
     },
   });
