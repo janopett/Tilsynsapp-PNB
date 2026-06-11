@@ -12,6 +12,7 @@ import {
 import { fetchStaticMapImage } from "@/lib/pdf/map-image";
 import { archiveInspectionToSif } from "@/lib/sif/archival";
 import { findCaseInSif } from "@/lib/sif/case-service";
+import { getSifUserByLogin } from "@/lib/sif/extensions/user-service";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { ArchiveInspectionResponse, InspectionWithAnswers, SifCase } from "@/types";
 
@@ -67,8 +68,8 @@ export async function POST(req: NextRequest) {
       ? findCaseInSif({ caseNumber, externalId, uid }).catch(() => null)
       : Promise.resolve(null);
 
-  // Load inspection with answers (parallel with case lookup)
-  const [[inspRes, answersRes, attachRes], prefetchedCase] = await Promise.all([
+  // Load inspection + answers + profile in parallel with case lookup
+  const [[inspRes, answersRes, attachRes], prefetchedCase, profileResult] = await Promise.all([
     Promise.all([
       supabase
         .from("inspections")
@@ -80,6 +81,11 @@ export async function POST(req: NextRequest) {
       supabase.from("attachments").select("*").eq("inspection_id", inspectionId),
     ]),
     earlyLookupPromise,
+    serviceClient
+      .from("user_profiles")
+      .select("pnb_contact_recno")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
 
   if (inspRes.error || !inspRes.data) {
@@ -94,6 +100,30 @@ export async function POST(req: NextRequest) {
     answers: answersRes.data ?? [],
     attachments: attachRes.data ?? [],
   };
+
+  // Resolve the current user's 360° contact recno for ViewFile permissions.
+  // On cache miss, look up by email (AD login) and save for next time.
+  let currentUserContactRecno: number | undefined =
+    profileResult.data?.pnb_contact_recno ?? undefined;
+  if (!currentUserContactRecno && user.email) {
+    try {
+      const sifUser = await getSifUserByLogin(user.email);
+      if (sifUser?.ContactRecno) {
+        currentUserContactRecno = sifUser.ContactRecno;
+        void serviceClient.from("user_profiles").upsert(
+          {
+            user_id: user.id,
+            pnb_contact_recno: sifUser.ContactRecno,
+            pnb_login: sifUser.Login ?? user.email,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
+      }
+    } catch (err) {
+      console.warn("[archive] SIF user lookup failed, archiving without ViewFile permission", err);
+    }
+  }
 
   // Download attachment files and fetch static map image in parallel (independent operations)
   const [attachmentFiles, staticMapBuf] = await Promise.all([
@@ -190,6 +220,7 @@ export async function POST(req: NextRequest) {
     sifStageRecno: stageRecno ?? inspection.sif_stage_recno ?? undefined,
     existingDocumentNumber,
     prefetchedCase: prefetchedCase ?? undefined,
+    currentUserContactRecno,
   });
 
   // Update archival record and (if successful) inspection status in parallel.

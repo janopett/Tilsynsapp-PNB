@@ -78,6 +78,12 @@ export interface ArchivalContext {
    */
   existingDocumentNumber?: string;
   /**
+   * The current user's contact recno in 360°.
+   * When set, a ViewFile permission is added to the created document so the
+   * archiving user can view the uploaded files in the Saksfiler tab.
+   */
+  currentUserContactRecno?: number;
+  /**
    * Pre-fetched SIF case (skips findCaseInSif when provided).
    * Set this when the case was looked up in parallel before archival started.
    */
@@ -283,6 +289,9 @@ export async function archiveInspectionToSif(
           stageRecno: ctx.sifStageRecno,
           documentDate: ctx.inspectionDate,
           accessCode: settings.docAccessCode || undefined,
+          permissions: ctx.currentUserContactRecno
+            ? [{ ContactExternalId: `recno:${ctx.currentUserContactRecno}`, ViewFile: true }]
+            : undefined,
           correlationId,
         });
 
