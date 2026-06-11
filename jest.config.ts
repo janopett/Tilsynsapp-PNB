@@ -15,11 +15,8 @@ const config: Config = {
   // Track coverage only for lib/ business logic.
   // Excluded: pdf/ (jsPDF/canvas), supabase/ (client init), i18n/ (React hooks),
   // stamp-gps.ts (Canvas API), auth-fetch.ts (use client + Supabase),
-  // api-auth.ts / audit-log.ts (server-only Supabase infra),
-  // sif/types.ts (pure type declarations, no executable code),
-  // sif/extensions/ (thin RPC wrappers requiring live SIF infra),
-  // sif/estate-service.ts / support-service.ts (thin SIF wrappers, same test
-  //   infrastructure as the already-covered case-/document-service).
+  // api-auth.ts (Next.js server middleware — requires live NextRequest/Supabase),
+  // sif/types.ts (pure type declarations, zero executable code).
   collectCoverageFrom: [
     "lib/**/*.{ts,tsx}",
     "!lib/pdf/**",
@@ -28,11 +25,7 @@ const config: Config = {
     "!lib/stamp-gps.ts",
     "!lib/auth-fetch.ts",
     "!lib/api-auth.ts",
-    "!lib/audit-log.ts",
     "!lib/sif/types.ts",
-    "!lib/sif/extensions/**",
-    "!lib/sif/estate-service.ts",
-    "!lib/sif/support-service.ts",
     "!**/*.d.ts",
     "!**/node_modules/**",
   ],
