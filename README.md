@@ -35,6 +35,7 @@ Web application for conducting and archiving building site visits (befaringer) i
 | Archiving | Send a completed site visit to the municipal records system (Public 360°) — create a new document or update an existing one |
 | Dashboard | Overview of active and archived site visits with filtering by status, date, and property |
 | My PNB cases | Dedicated dashboard tab that fetches all PNB cases where the logged-in user is the responsible case officer — shows properties, contacts, case stages, and deadlines |
+| Case file viewer | Files tab on each site visit shows all documents from the linked PNB case. PDF files open in an inline iframe viewer (bytes fetched via proxy → Blob → `URL.createObjectURL`); images open in a lightbox; other file types download directly |
 | Map picker | Select coordinates for the site visit location via an interactive OpenStreetMap map |
 | Dark/light theme | Automatic system theme with manual override (light / dark / system) |
 

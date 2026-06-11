@@ -35,6 +35,7 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 | Arkivering | Send ferdig befaring til kommunens arkivsystem (Public 360°) — opprett nytt dokument eller oppdater et eksisterende |
 | Dashboard | Oversikt over aktive og arkiverte befaringer med filtrering etter status, dato og eiendom |
 | Mine PNB-saker | Egen dashbordfane som henter alle saker fra PNB der innlogget bruker er ansvarlig saksbehandler — viser eiendommer, kontakter, behandlingstrinn og frister |
+| Saksfil-visning | Filer-fanen på hver befaring viser alle dokumenter fra tilknyttet PNB-sak. PDF-filer åpnes i innebygd iframe-viewer (bytes hentes via proxy → Blob → `URL.createObjectURL`); bilder åpnes i lysboks; andre filtyper lastes ned direkte |
 | Kartplukking | Velg koordinater for befaringsstedet via interaktivt OpenStreetMap-kart |
 | Mørkt/lyst tema | Automatisk systemtema med manuell overstyring (lys/mørk/system) |
 
