@@ -24,12 +24,40 @@ export interface FindCaseInput {
   correlationId?: string;
 }
 
+// Kort levetid: samme sak slås ofte opp flere ganger samtidig (f.eks. kontakter, etapper
+// og estater ved valg av sak). Feilede oppslag caches ikke.
+const CASE_LOOKUP_TTL_MS = 30_000;
+const caseLookupCache = new Map<string, { expires: number; promise: Promise<SifCase> }>();
+
+/** Tømmer oppslagscachen. Brukes i tester. */
+export function clearCaseLookupCache(): void {
+  caseLookupCache.clear();
+}
+
 /**
  * Find a single case in SIF using the best available criteria.
  * Priority: caseNumber > uid > externalId > importedCaseNumber
  * Throws if 0 or >1 cases match.
+ *
+ * Oppslag på saksnummer caches i kort tid, og samtidige kall deler samme forespørsel.
  */
-export async function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
+export function findCaseInSif(input: FindCaseInput): Promise<SifCase> {
+  const { caseNumber } = input;
+  if (!caseNumber) return fetchCaseFromSif(input);
+
+  const now = Date.now();
+  const cached = caseLookupCache.get(caseNumber);
+  if (cached && cached.expires > now) return cached.promise;
+
+  const promise = fetchCaseFromSif(input);
+  caseLookupCache.set(caseNumber, { expires: now + CASE_LOOKUP_TTL_MS, promise });
+  promise.catch(() => {
+    if (caseLookupCache.get(caseNumber)?.promise === promise) caseLookupCache.delete(caseNumber);
+  });
+  return promise;
+}
+
+async function fetchCaseFromSif(input: FindCaseInput): Promise<SifCase> {
   const {
     caseNumber,
     externalId,

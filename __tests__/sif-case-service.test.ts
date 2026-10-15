@@ -33,13 +33,13 @@ jest.mock("@/lib/sif/settings", () => ({
   }),
 }));
 
-import { findCaseInSif, searchCasesInSif } from "@/lib/sif/case-service";
+import { clearCaseLookupCache, findCaseInSif, searchCasesInSif } from "@/lib/sif/case-service";
+import { sifRpcCall } from "@/lib/sif/client";
 import {
   SifCaseNotFoundError,
   SifMultipleCasesFoundError,
   SifValidationError,
 } from "@/lib/sif/errors";
-import { sifRpcCall } from "@/lib/sif/client";
 
 const mockRpc = sifRpcCall as jest.Mock;
 
@@ -53,6 +53,7 @@ const caseResult = {
 
 beforeEach(() => {
   mockRpc.mockReset();
+  clearCaseLookupCache();
 });
 
 // ── findCaseInSif ────────────────────────────────────────────────────────────
@@ -60,6 +61,30 @@ beforeEach(() => {
 describe("findCaseInSif", () => {
   it("throws SifValidationError when no criteria provided", async () => {
     await expect(findCaseInSif({})).rejects.toBeInstanceOf(SifValidationError);
+  });
+
+  it("reuses a successful lookup for the same caseNumber", async () => {
+    mockRpc.mockResolvedValueOnce({ Successful: true, Cases: [caseResult] });
+    const [a, b] = await Promise.all([
+      findCaseInSif({ caseNumber: "25/100" }),
+      findCaseInSif({ caseNumber: "25/100" }),
+    ]);
+    const again = await findCaseInSif({ caseNumber: "25/100" });
+    expect(a.recno).toBe(100);
+    expect(b.recno).toBe(100);
+    expect(again.recno).toBe(100);
+    expect(mockRpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not cache failed lookups", async () => {
+    mockRpc.mockResolvedValueOnce({ Successful: true, Cases: [] });
+    await expect(findCaseInSif({ caseNumber: "25/100" })).rejects.toBeInstanceOf(
+      SifCaseNotFoundError
+    );
+    mockRpc.mockResolvedValueOnce({ Successful: true, Cases: [caseResult] });
+    const result = await findCaseInSif({ caseNumber: "25/100" });
+    expect(result.recno).toBe(100);
+    expect(mockRpc).toHaveBeenCalledTimes(2);
   });
 
   it("returns mapped case on success by caseNumber", async () => {

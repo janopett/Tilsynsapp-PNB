@@ -30,6 +30,26 @@ async function fetchPage(page: number): Promise<SifGetCasesResult> {
   });
 }
 
+const CONCURRENCY = 8;
+
+/** Kjører fn for alle items med høyst `limit` samtidige kall. Resultatene beholder rekkefølgen. */
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      const index = next++;
+      results[index] = await fn(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 /** Extract all date strings from a progress plan details response */
 function extractProgressPlanDates(result: SifGetProgressPlanDetailsResult): string[] {
   if (!result.Successful || !result.Activities?.length) return [];
@@ -99,12 +119,9 @@ export async function GET(req: NextRequest) {
 
     if (totalPages > 1) {
       const remaining = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
-      for (let i = 0; i < remaining.length; i += 5) {
-        const batch = remaining.slice(i, i + 5);
-        const results = await Promise.all(batch.map((p) => fetchPage(p)));
-        for (const r of results) {
-          if (r.Successful) allRaw.push(...(r.Cases ?? []));
-        }
+      const results = await mapWithConcurrency(remaining, CONCURRENCY, fetchPage);
+      for (const r of results) {
+        if (r.Successful) allRaw.push(...(r.Cases ?? []));
       }
     }
 
@@ -116,27 +133,25 @@ export async function GET(req: NextRequest) {
     // Only called for cases where GetCases returned no deadline/milestone dates.
     const needsDates = cases.filter((c) => !hasAnyDate(c));
     if (needsDates.length > 0) {
-      for (let i = 0; i < needsDates.length; i += 5) {
-        const batch = needsDates.slice(i, i + 5);
-        const ppResults = await Promise.allSettled(
-          batch.map((c) =>
-            sifRpcCall<SifGetProgressPlanDetailsQuery, SifGetProgressPlanDetailsResult>(
-              "ProgressPlanService",
-              "GetProgressPlanDetails",
-              {
-                CaseNumber: c.caseNumber,
-                IncludePhases: true,
-                MaxReturnedActivities: 50,
-              }
-            )
-          )
-        );
-        for (let j = 0; j < batch.length; j++) {
-          const r = ppResults[j];
-          if (r.status === "fulfilled") {
-            const dates = extractProgressPlanDates(r.value);
-            if (dates.length) batch[j].progressPlanDates = dates;
+      const ppResults = await mapWithConcurrency(needsDates, CONCURRENCY, (c) =>
+        sifRpcCall<SifGetProgressPlanDetailsQuery, SifGetProgressPlanDetailsResult>(
+          "ProgressPlanService",
+          "GetProgressPlanDetails",
+          {
+            CaseNumber: c.caseNumber,
+            IncludePhases: true,
+            MaxReturnedActivities: 50,
           }
+        ).then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          () => ({ status: "rejected" as const })
+        )
+      );
+      for (let j = 0; j < needsDates.length; j++) {
+        const r = ppResults[j];
+        if (r.status === "fulfilled") {
+          const dates = extractProgressPlanDates(r.value);
+          if (dates.length) needsDates[j].progressPlanDates = dates;
         }
       }
     }

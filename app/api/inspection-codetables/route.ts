@@ -26,6 +26,13 @@ interface GetCodeTableRowsResponse {
   CodeTableRows?: CodeTableRow[]; // other SIF versions
 }
 
+// Kodetabellene endrer seg sjelden, så resultatet caches i prosessen i én time.
+const CODETABLE_TTL_MS = 60 * 60 * 1000;
+const codetableCache = new Map<
+  string,
+  { expires: number; items: { code: string; description: string }[] }
+>();
+
 // ── GET /api/inspection-codetables?type=supervision-area|measure-type ─────────
 // Tilgjengelig for alle innloggede brukere (ikke bare admin).
 export async function GET(req: NextRequest) {
@@ -43,6 +50,14 @@ export async function GET(req: NextRequest) {
   }
 
   const tableName = CODETABLE_MAP[type];
+
+  const cached = codetableCache.get(type);
+  if (cached && cached.expires > Date.now()) {
+    return NextResponse.json(
+      { ok: true, items: cached.items },
+      { headers: { "Cache-Control": "private, max-age=3600" } }
+    );
+  }
 
   const settings = await loadSifSettingsWithEnvFallback();
   if (!settings.baseUrl) {
@@ -83,7 +98,12 @@ export async function GET(req: NextRequest) {
       console.error("[codetables] GetCodeTableRows Successful=false", { type, tableName, msg });
       return NextResponse.json({ ok: false, items: [], error: msg }, { status: 502 });
     }
-    return NextResponse.json({ ok: true, items: mapRows(result) });
+    const items = mapRows(result);
+    codetableCache.set(type, { expires: Date.now() + CODETABLE_TTL_MS, items });
+    return NextResponse.json(
+      { ok: true, items },
+      { headers: { "Cache-Control": "private, max-age=3600" } }
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("[codetables] GetCodeTableRows failed", { type, tableName, msg });
