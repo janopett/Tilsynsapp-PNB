@@ -62,7 +62,7 @@ Inspektøren arbeider i nettleseren på PC, nettbrett eller mobil. Når befaring
 Appen er bygget for å leve **inne i** kommunens eksisterende infrastruktur — ikke ved siden av den:
 
 - **Public 360° / Plan & Bygg** — Saker, parter, eiendom og dokumenter hentes og lagres direkte via SIF-API. Ingen dobbeltregistrering.
-- **Kommunal innlogging** — Støtter Azure AD via OAuth2 (samme single sign-on som resten av kommunens systemer)
+- **Kommunal innlogging** — Innlogging med Microsoft-konto (Azure AD) via OAuth2, i tillegg til e-post og passord. Gir samme single sign-on som resten av kommunens systemer
 - **Nettleserbasert** — Ingen installasjon, fungerer på alle enheter (PC, nettbrett, mobil)
 
 ---

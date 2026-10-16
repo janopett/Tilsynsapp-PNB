@@ -62,7 +62,7 @@ The inspector works in a browser on PC, tablet, or mobile. When the site visit i
 The application is built to live **inside** the municipality's existing infrastructure — not alongside it:
 
 - **Public 360° / Plan & Building** — Cases, parties, property, and documents are fetched and stored directly via the SIF API. No duplicate data entry.
-- **Municipal login** — Supports Azure AD via OAuth2 (same single sign-on as the rest of the municipality's systems)
+- **Municipal login** — Sign-in with a Microsoft account (Azure AD) via OAuth2, in addition to e-mail and password. Gives the same single sign-on as the rest of the municipality's systems
 - **Browser-based** — No installation required, works on all devices (PC, tablet, mobile)
 
 ---
