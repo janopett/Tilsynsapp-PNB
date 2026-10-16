@@ -39,6 +39,7 @@ Web application for conducting and archiving building site visits (befaringer) i
 | Case file viewer | Files tab on each site visit shows all documents from the linked PNB case. PDF files open in an inline iframe viewer (bytes fetched via proxy → Blob → `URL.createObjectURL`); images open in a lightbox; other file types download directly |
 | Map picker | Select coordinates for the site visit location via an interactive OpenStreetMap map |
 | Dark/light theme | Automatic system theme with manual override (light / dark / system) |
+| Login | E-mail and password, or a Microsoft account (Azure AD / Entra ID) via Supabase OAuth |
 
 ### SIF integration (Plan & Building / Public 360°)
 
@@ -63,7 +64,7 @@ Web application for conducting and archiving building site visits (befaringer) i
 | Styling | Tailwind CSS v4 with dark mode |
 | Internationalisation | next-intl (Norwegian / English via cookie) |
 | Database | Supabase (PostgreSQL) |
-| Authentication | Supabase Auth (email + password, JWT, cookie sessions via @supabase/ssr) |
+| Authentication | Supabase Auth (email + password or Microsoft OAuth via Azure, JWT, cookie sessions via @supabase/ssr) |
 | File storage | Supabase Storage |
 | PDF generation | jsPDF + jspdf-autotable + pdf-lib (attachment merging) |
 | Map tiles | OpenStreetMap (client-side Leaflet) + Kartverket WMS (server-side static map) |
@@ -147,6 +148,16 @@ Copy `.env.example` to `.env.local` and fill in the values.
 > SIF settings can also be configured via the admin interface (`/dashboard/admin/sif-config`). Settings stored in the database take precedence over environment variables. An in-process cache (60 s TTL) prevents repeated DB round-trips on every RPC call.
 
 ---
+
+## Microsoft login
+
+Users can sign in with a Microsoft account (Azure AD / Entra ID) as well as with e-mail and password. Sign-in uses Supabase Auth's `azure` provider. After Microsoft has authenticated the user, Supabase redirects to `/auth/callback`, which exchanges the code for a session and sends the user to `/dashboard`.
+
+The provider is configured in the Supabase dashboard, not in environment variables:
+
+1. In Entra ID, register an app with the redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`.
+2. In Supabase (Authentication → Providers → Azure), enter the Application (client) ID and a client secret. Set the Azure tenant URL to your tenant to limit sign-in to your organisation.
+3. In Supabase (Authentication → URL Configuration), add `<app-url>/auth/callback` to the allowed redirect URLs.
 
 ## Database migrations
 

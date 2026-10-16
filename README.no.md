@@ -39,6 +39,7 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 | Saksfil-visning | Filer-fanen på hver befaring viser alle dokumenter fra tilknyttet PNB-sak. PDF-filer åpnes i innebygd iframe-viewer (bytes hentes via proxy → Blob → `URL.createObjectURL`); bilder åpnes i lysboks; andre filtyper lastes ned direkte |
 | Kartplukking | Velg koordinater for befaringsstedet via interaktivt OpenStreetMap-kart |
 | Mørkt/lyst tema | Automatisk systemtema med manuell overstyring (lys/mørk/system) |
+| Innlogging | E-post og passord, eller Microsoft-konto (Azure AD / Entra ID) via Supabase OAuth |
 
 ### SIF-integrasjon (Plan & Bygg / Public 360°)
 
@@ -63,7 +64,7 @@ Webapplikasjon for gjennomføring og arkivering av befaringer i kommunen. Inspek
 | Styling | Tailwind CSS v4 med mørkt tema |
 | Internasjonalisering | next-intl (norsk / engelsk via cookie) |
 | Database | Supabase (PostgreSQL) |
-| Autentisering | Supabase Auth (e-post + passord, JWT, cookie-sesjoner via @supabase/ssr) |
+| Autentisering | Supabase Auth (e-post + passord eller Microsoft OAuth via Azure, JWT, cookie-sesjoner via @supabase/ssr) |
 | Fillagring | Supabase Storage |
 | PDF-generering | jsPDF + jspdf-autotable + pdf-lib (sammenslåing av vedlegg) |
 | Kart | OpenStreetMap (klient-side Leaflet) + Kartverket WMS (statisk kart server-side) |
@@ -147,6 +148,16 @@ Kopier `.env.example` til `.env.local` og fyll inn verdiene.
 > SIF-innstillinger kan også konfigureres via admin-grensesnittet (`/dashboard/admin/sif-config`). Innstillinger i databasen overstyrer miljøvariabler. En intern cache (60 sek TTL) unngår gjentatte DB-oppslag per RPC-kall.
 
 ---
+
+## Microsoft-innlogging
+
+Brukere kan logge inn med en Microsoft-konto (Azure AD / Entra ID) i tillegg til e-post og passord. Innloggingen går via Supabase Auth med leverandøren `azure`. Når Microsoft har autentisert brukeren, sender Supabase nettleseren til `/auth/callback`. Der byttes koden mot en sesjon, og brukeren sendes videre til `/dashboard`.
+
+Leverandøren settes opp i Supabase-dashbordet, ikke i miljøvariabler:
+
+1. Registrer en app i Entra ID med redirect-URI-en `https://<project-ref>.supabase.co/auth/v1/callback`.
+2. I Supabase (Authentication → Providers → Azure) legges Application (client) ID og en client secret inn. Sett Azure tenant URL til din tenant for å begrense innlogging til egen organisasjon.
+3. I Supabase (Authentication → URL Configuration) legges `<app-url>/auth/callback` til blant tillatte redirect-URL-er.
 
 ## Databasemigrasjoner
 
